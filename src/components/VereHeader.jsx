@@ -1,5 +1,6 @@
 // 1. เราจะเปลี่ยนไปใช้ Dropdown พื้นฐาน (ไม่ใช่ NavDropdown)
 import { Navbar, Container, Nav, Dropdown, Form, Button } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 
 function VereHeader() {
   return (
@@ -52,7 +53,7 @@ function VereHeader() {
 
             {/* 6. เมนู Login นี้ก็จะ "ลอยทับ" เช่นกัน */}
             <Dropdown.Menu>
-              <Dropdown.Item href="/create-account">
+              <Dropdown.Item as={Link} to="/create-account">
                 Create Account
               </Dropdown.Item>
               <Dropdown.Divider />
