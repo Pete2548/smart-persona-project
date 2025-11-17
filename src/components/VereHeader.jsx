@@ -53,8 +53,8 @@ function VereHeader() {
 
             {/* 6. เมนู Login นี้ก็จะ "ลอยทับ" เช่นกัน */}
             <Dropdown.Menu>
-              <Dropdown.Item as={Link} to="/create-account">
-                Create Account
+              <Dropdown.Item as={Link} to="/create-account" className='text-center '>
+               <Button className='btn-secondary fw-bold'>Create Account</Button>
               </Dropdown.Item>
               <Dropdown.Divider />
               
@@ -67,7 +67,7 @@ function VereHeader() {
                   <Form.Group className="mb-3">
                     <Form.Control type="password" placeholder="Password" size="sm" />
                   </Form.Group>
-                  <Button variant="primary" type="submit" className="w-100 btn-sm">
+                  <Button variant="secondary" type="submit" className="w-100 btn-sm">
                     Login
                   </Button>
                 </Form>
