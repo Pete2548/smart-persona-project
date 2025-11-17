@@ -1,39 +1,47 @@
 import { Container, Row, Col, Button, Stack } from "react-bootstrap";
+import connectingDots from "../img/connecting dot polygon.jpg";
+import Image from "react-bootstrap/Image";
+import shareIcon from "../img/share.png";
+import aiIcon from "../img/ai.png";
+import profile from "../img/profile.png";
+import logo from "../img/logo.png";
 
 function HomePage() {
   // สมมติ Header สูงประมาณ 56px (มาตรฐานของ Bootstrap Navbar)
-  const heroRemainingHeight = 'calc(100vh - 56px)'; 
-  
+  const heroRemainingHeight = "calc(100vh - 56px)";
+
   // 🚨 สไตล์ใหม่: สำหรับ Hero ทั้งหมด (รวมรูปเป็นพื้นหลัง)
   const fullHeroStyle = {
     // 1. จัดกึ่งกลางแนวตั้งและแนวนอนของเนื้อหาที่อยู่ข้างใน
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+
     // 2. ขยายเต็มพื้นที่ที่เหลือของหน้าจอ
-    width: '100%', 
-    minHeight: heroRemainingHeight, 
-    
+    width: "100%",
+    minHeight: heroRemainingHeight,
+
     // 3. ใส่รูปภาพเป็นพื้นหลังของ div นี้ทั้งหมด
-    backgroundImage: `url('/src/img/connecting dot polygon.jpg')`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center', // ให้ภาพอยู่ตรงกลาง
+    backgroundImage: `url(${connectingDots})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center", // ให้ภาพอยู่ตรงกลาง
   };
-    
+
   return (
     <>
       {/* 🚨 ส่วน Hero Section - ใช้สไตล์ใหม่ และนำโค้ดเนื้อหามาไว้ข้างในเลย */}
       <div style={fullHeroStyle}>
-        
         <Container>
           {/* เนื้อหา Stack นี้จะถูกจัดกึ่งกลางของ div Hero ทั้งหมด */}
           {/* 🚨 เพิ่ม text-white และ text-light เพื่อให้อ่านออกบนพื้นหลังรูป */}
-          <Stack gap={3} className="text-center"> 
-            <h1 className="display-1 fw-bold ">V</h1>
-            <h2 className="h4">
-              Illuminate your true self with AI.
-            </h2>
+          <Stack gap={3} className="text-center">
+            <Image
+              src={logo}
+              rounded
+              style={{ width: "300px", height: "300px" }}
+              className="mx-auto"
+            />
+            <h2 className="h4">Illuminate your true self with AI.</h2>
             <Stack direction="horizontal" gap={3} className="mx-auto">
               <Button variant="secondary" size="lg">
                 Create Persona
@@ -45,7 +53,7 @@ function HomePage() {
           </Stack>
         </Container>
       </div>
-      
+
       {/* ส่วน What is VERE ยังคงเดิม */}
       <div className="bg-light p-5 text-center">
         <Container>
@@ -58,19 +66,31 @@ function HomePage() {
           <Row className="mt-5 pt-3">
             <Col md={4}>
               <Stack gap={2} className="align-items-center">
-                <i className="bi bi-robot fs-1"></i>
+                <Image
+                  src={aiIcon}
+                  rounded
+                  style={{ width: "60px", height: "60px" }}
+                />
                 <h5 className="fw-bold">AI Persona</h5>
               </Stack>
             </Col>
             <Col md={4}>
               <Stack gap={2} className="align-items-center">
-                <i className="bi bi-palette fs-1"></i>
+                <Image
+                  src={profile}
+                  rounded
+                  style={{ width: "60px", height: "60px" }}
+                />
                 <h5 className="fw-bold">Profile Design</h5>
               </Stack>
             </Col>
             <Col md={4}>
               <Stack gap={2} className="align-items-center">
-                <i className="bi bi-share fs-1"></i>
+                <Image
+                  src={shareIcon}
+                  rounded
+                  style={{ width: "60px", height: "60px" }}
+                />
                 <h5 className="fw-bold">Smart Sharing</h5>
               </Stack>
             </Col>
