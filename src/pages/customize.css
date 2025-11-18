@@ -1,0 +1,138 @@
+/* Basic styles for Customize page */
+.customize-container {
+  /* Fill available width inside dashboard main area */
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 24px 32px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.customize-container h1 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.customize-logo {
+  display: block;
+  width: 120px;
+  height: auto;
+  margin: 1rem 0 0 0;
+}
+
+.customize-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+
+.customize-card {
+  background: #faf9fb;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.preview-description {
+  margin-top: 8px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* Center text inside preview block */
+.preview-wrapper { display:flex; align-items:center; justify-content:center; padding:12px 0 }
+.preview-block { display:block; text-align:center }
+.preview-username { display:block; margin: 6px 0 }
+
+/* reflection removed — preview uses glow only */
+
+.customize-title { font-size: 1.2rem; color: #555; margin-bottom: 12px }
+
+.customize-row { display:flex; gap:20px }
+.customize-row .form-group { flex:1 }
+
+.neutral-input {
+  background: #eee9ea;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.assets-grid { display:flex; gap:20px; padding:20px }
+.asset-item { text-align:center }
+.asset-title { margin-top:8px; font-weight:600 }
+.asset-box {
+  display:inline-flex;
+  width:160px;
+  height:120px;
+  border-radius:12px;
+  background:#ebe7e8;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  border: 1px solid rgba(0,0,0,0.04);
+  cursor:pointer;
+}
+.asset-label { color:#7a6f71; font-size:0.9rem; margin-top:8px }
+
+/* Constrain uploaded images inside asset boxes and profile preview */
+.asset-box img,
+.asset-box .avatar-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 10px;
+}
+
+/* If a larger preview image is used elsewhere, cap its display size */
+.avatar-preview-large {
+  max-width: 420px;
+  max-height: 420px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* circular avatar helper and default sizing for previews */
+.avatar-circle {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  margin: 14px auto;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.7);
+  border: 6px solid rgba(255,255,255,0.06);
+}
+
+/* small thumbnail used for background preview in assets grid */
+.asset-bg-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 10px;
+}
+
+.asset-item .btn { font-size: 12px }
+
+/* style for overlay slider */
+.customize-card input[type="range"] { width: 220px }
+
+@media (max-width:900px){
+  .customize-row{flex-direction:column}
+  .assets-grid{flex-direction:row;flex-wrap:wrap}
+  .asset-box{width:140px;height:110px}
+}
+
+@media (max-width: 900px) {
+  .customize-grid { grid-template-columns: 1fr; }
+  .customize-logo { width: 90px }
+}
