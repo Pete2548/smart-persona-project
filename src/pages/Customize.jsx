@@ -1,0 +1,308 @@
+import React, { useState, useEffect } from 'react';
+import Sidebar from '../components/Sidebar'
+import './customize.css';
+import './dashboard.css'
+
+const Customize = () => {
+    const [username, setUsername] = useState('')
+    const [displayName, setDisplayName] = useState('')
+    const [description, setDescription] = useState('')
+    const [avatarPreview, setAvatarPreview] = useState(null)
+    const [bgImage, setBgImage] = useState(null)
+    const [bgOverlay, setBgOverlay] = useState(0.3)
+    const [nameColor, setNameColor] = useState('#1E6FB8')
+    const [blockColor, setBlockColor] = useState('#ffffff')
+    const [bgColor, setBgColor] = useState('#050505')
+    const [descColor, setDescColor] = useState('#ffffff')
+
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem('user_profile')
+            if (raw) {
+                const p = JSON.parse(raw)
+                setUsername(p.username || '')
+                setDisplayName(p.displayName || '')
+                setDescription(p.description || '')
+                setAvatarPreview(p.avatar || null)
+                setBgImage(p.bgImage || null)
+                setBgOverlay(typeof p.bgOverlay === 'number' ? p.bgOverlay : 0.3)
+                setNameColor(p.nameColor || '#1E6FB8')
+                setBlockColor(p.blockColor || '#ffffff')
+                setBgColor(p.bgColor || '#050505')
+                setDescColor(p.descColor || '#ffffff')
+            }
+        } catch (err) {
+            console.warn('Failed to load user_profile', err)
+        }
+    }, [])
+
+    const handleProfileUpload = (e) => {
+        const file = e.target.files && e.target.files[0]
+        if (!file) return
+        const reader = new FileReader()
+        reader.onload = () => {
+            setAvatarPreview(reader.result)
+        }
+        reader.readAsDataURL(file)
+    }
+
+    const handleBgUpload = (e) => {
+        const file = e.target.files && e.target.files[0]
+        if (!file) return
+        const reader = new FileReader()
+        reader.onload = () => {
+            setBgImage(reader.result)
+        }
+        reader.readAsDataURL(file)
+    }
+
+    const clearBgImage = () => {
+        setBgImage(null)
+    }
+
+    const hexToRgba = (hex, alpha) => {
+        if (!hex) return `rgba(30,111,184,${alpha})`
+        const h = hex.replace('#','')
+        const normalized = h.length === 3 ? h.split('').map(c=>c+c).join('') : h
+        const bigint = parseInt(normalized, 16)
+        const r = (bigint >> 16) & 255
+        const g = (bigint >> 8) & 255
+        const b = bigint & 255
+        return `rgba(${r},${g},${b},${alpha})`
+    }
+
+    const hexLuminance = (hex) => {
+        if (!hex) return 0
+        const h = hex.replace('#','')
+        const normalized = h.length === 3 ? h.split('').map(c=>c+c).join('') : h
+        const bigint = parseInt(normalized, 16)
+        const r = (bigint >> 16) & 255
+        const g = (bigint >> 8) & 255
+        const b = bigint & 255
+        const srgb = [r,g,b].map(v => {
+            const s = v/255
+            return s <= 0.03928 ? s/12.92 : Math.pow((s+0.055)/1.055, 2.4)
+        })
+        return 0.2126*srgb[0] + 0.7152*srgb[1] + 0.0722*srgb[2]
+    }
+
+    const buildTextGlow = (hex) => {
+        const c1 = hexToRgba(hex, 0.95)
+        const c2 = hexToRgba(hex, 0.6)
+        const c3 = hexToRgba(hex, 0.35)
+        const dark1 = 'rgba(0,0,0,0.7)'
+        const dark2 = 'rgba(0,0,0,0.45)'
+        return [
+            `0 2px 0 ${dark1}`,
+            `0 6px 14px ${dark2}`,
+            `0 0 6px ${c1}`,
+            `0 0 18px ${c2}`,
+            `0 0 40px ${c3}`,
+            `0 0 90px ${c3}`,
+        ].join(', ')
+    }
+
+    const saveProfile = () => {
+        const profile = {
+            username: username.trim() || 'me',
+            displayName,
+            description,
+            avatar: avatarPreview || null,
+            bgImage: bgImage || null,
+            bgOverlay: bgOverlay,
+            nameColor,
+            blockColor,
+            bgColor,
+            descColor,
+        }
+        localStorage.setItem('user_profile', JSON.stringify(profile))
+        // simple feedback
+        alert('Profile saved — click View Profile to open it')
+    }
+
+    // preview wrapper style depends on optional bgImage (image) or bgColor
+    const previewWrapperStyle = bgImage ? {
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        borderRadius: 10,
+        padding: 20
+    } : { background: bgColor || '#0b0b0b', borderRadius:10, padding:20 }
+
+    return (
+        <div className="dashboard-shell p-4">
+            <div className="dashboard-card d-flex">
+                <Sidebar />
+
+                <main className="dashboard-main p-4">
+                    <div className="customize-container">
+                        <h2 className="customize-title">Customization</h2>
+
+                        <div className="customize-card mb-4">
+                            <div className="customize-row">
+                                <div className="form-group">
+                                    <label className="form-label">Username (public)</label>
+                                    <input value={username} onChange={e => setUsername(e.target.value)} className="form-control neutral-input" placeholder="your-username" />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Displayname</label>
+                                    <input value={displayName} onChange={e => setDisplayName(e.target.value)} className="form-control neutral-input" placeholder="this is my name" />
+                                </div>
+
+                                <div className="form-group w-100">
+                                    <label className="form-label">Description</label>
+                                    <input value={description} onChange={e => setDescription(e.target.value)} className="form-control neutral-input" placeholder="this is my Description" />
+                                </div>
+                            </div>
+
+                            <div className="customize-row mt-3">
+                                <div className="form-group">
+                                    <label className="form-label">Name color</label>
+                                    <div className="d-flex align-items-center gap-2">
+                                        <input type="color" value={nameColor} onChange={e => setNameColor(e.target.value)} className="form-control form-control-color" style={{width:56, height:36, padding:4}} />
+                                        <input type="text" value={nameColor} onChange={e => setNameColor(e.target.value)} className="form-control neutral-input" style={{maxWidth:140}} />
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Block background</label>
+                                    <div className="d-flex align-items-center gap-2">
+                                        <input type="color" value={blockColor} onChange={e => setBlockColor(e.target.value)} className="form-control form-control-color" style={{width:56, height:36, padding:4}} />
+                                        <input type="text" value={blockColor} onChange={e => setBlockColor(e.target.value)} className="form-control neutral-input" style={{maxWidth:140}} />
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Description color</label>
+                                    <div className="d-flex align-items-center gap-2">
+                                        <input type="color" value={descColor} onChange={e => setDescColor(e.target.value)} className="form-control form-control-color" style={{width:56, height:36, padding:4}} />
+                                        <input type="text" value={descColor} onChange={e => setDescColor(e.target.value)} className="form-control neutral-input" style={{maxWidth:140}} />
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Page background</label>
+                                    <div className="d-flex align-items-center gap-2">
+                                        <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} className="form-control form-control-color" style={{width:56, height:36, padding:4}} />
+                                        <input type="text" value={bgColor} onChange={e => setBgColor(e.target.value)} className="form-control neutral-input" style={{maxWidth:140}} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-3 d-flex justify-content-end">
+                                <button className="btn btn-primary" onClick={saveProfile}>Save Profile</button>
+                            </div>
+                        </div>
+
+                        <h3 className="customize-title">Assets Uploader</h3>
+                        <div className="customize-card assets-grid">
+                            <div className="asset-item">
+                                <label className="asset-box" htmlFor="bg-upload">
+                                    {bgImage ? (
+                                        <img src={bgImage} alt="background preview" className="asset-bg-thumb" />
+                                    ) : (
+                                    <>
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    <div className="asset-label">upload a file</div>
+                                    </>
+                                    )}
+                                </label>
+                                <div className="d-flex align-items-center" style={{gap:8, marginTop:8}}>
+                                    <div className="asset-title">Background</div>
+                                    {bgImage && (
+                                        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={clearBgImage} style={{marginLeft:8}}>Remove</button>
+                                    )}
+                                </div>
+                                <input id="bg-upload" onChange={handleBgUpload} type="file" accept="image/*" className="d-none" />
+                            </div>
+
+                            <div className="asset-item">
+                                <label className="asset-box" htmlFor="audio-upload">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    <div className="asset-label">open audio manager</div>
+                                </label>
+                                <div className="asset-title">Audio</div>
+                                <input id="audio-upload" type="file" accept="audio/*" className="d-none" />
+                            </div>
+
+                            <div className="asset-item">
+                                <label className="asset-box profile-box" htmlFor="profile-upload">
+                                    {avatarPreview ? (
+                                        <img src={avatarPreview} alt="avatar preview" className="avatar-preview" />
+                                    ) : (
+                                        <>
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                            <div className="asset-label">upload a file</div>
+                                        </>
+                                    )}
+                                </label>
+                                <div className="asset-title">Profile</div>
+                                <input id="profile-upload" onChange={handleProfileUpload} type="file" accept="image/*" className="d-none" />
+                            </div>
+                        </div>
+
+                            <div className="customize-card mt-4">
+                            <h4 className="mb-3">Preview</h4>
+                            <div className="d-flex align-items-center" style={{gap:12, marginBottom:8}}>
+                                <div style={{display:'flex', alignItems:'center', gap:12}}>
+                                    <label className="form-label mb-0">Background overlay</label>
+                                    <input type="range" min={0} max={100} value={Math.round(bgOverlay*100)} onChange={e => setBgOverlay(Number(e.target.value)/100)} />
+                                    <div style={{minWidth:42, textAlign:'center'}}>{Math.round(bgOverlay*100)}%</div>
+                                </div>
+                            </div>
+                            <div className="preview-wrapper" style={previewWrapperStyle}>
+                                {bgImage ? (
+                                    <div className="preview-no-block" style={{width:'100%', maxWidth:760, padding:24, borderRadius:0}}>
+                                        {avatarPreview && (
+                                            <img src={avatarPreview} alt="avatar preview" className="avatar-preview-large avatar-circle" style={{
+                                                boxShadow: `0 10px 30px ${hexToRgba(nameColor,0.28)}`,
+                                                border: `4px solid ${hexToRgba(nameColor,0.12)}`
+                                            }} />
+                                        )}
+                                        <div className="preview-username" style={{
+                                                fontSize:28,
+                                                fontWeight:700,
+                                                color: nameColor || '#ffffff',
+                                                textShadow: buildTextGlow(nameColor || '#ffffff')
+                                        }}>
+                                            {username || 'username'}
+                                        </div>
+                                        <div className="preview-description" style={{color: descColor || (hexLuminance(bgColor || '#050505') > 0.6 ? '#111' : '#fff')}}>{description}</div>
+                                    </div>
+                                ) : (
+                                    <div className="preview-block" style={{width:'100%', maxWidth:760, padding:12, background: blockColor || '#ffffff', borderRadius:8}}>
+                                        {avatarPreview && (
+                                            <img src={avatarPreview} alt="avatar preview" className="avatar-preview-large avatar-circle" style={{
+                                                boxShadow: `0 10px 30px ${hexToRgba(nameColor,0.28)}`,
+                                                border: `4px solid ${hexToRgba(nameColor,0.12)}`
+                                            }} />
+                                        )}
+                                        <div className="preview-username" style={{
+                                                fontSize:28,
+                                                fontWeight:700,
+                                                color: nameColor || '#ffffff',
+                                                textShadow: buildTextGlow(nameColor || '#ffffff')
+                                        }}>
+                                            {username || 'username'}
+                                        </div>
+                                        <div className="preview-description" style={{color: descColor || (hexLuminance(bgColor || '#050505') > 0.6 ? '#111' : '#fff')}}>{description}</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    );
+};
+
+export default Customize;

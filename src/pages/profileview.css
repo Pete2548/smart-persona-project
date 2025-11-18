@@ -1,0 +1,173 @@
+/* Full-screen dark background and centered rounded card */
+
+
+/* Dark-themed profile card with heavy white glow to match reference image */
+.profile-view-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #050505;
+  padding: 48px 16px;
+}
+
+.profile-card {
+  width: min(900px, 86%);
+  max-width: 900px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  padding: 22px 28px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.02);
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+.profile-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255,255,255,0.85);
+  width: 72px;
+}
+.eye-icon { font-size: 14px; color: rgba(255,255,255,0.85) }
+.view-count { font-size: 13px; color: rgba(255,255,255,0.85) }
+
+.profile-center {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+/* ensure username and description are centered inside the center column */
+.profile-center { text-align: center }
+
+/* avatar size and circle style for profile view */
+.avatar-circle {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.72);
+  border: 6px solid rgba(255,255,255,0.04);
+}
+.username-glow {
+  font-size: 44px;
+  font-weight: 700;
+  color: #ffffff;
+  /* strong layered white glow */
+  text-shadow:
+    0 1px 0 rgba(0,0,0,0.8),
+    0 6px 18px rgba(0,0,0,0.6),
+    0 0 6px rgba(255,255,255,0.95),
+    0 0 18px rgba(255,255,255,0.75),
+    0 0 40px rgba(255,255,255,0.48),
+    0 0 90px rgba(255,255,255,0.28);
+}
+
+.profile-empty-card {
+  background: rgba(255,255,255,0.02);
+  color: #fff;
+  padding: 24px 32px;
+  border-radius: 12px;
+}
+
+@media (max-width: 640px) {
+  .username-glow { font-size: 32px }
+  .profile-card { padding: 16px }
+  .profile-left { width: 56px }
+}
+
+.profile-card {
+  width: min(920px, 92%);
+  background: var(--card-white);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  padding: 28px 36px;
+  box-shadow: 0 8px 30px rgba(15,23,42,0.06);
+  position: relative;
+  border: 1px solid var(--card-border);
+}
+
+.profile-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted-gray);
+  width: 84px;
+}
+.eye-icon {
+  font-size: 16px;
+  color: var(--muted-gray);
+}
+.view-count {
+  font-size: 13px;
+  color: var(--muted-gray);
+}
+
+.profile-center {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.username-glow {
+  font-size: 44px;
+  font-weight: 700;
+  color: var(--theme-blue);
+  text-shadow: 0 2px 0 rgba(0,0,0,0.08), 0 10px 24px rgba(30,111,184,0.16), 0 0 28px rgba(30,111,184,0.26);
+}
+
+/* Constrain any avatar or background images shown on profile view */
+.profile-card img {
+  max-width: 280px;
+  max-height: 280px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* More specific rule to ensure avatar images with the avatar-circle class stay perfectly circular
+   and are not overridden by the more generic .profile-card img selector above. */
+.profile-card img.avatar-circle {
+  width: 180px !important;
+  height: 180px !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  display: block !important;
+  margin: 0 auto 20px auto !important;
+}
+
+/* Reflection (water-like) under the username */
+.username-reflection {
+  margin-top: 6px;
+  transform: scaleY(-1);
+  opacity: 0.28;
+  filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.75), rgba(0,0,0,0));
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.75), rgba(0,0,0,0));
+  pointer-events: none;
+  font-size: 36px;
+}
+
+.profile-empty-card {
+  background: rgba(255,255,255,0.98);
+  color: #111827;
+  padding: 24px 32px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+}
+
+@media (max-width: 640px) {
+  .username-glow { font-size: 28px }
+  .profile-card { padding: 20px }
+  .profile-left { width: 56px }
+}
