@@ -1,6 +1,11 @@
 import React from 'react'
 import Sidebar from '../components/Sidebar'
 import './dashboard.css'
+import Image from "react-bootstrap/Image";
+import ig from "../img/ig.png";
+import facebook from "../img/facebook.png";
+import x from "../img/twitter.png";
+import spotify from "../img/spotify.png";
 
 function Links() {
   return (
@@ -14,10 +19,26 @@ function Links() {
             <p className="text-muted small mb-3">Pick a social media to add to your profile.</p>
 
             <div className="social-icons d-flex gap-3">
-              <button className="social-icon instagram" aria-label="Instagram">IG</button>
-              <button className="social-icon facebook" aria-label="Facebook">f</button>
-              <button className="social-icon x" aria-label="X">X</button>
-              <button className="social-icon spotify" aria-label="Spotify">S</button>
+              <Image
+                  src={ig}
+                  rounded
+                  style={{ width: "49px", height: "49px" }}
+                />
+              <Image
+                  src={facebook}
+                  rounded
+                  style={{ width: "49px", height: "49px" }}
+                />
+              <Image
+                  src={x}
+                  rounded
+                  style={{ width: "49px", height: "49px" }}
+                />
+              <Image
+                  src={spotify}
+                  rounded
+                  style={{ width: "49px", height: "49px" }}
+                />
             </div>
           </div>
 

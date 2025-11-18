@@ -41,8 +41,8 @@ function AIImageGenerator({ onApply }){
       </div>
 
       <div className="d-flex gap-2 mb-3">
-        <button className="btn btn-primary" onClick={generate}>Generate Avatar</button>
-        <button className="btn btn-outline-secondary" onClick={() => { setSeedText(''); setUrl(buildDicebearUrl('', style, bg)) }}>Reset</button>
+        <button className="btn btn-dark" onClick={generate}>Generate Avatar</button>
+        <button className="btn btn-outline-danger" onClick={() => { setSeedText(''); setUrl(buildDicebearUrl('', style, bg)) }}>Reset</button>
       </div>
 
       <div className="mb-2">
@@ -52,8 +52,8 @@ function AIImageGenerator({ onApply }){
       </div>
 
       <div className="d-flex gap-2">
-        <a className="btn btn-outline-primary" href={url} target="_blank" rel="noreferrer">Open</a>
-        <button className="btn btn-primary" onClick={apply}>Apply Avatar</button>
+        <a className="btn btn-outline-success" href={url} target="_blank" rel="noreferrer">Open</a>
+        <button className="btn btn-dark" onClick={apply}>Apply Avatar</button>
       </div>
     </div>
   )

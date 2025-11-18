@@ -39,8 +39,8 @@ function AIControls({ onGenerate, loading, initial }) {
       </div>
 
       <div className="d-flex gap-2 mt-2">
-        <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? 'Generating...' : 'Generate'}</button>
-        <button className="btn btn-outline-secondary" type="button" onClick={() => { setKeywords(''); setTemplate('Personal'); setTone('Friendly'); setLength('short') }}>Clear</button>
+        <button className="btn btn-dark" type="submit" disabled={loading}>{loading ? 'Generating...' : 'Generate'}</button>
+        <button className="btn btn-outline-danger" type="button" onClick={() => { setKeywords(''); setTemplate('Personal'); setTone('Friendly'); setLength('short') }}>Clear</button>
       </div>
     </form>
   )

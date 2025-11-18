@@ -189,7 +189,7 @@ const Customize = () => {
                             </div>
 
                             <div className="mt-3 d-flex justify-content-end">
-                                <button className="btn btn-primary" onClick={saveProfile}>Save Profile</button>
+                                <button className="btn btn-dark" onClick={saveProfile}>Save Profile</button>
                             </div>
                         </div>
 
@@ -253,7 +253,7 @@ const Customize = () => {
                             <h4 className="mb-3">Preview</h4>
                             <div className="d-flex align-items-center" style={{gap:12, marginBottom:8}}>
                                 <div style={{display:'flex', alignItems:'center', gap:12}}>
-                                    <label className="form-label mb-0">Background overlay</label>
+                                    <label className="form-label mb-0 ">Background overlay</label>
                                     <input type="range" min={0} max={100} value={Math.round(bgOverlay*100)} onChange={e => setBgOverlay(Number(e.target.value)/100)} />
                                     <div style={{minWidth:42, textAlign:'center'}}>{Math.round(bgOverlay*100)}%</div>
                                 </div>
