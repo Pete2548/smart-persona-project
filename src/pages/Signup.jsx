@@ -1,5 +1,7 @@
 import { Container, Row, Col, Form, Button } from "react-bootstrap";
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom'
+import { registerUser } from '../services/auth'
 import '../App.css';
 
 function Signup() {
@@ -11,6 +13,7 @@ function Signup() {
     email: '',
     password: ''
   });
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,8 +25,15 @@ function Signup() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Add your form submission logic here
+    // try register
+    const { username, email, password, firstName, lastName, birthDate } = formData
+    const res = registerUser({ username, email, password, firstName, lastName, birthDate })
+    if (!res.ok) {
+      alert(res.message || 'Registration failed')
+      return
+    }
+    // success -> navigate to dashboard
+    navigate('/dashboard')
   };
 
   return (
