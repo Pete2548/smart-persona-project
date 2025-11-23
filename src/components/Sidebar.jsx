@@ -37,6 +37,12 @@ function Sidebar() {
             </NavLink>
           </li>
           <li className="nav-item mb-3">
+            <NavLink to="/themes" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
+              <i className="bi bi-palette fs-4 me-2"></i>
+              <span className="nav-label">themes</span>
+            </NavLink>
+          </li>
+          <li className="nav-item mb-3">
             <NavLink to="/links" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
               <i className="bi bi-link-45deg fs-4 me-2"></i>
               <span className="nav-label">links</span>
@@ -53,18 +59,32 @@ function Sidebar() {
 
       <div className="sidebar-footer p-3">
         <div className="mb-3">
-          <Link to={viewPath} className="btn view-profile-btn w-100 d-flex align-items-center justify-content-center">
+          <a href={viewPath} target="_blank" rel="noopener noreferrer" className="btn view-profile-btn w-100 d-flex align-items-center justify-content-center">
             <i className="bi bi-eye me-2"></i>
             <span>View Profile</span>
-          </Link>
+          </a>
         </div>
 
         <button className="btn btn-dark w-100 share-btn mb-3">Share Your Profile</button>
 
         <div className="profile d-flex align-items-center">
-          <i className="bi bi-person-circle fs-4 me-2"></i>
+          {profile && profile.avatar ? (
+            <img 
+              src={profile.avatar} 
+              alt="profile" 
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                marginRight: 8
+              }}
+            />
+          ) : (
+            <i className="bi bi-person-circle fs-4 me-2"></i>
+          )}
           <div className="flex-grow-1">
-            <div className="profile-name">Kotchakorn</div>
+            <div className="profile-name">{profile?.displayName || profile?.username || 'Guest'}</div>
           </div>
           <i className="bi bi-three-dots"></i>
         </div>
