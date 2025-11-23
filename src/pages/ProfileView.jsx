@@ -1,27 +1,133 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import './profileview.css'
+
+// IndexedDB helper
+const getAudioFromDB = async () => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('ProfileDB', 1)
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => {
+      const db = request.result
+      if (!db.objectStoreNames.contains('audio')) {
+        resolve(null)
+        return
+      }
+      const transaction = db.transaction(['audio'], 'readonly')
+      const store = transaction.objectStore('audio')
+      const getRequest = store.get('userAudio')
+      getRequest.onsuccess = () => resolve(getRequest.result)
+      getRequest.onerror = () => reject(getRequest.error)
+    }
+  })
+}
 
 const ProfileView = () => {
   const { username } = useParams()
   const [profile, setProfile] = useState(null)
+  const [audioFile, setAudioFile] = useState(null)
+  const audioRef = useRef(null)
+  const [isMuted, setIsMuted] = useState(false)
 
   useEffect(() => {
     // load saved profile
-    try {
-      const raw = localStorage.getItem('user_profile')
-      if (raw) {
-        const p = JSON.parse(raw)
-        if (!username || p.username === username) {
-          setProfile(p)
-          return
+    const loadProfile = async () => {
+      try {
+        const raw = localStorage.getItem('user_profile')
+        if (raw) {
+          const p = JSON.parse(raw)
+          if (!username || p.username === username) {
+            setProfile(p)
+            
+            // Load audio from IndexedDB if exists
+            if (p.hasAudio) {
+              try {
+                const audioData = await getAudioFromDB()
+                setAudioFile(audioData)
+              } catch (err) {
+                console.warn('Failed to load audio from DB', err)
+                setAudioFile(null)
+              }
+            } else {
+              setAudioFile(null)
+            }
+            return
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load profile', err)
+      }
+      setProfile(null)
+      setAudioFile(null)
+    }
+    loadProfile()
+  }, [username])
+
+  // Handle audio playback with start/end time
+  useEffect(() => {
+    if (audioRef.current && audioFile && profile) {
+      const audio = audioRef.current
+      const startTime = profile.audioStartTime || 0
+      const endTime = profile.audioEndTime || 0
+      
+      console.log('Audio setup:', { audioFile: !!audioFile, startTime, endTime, isMuted })
+      
+      const handleLoadedMetadata = () => {
+        console.log('Audio loaded, duration:', audio.duration)
+        audio.volume = isMuted ? 0 : 1
+        audio.currentTime = startTime
+        console.log('Attempting to play, volume:', audio.volume)
+        audio.play()
+          .then(() => console.log('Audio playing successfully'))
+          .catch(err => console.log('Autoplay prevented:', err))
+      }
+      
+      const handleVolumeChange = () => {
+        console.log('Volume changed to:', audio.volume)
+      }
+      
+      const handleTimeUpdate = () => {
+        if (endTime > 0 && audio.currentTime >= endTime) {
+          audio.currentTime = startTime
         }
       }
-    } catch (err) {
-      // ignore
+      
+      const handleEnded = () => {
+        audio.currentTime = startTime
+        audio.play().catch(err => console.log('Loop play prevented:', err))
+      }
+      
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+      audio.addEventListener('volumechange', handleVolumeChange)
+      audio.addEventListener('timeupdate', handleTimeUpdate)
+      audio.addEventListener('ended', handleEnded)
+      
+      // Try to load
+      audio.load()
+      
+      return () => {
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+        audio.removeEventListener('volumechange', handleVolumeChange)
+        audio.removeEventListener('timeupdate', handleTimeUpdate)
+        audio.removeEventListener('ended', handleEnded)
+      }
     }
-    setProfile(null)
-  }, [username])
+  }, [audioFile, profile, isMuted])
+
+  // Separate effect for volume control
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : 1
+    }
+  }, [isMuted])
+
+  const toggleMute = () => {
+    const newMutedState = !isMuted
+    setIsMuted(newMutedState)
+    if (audioRef.current) {
+      audioRef.current.volume = newMutedState ? 0 : 1
+    }
+  }
 
   if (!profile) {
     return (
@@ -31,7 +137,7 @@ const ProfileView = () => {
     )
   }
   const cardStyle = {
-    background: profile.blockColor || undefined,
+    background: profile.bgImage ? 'transparent' : (profile.blockColor || undefined),
   }
 
   // helper to create rgba shadow from hex
@@ -103,6 +209,56 @@ const ProfileView = () => {
 
   return (
     <div className="profile-view-wrapper" style={wrapperStyle}>
+      {audioFile && (
+        <div style={{
+          position: 'fixed',
+          top: 20,
+          left: 20,
+          background: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(10px)',
+          padding: '12px 16px',
+          borderRadius: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          zIndex: 1000,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+        }}>
+          <button 
+            onClick={toggleMute}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              padding: 4,
+              display: 'flex',
+              alignItems: 'center',
+              fontSize: 14
+            }}
+            title={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? (
+              <>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: 8}}>
+                  <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+                  <line x1="23" y1="9" x2="17" y2="15"/>
+                  <line x1="17" y1="9" x2="23" y2="15"/>
+                </svg>
+                Muted
+              </>
+            ) : (
+              <>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: 8}}>
+                  <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                </svg>
+                Playing
+              </>
+            )}
+          </button>
+        </div>
+      )}
       <div className="profile-card" style={cardStyle}>
         <div className="profile-center">
             {profile.avatar && (
@@ -113,6 +269,12 @@ const ProfileView = () => {
             )}
           <div className="username-glow" style={usernameStyle}>{profile.username}</div>
             <div className="profile-description" style={{color: descColor, marginTop: 8, fontSize: 16, textAlign: 'center'}}>{profile.description}</div>
+            {audioFile && (
+              <audio ref={audioRef} preload="auto" style={{display: 'none'}}>
+                <source src={audioFile} type="audio/mpeg" />
+                <source src={audioFile} type="video/mp4" />
+              </audio>
+            )}
         </div>
         {/* profile-right removed per user request (no copy link) */}
       </div>
