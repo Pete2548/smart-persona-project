@@ -28,6 +28,40 @@
   margin: 0;
 }
 
+.themes-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.tab-btn:hover {
+  background: #f8f8f8;
+  color: #333;
+  border-color: #ccc;
+}
+
+.tab-btn.active {
+  background: #6c5ce7;
+  color: #fff;
+  border-color: #6c5ce7;
+}
+
 .themes-filters {
   display: flex;
   gap: 12px;
@@ -155,6 +189,13 @@
   font-weight: 600;
   color: #333;
   margin: 8px 0 12px 0;
+}
+
+.layout-description {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
 }
 
 .theme-tags {
