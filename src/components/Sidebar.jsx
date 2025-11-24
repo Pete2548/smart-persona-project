@@ -1,8 +1,37 @@
-import React from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { getCurrentUser } from '../services/auth'
+import LoginModal from './LoginModal'
 import '../pages/dashboard.css'
 
 function Sidebar() {
+  const navigate = useNavigate()
+  const [showLoginModal, setShowLoginModal] = useState(false)
+
+  const handleProtectedAction = (e, path) => {
+    e.preventDefault()
+    const user = getCurrentUser()
+    if (!user) {
+      setShowLoginModal(true)
+    } else {
+      navigate(path)
+    }
+  }
+
+  const handleProtectedClick = (callback) => {
+    const user = getCurrentUser()
+    if (!user) {
+      setShowLoginModal(true)
+    } else {
+      callback()
+    }
+  }
+
+  const handleSwitchToSignup = () => {
+    setShowLoginModal(false)
+    navigate('/signup')
+  }
+
   // Read saved profile from localStorage to build the view-profile link
   let profile = null
   try {
@@ -28,6 +57,12 @@ function Sidebar() {
             <NavLink to="/dashboard" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
               <i className="bi bi-speedometer2 fs-4 me-2"></i>
               <span className="nav-label">dashboard</span>
+            </NavLink>
+          </li>
+          <li className="nav-item mb-3">
+            <NavLink to="/my-profiles" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
+              <i className="bi bi-collection fs-4 me-2"></i>
+              <span className="nav-label">my profiles</span>
             </NavLink>
           </li>
           <li className="nav-item mb-3">
@@ -59,13 +94,21 @@ function Sidebar() {
 
       <div className="sidebar-footer p-3">
         <div className="mb-3">
-          <a href={viewPath} target="_blank" rel="noopener noreferrer" className="btn view-profile-btn w-100 d-flex align-items-center justify-content-center">
+          <button 
+            onClick={() => handleProtectedClick(() => window.open(viewPath, '_blank'))}
+            className="btn view-profile-btn w-100 d-flex align-items-center justify-content-center"
+          >
             <i className="bi bi-eye me-2"></i>
             <span>View Profile</span>
-          </a>
+          </button>
         </div>
 
-        <button className="btn btn-dark w-100 share-btn mb-3">Share Your Profile</button>
+        <button 
+          onClick={() => handleProtectedClick(() => alert('Share feature'))}
+          className="btn btn-dark w-100 share-btn mb-3"
+        >
+          Share Your Profile
+        </button>
 
         <div className="profile d-flex align-items-center">
           {profile && profile.avatar ? (
@@ -89,6 +132,12 @@ function Sidebar() {
           <i className="bi bi-three-dots"></i>
         </div>
       </div>
+
+      <LoginModal 
+        show={showLoginModal} 
+        onHide={() => setShowLoginModal(false)}
+        onSwitchToSignup={handleSwitchToSignup}
+      />
     </aside>
   )
 }

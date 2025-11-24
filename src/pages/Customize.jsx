@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar'
+import LoginModal from '../components/LoginModal'
+import VisualEditor from '../components/VisualEditor'
+import { getCurrentUser } from '../services/auth'
+import { getAllProfiles, getActiveProfile, getActiveProfileId, setActiveProfile, updateProfile, migrateOldProfile, getProfiles } from '../services/profileManager'
 import './customize.css';
 import './dashboard.css'
 
@@ -52,6 +57,10 @@ const deleteAudioFromDB = async () => {
 }
 
 const Customize = () => {
+    const navigate = useNavigate()
+    const [showLoginModal, setShowLoginModal] = useState(false)
+    const [profiles, setProfiles] = useState([])
+    const [currentProfileId, setCurrentProfileId] = useState(null)
     const [username, setUsername] = useState('')
     const [displayName, setDisplayName] = useState('')
     const [description, setDescription] = useState('')
@@ -62,11 +71,46 @@ const Customize = () => {
     const [blockColor, setBlockColor] = useState('#ffffff')
     const [bgColor, setBgColor] = useState('#050505')
     const [descColor, setDescColor] = useState('#ffffff')
+    const [layout, setLayout] = useState('default')
     const [audioFile, setAudioFile] = useState(null)
     const [audioFileName, setAudioFileName] = useState('')
     const [audioStartTime, setAudioStartTime] = useState(0)
     const [audioEndTime, setAudioEndTime] = useState(0)
     const [audioDuration, setAudioDuration] = useState(0)
+    
+    // Visual Editor Mode
+    const [visualEditorMode, setVisualEditorMode] = useState(false)
+    
+    // Advanced Layout Settings
+    const [advancedMode, setAdvancedMode] = useState(false)
+    const [layoutSettings, setLayoutSettings] = useState({
+        avatarAlignment: 'center', // left, center, right
+        avatarSize: 120, // pixels
+        avatarVisible: true,
+        nameAlignment: 'center',
+        nameFontSize: 32,
+        nameVisible: true,
+        descAlignment: 'center',
+        descFontSize: 16,
+        descVisible: true,
+        contentVerticalAlign: 'center', // top, center, bottom
+        contentPadding: 48,
+        elementSpacing: 16
+    })
+
+    const checkLogin = () => {
+        const user = getCurrentUser()
+        if (!user) {
+            setShowLoginModal(true)
+            return false
+        }
+        return true
+    }
+
+    const handleSwitchToSignup = () => {
+        setShowLoginModal(false)
+        navigate('/signup')
+    }
 
     // Helper to format seconds to MM:SS
     const formatTime = (seconds) => {
@@ -76,27 +120,49 @@ const Customize = () => {
     }
 
     useEffect(() => {
+        // Migrate old profile data first
+        migrateOldProfile()
+        
         const loadProfile = async () => {
             try {
-                const raw = localStorage.getItem('user_profile')
-                if (raw) {
-                    const p = JSON.parse(raw)
-                    setUsername(p.username || '')
-                    setDisplayName(p.displayName || '')
-                    setDescription(p.description || '')
-                    setAvatarPreview(p.avatar || null)
-                    setBgImage(p.bgImage || null)
-                    setBgOverlay(typeof p.bgOverlay === 'number' ? p.bgOverlay : 0.3)
-                    setNameColor(p.nameColor || '#1E6FB8')
-                    setBlockColor(p.blockColor || '#ffffff')
-                    setBgColor(p.bgColor || '#050505')
-                    setDescColor(p.descColor || '#ffffff')
-                    setAudioFileName(p.audioFileName || '')
-                    setAudioStartTime(p.audioStartTime || 0)
-                    setAudioEndTime(p.audioEndTime || 0)
+                // Load all profiles
+                const allProfiles = getAllProfiles()
+                setProfiles(allProfiles)
+                
+                // Get active profile
+                const activeId = getActiveProfileId()
+                const activeProfile = getActiveProfile()
+                
+                if (activeProfile) {
+                    setCurrentProfileId(activeId)
+                    const data = activeProfile.data
+                    
+                    // Load from user session first (this is the registered username)
+                    const currentUser = localStorage.getItem('spa_current_user')
+                    const user = currentUser ? JSON.parse(currentUser) : null
+                    
+                    setUsername(user?.username || data.username || '')
+                    setDisplayName(data.displayName || '')
+                    setDescription(data.description || '')
+                    setAvatarPreview(data.avatar || null)
+                    setBgImage(data.bgImage || null)
+                    setBgOverlay(typeof data.bgOverlay === 'number' ? data.bgOverlay : 0.3)
+                    setNameColor(data.nameColor || '#1E6FB8')
+                    setBlockColor(data.blockColor || '#ffffff')
+                    setBgColor(data.bgColor || '#050505')
+                    setDescColor(data.descColor || '#ffffff')
+                    setLayout(data.layout || 'default')
+                    setAudioFileName(data.audioFileName || '')
+                    setAudioStartTime(data.audioStartTime || 0)
+                    setAudioEndTime(data.audioEndTime || 0)
+                    
+                    // Load advanced layout settings
+                    if (data.layoutSettings) {
+                        setLayoutSettings(data.layoutSettings)
+                    }
                     
                     // Load audio from IndexedDB
-                    if (p.hasAudio) {
+                    if (data.hasAudio) {
                         const audioData = await getAudioFromDB()
                         if (audioData) {
                             setAudioFile(audioData)
@@ -116,6 +182,7 @@ const Customize = () => {
     }, [])
 
     const handleProfileUpload = (e) => {
+        if (!checkLogin()) return
         const file = e.target.files && e.target.files[0]
         if (!file) return
         const reader = new FileReader()
@@ -126,6 +193,7 @@ const Customize = () => {
     }
 
     const handleBgUpload = (e) => {
+        if (!checkLogin()) return
         const file = e.target.files && e.target.files[0]
         if (!file) return
         const reader = new FileReader()
@@ -136,10 +204,12 @@ const Customize = () => {
     }
 
     const clearBgImage = () => {
+        if (!checkLogin()) return
         setBgImage(null)
     }
 
     const handleAudioUpload = (e) => {
+        if (!checkLogin()) return
         const file = e.target.files && e.target.files[0]
         if (!file) return
         const reader = new FileReader()
@@ -160,6 +230,7 @@ const Customize = () => {
     }
 
     const clearAudio = async () => {
+        if (!checkLogin()) return
         try {
             await deleteAudioFromDB()
         } catch (err) {
@@ -215,15 +286,21 @@ const Customize = () => {
     }
 
     const saveProfile = async () => {
+        if (!checkLogin()) return
+        if (!currentProfileId) {
+            alert('No profile selected')
+            return
+        }
+        
         try {
             // Save audio to IndexedDB first
             if (audioFile) {
                 await saveAudioToDB(audioFile)
             }
             
-            const profile = {
-                username: username.trim() || 'me',
-                displayName,
+            // Update the current profile
+            const updates = {
+                displayName: displayName.trim() || username.trim() || 'User',
                 description,
                 avatar: avatarPreview || null,
                 bgImage: bgImage || null,
@@ -232,14 +309,16 @@ const Customize = () => {
                 blockColor,
                 bgColor,
                 descColor,
+                layout,
+                layoutSettings, // Save advanced layout settings
                 hasAudio: !!audioFile,
                 audioFileName: audioFileName || '',
                 audioStartTime: audioStartTime || 0,
                 audioEndTime: audioEndTime || 0,
             }
             
-            localStorage.setItem('user_profile', JSON.stringify(profile))
-            alert('Profile saved — click View Profile to open it')
+            updateProfile(currentProfileId, updates)
+            alert('Profile saved successfully!')
         } catch (err) {
             if (err.name === 'QuotaExceededError') {
                 alert('Error: Storage quota exceeded. Please use smaller images.')
@@ -248,6 +327,12 @@ const Customize = () => {
             }
             console.error('Save error:', err)
         }
+    }
+
+    const handleProfileSwitch = (e) => {
+        const profileId = e.target.value
+        setActiveProfile(profileId)
+        window.location.reload() // Reload to load new profile data
     }
 
     // preview wrapper style depends on optional bgImage (image) or bgColor
@@ -259,6 +344,60 @@ const Customize = () => {
         padding: 20
     } : { background: bgColor || '#0b0b0b', borderRadius:10, padding:20 }
 
+    // Handle Visual Editor Save
+    const handleVisualEditorSave = async (vereData) => {
+        if (!checkLogin()) return
+        if (!currentProfileId) return
+        
+        try {
+            await updateProfile(currentProfileId, vereData)
+            // Refresh profile data
+            const updatedProfiles = getProfiles()
+            setProfiles(updatedProfiles)
+            setVisualEditorMode(false)
+            alert('Vere design saved!')
+        } catch (err) {
+            console.error('Failed to save vere:', err)
+            alert('Failed to save vere design')
+        }
+    }
+
+    // If in visual editor mode, show visual editor
+    if (visualEditorMode) {
+        const currentProfile = profiles.find(p => p.id === currentProfileId)
+        return (
+            <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
+                <button
+                    className="btn btn-secondary"
+                    style={{
+                        position: 'absolute',
+                        top: 20,
+                        left: 20,
+                        zIndex: 1000
+                    }}
+                    onClick={() => setVisualEditorMode(false)}
+                >
+                    <i className="bi bi-arrow-left me-2"></i>
+                    Back to Normal Editor
+                </button>
+                <VisualEditor 
+                    profile={{
+                        ...currentProfile?.data,
+                        username,
+                        displayName,
+                        description,
+                        avatar: avatarPreview,
+                        bgImage,
+                        bgColor,
+                        nameColor,
+                        descColor
+                    }}
+                    onSave={handleVisualEditorSave}
+                />
+            </div>
+        )
+    }
+
     return (
         <div className="dashboard-shell p-4">
             <div className="dashboard-card d-flex">
@@ -266,18 +405,51 @@ const Customize = () => {
 
                 <main className="dashboard-main p-4">
                     <div className="customize-container">
-                        <h2 className="customize-title">Customization</h2>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h2 className="customize-title mb-0">Customization</h2>
+                            
+                            {/* Profile Selector */}
+                            {profiles.length > 0 && (
+                                <div className="d-flex align-items-center gap-2">
+                                    <label className="mb-0 small text-muted">Editing:</label>
+                                    <select 
+                                        className="form-select" 
+                                        style={{ width: 'auto', minWidth: '200px' }}
+                                        value={currentProfileId || ''}
+                                        onChange={handleProfileSwitch}
+                                    >
+                                        {profiles.map(p => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name} ({p.type})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
 
                         <div className="customize-card mb-4">
                             <div className="customize-row">
                                 <div className="form-group">
-                                    <label className="form-label">Username (public)</label>
-                                    <input value={username} onChange={e => setUsername(e.target.value)} className="form-control neutral-input" placeholder="your-username" />
+                                    <label className="form-label">Username (cannot be changed)</label>
+                                    <input 
+                                        value={username} 
+                                        className="form-control neutral-input" 
+                                        placeholder="your-username" 
+                                        disabled
+                                        style={{
+                                            backgroundColor: '#f0f0f0',
+                                            cursor: 'not-allowed',
+                                            color: '#666'
+                                        }}
+                                    />
+                                    <small className="text-muted">This is your login username and cannot be changed</small>
                                 </div>
 
                                 <div className="form-group">
-                                    <label className="form-label">Displayname</label>
-                                    <input value={displayName} onChange={e => setDisplayName(e.target.value)} className="form-control neutral-input" placeholder="this is my name" />
+                                    <label className="form-label">Display Name</label>
+                                    <input value={displayName} onChange={e => setDisplayName(e.target.value)} className="form-control neutral-input" placeholder="Your display name" />
+                                    <small className="text-muted">This name will be shown on your profile</small>
                                 </div>
 
                                 <div className="form-group w-100">
@@ -318,7 +490,242 @@ const Customize = () => {
                                 </div>
                             </div>
 
-                            <div className="mt-3 d-flex justify-content-end">
+                            {/* Layout Selector */}
+                            <div className="customize-row mt-3">
+                                <div className="form-group w-100">
+                                    <label className="form-label">Profile Layout</label>
+                                    <select 
+                                        className="form-select"
+                                        value={layout}
+                                        onChange={(e) => setLayout(e.target.value)}
+                                    >
+                                        <option value="default">Default - Classic Card</option>
+                                        <option value="linktree">Linktree Style - Centered Links</option>
+                                        <option value="linkedin">LinkedIn Style - Professional</option>
+                                        <option value="guns">Guns.lol Style - Neon/Dark</option>
+                                        <option value="minimal">Minimal - Clean & Simple</option>
+                                        <option value="custom">Custom - Advanced Edit Mode</option>
+                                    </select>
+                                    <small className="text-muted">Choose how your profile will be displayed</small>
+                                </div>
+                            </div>
+
+                            {/* Advanced Layout Editor - Only show when custom layout is selected */}
+                            {layout === 'custom' && (
+                                <div className="mt-4 p-4 border rounded" style={{ backgroundColor: '#f8f9fa' }}>
+                                    <div className="d-flex align-items-center justify-content-between mb-3">
+                                        <h5 className="mb-0">
+                                            <i className="bi bi-tools me-2"></i>
+                                            Advanced Layout Editor
+                                        </h5>
+                                        <button 
+                                            className="btn btn-sm btn-outline-secondary"
+                                            onClick={() => setAdvancedMode(!advancedMode)}
+                                        >
+                                            {advancedMode ? 'Hide Details' : 'Show Details'}
+                                        </button>
+                                    </div>
+
+                                    {/* Avatar Settings */}
+                                    <div className="mb-3 p-3 bg-white rounded">
+                                        <h6 className="mb-3">
+                                            <i className="bi bi-person-circle me-2"></i>
+                                            Avatar Settings
+                                        </h6>
+                                        <div className="row g-3">
+                                            <div className="col-md-6">
+                                                <label className="form-label small">Alignment</label>
+                                                <select 
+                                                    className="form-select form-select-sm"
+                                                    value={layoutSettings.avatarAlignment}
+                                                    onChange={(e) => setLayoutSettings({...layoutSettings, avatarAlignment: e.target.value})}
+                                                >
+                                                    <option value="left">Left</option>
+                                                    <option value="center">Center</option>
+                                                    <option value="right">Right</option>
+                                                </select>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <label className="form-label small">Size: {layoutSettings.avatarSize}px</label>
+                                                <input 
+                                                    type="range" 
+                                                    className="form-range"
+                                                    min="60"
+                                                    max="200"
+                                                    value={layoutSettings.avatarSize}
+                                                    onChange={(e) => setLayoutSettings({...layoutSettings, avatarSize: parseInt(e.target.value)})}
+                                                />
+                                            </div>
+                                            <div className="col-12">
+                                                <div className="form-check">
+                                                    <input 
+                                                        className="form-check-input" 
+                                                        type="checkbox" 
+                                                        checked={layoutSettings.avatarVisible}
+                                                        onChange={(e) => setLayoutSettings({...layoutSettings, avatarVisible: e.target.checked})}
+                                                    />
+                                                    <label className="form-check-label small">Show Avatar</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Name Settings */}
+                                    <div className="mb-3 p-3 bg-white rounded">
+                                        <h6 className="mb-3">
+                                            <i className="bi bi-type me-2"></i>
+                                            Name Settings
+                                        </h6>
+                                        <div className="row g-3">
+                                            <div className="col-md-6">
+                                                <label className="form-label small">Alignment</label>
+                                                <select 
+                                                    className="form-select form-select-sm"
+                                                    value={layoutSettings.nameAlignment}
+                                                    onChange={(e) => setLayoutSettings({...layoutSettings, nameAlignment: e.target.value})}
+                                                >
+                                                    <option value="left">Left</option>
+                                                    <option value="center">Center</option>
+                                                    <option value="right">Right</option>
+                                                </select>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <label className="form-label small">Font Size: {layoutSettings.nameFontSize}px</label>
+                                                <input 
+                                                    type="range" 
+                                                    className="form-range"
+                                                    min="16"
+                                                    max="64"
+                                                    value={layoutSettings.nameFontSize}
+                                                    onChange={(e) => setLayoutSettings({...layoutSettings, nameFontSize: parseInt(e.target.value)})}
+                                                />
+                                            </div>
+                                            <div className="col-12">
+                                                <div className="form-check">
+                                                    <input 
+                                                        className="form-check-input" 
+                                                        type="checkbox" 
+                                                        checked={layoutSettings.nameVisible}
+                                                        onChange={(e) => setLayoutSettings({...layoutSettings, nameVisible: e.target.checked})}
+                                                    />
+                                                    <label className="form-check-label small">Show Name</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Description Settings */}
+                                    <div className="mb-3 p-3 bg-white rounded">
+                                        <h6 className="mb-3">
+                                            <i className="bi bi-text-paragraph me-2"></i>
+                                            Description Settings
+                                        </h6>
+                                        <div className="row g-3">
+                                            <div className="col-md-6">
+                                                <label className="form-label small">Alignment</label>
+                                                <select 
+                                                    className="form-select form-select-sm"
+                                                    value={layoutSettings.descAlignment}
+                                                    onChange={(e) => setLayoutSettings({...layoutSettings, descAlignment: e.target.value})}
+                                                >
+                                                    <option value="left">Left</option>
+                                                    <option value="center">Center</option>
+                                                    <option value="right">Right</option>
+                                                </select>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <label className="form-label small">Font Size: {layoutSettings.descFontSize}px</label>
+                                                <input 
+                                                    type="range" 
+                                                    className="form-range"
+                                                    min="12"
+                                                    max="24"
+                                                    value={layoutSettings.descFontSize}
+                                                    onChange={(e) => setLayoutSettings({...layoutSettings, descFontSize: parseInt(e.target.value)})}
+                                                />
+                                            </div>
+                                            <div className="col-12">
+                                                <div className="form-check">
+                                                    <input 
+                                                        className="form-check-input" 
+                                                        type="checkbox" 
+                                                        checked={layoutSettings.descVisible}
+                                                        onChange={(e) => setLayoutSettings({...layoutSettings, descVisible: e.target.checked})}
+                                                    />
+                                                    <label className="form-check-label small">Show Description</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Spacing Settings */}
+                                    <div className="mb-3 p-3 bg-white rounded">
+                                        <h6 className="mb-3">
+                                            <i className="bi bi-arrows-expand me-2"></i>
+                                            Spacing & Layout
+                                        </h6>
+                                        <div className="row g-3">
+                                            <div className="col-md-4">
+                                                <label className="form-label small">Vertical Position</label>
+                                                <select 
+                                                    className="form-select form-select-sm"
+                                                    value={layoutSettings.contentVerticalAlign}
+                                                    onChange={(e) => setLayoutSettings({...layoutSettings, contentVerticalAlign: e.target.value})}
+                                                >
+                                                    <option value="top">Top</option>
+                                                    <option value="center">Center</option>
+                                                    <option value="bottom">Bottom</option>
+                                                </select>
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="form-label small">Content Padding: {layoutSettings.contentPadding}px</label>
+                                                <input 
+                                                    type="range" 
+                                                    className="form-range"
+                                                    min="0"
+                                                    max="120"
+                                                    value={layoutSettings.contentPadding}
+                                                    onChange={(e) => setLayoutSettings({...layoutSettings, contentPadding: parseInt(e.target.value)})}
+                                                />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <label className="form-label small">Element Spacing: {layoutSettings.elementSpacing}px</label>
+                                                <input 
+                                                    type="range" 
+                                                    className="form-range"
+                                                    min="0"
+                                                    max="60"
+                                                    value={layoutSettings.elementSpacing}
+                                                    onChange={(e) => setLayoutSettings({...layoutSettings, elementSpacing: parseInt(e.target.value)})}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="alert alert-info small mb-0">
+                                        <i className="bi bi-info-circle me-2"></i>
+                                        Changes will be applied when you save the profile and view it.
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-3 d-flex justify-content-between align-items-center">
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => {
+                                        if (checkLogin()) {
+                                            setVisualEditorMode(true)
+                                        }
+                                    }}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        border: 'none',
+                                        fontWeight: 600
+                                    }}
+                                >
+                                    <i className="bi bi-brush me-2"></i>
+                                    Visual Editor
+                                </button>
                                 <button className="btn btn-dark" onClick={saveProfile}>Save Profile</button>
                             </div>
                         </div>
@@ -454,6 +861,12 @@ const Customize = () => {
                     </div>
                 </main>
             </div>
+
+            <LoginModal 
+                show={showLoginModal} 
+                onHide={() => setShowLoginModal(false)}
+                onSwitchToSignup={handleSwitchToSignup}
+            />
         </div>
     );
 };
