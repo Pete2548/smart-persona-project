@@ -12,6 +12,18 @@ function VereHeader() {
 
   useEffect(() => {
     setCurrent(getCurrentUser())
+    // If user just registered, pre-fill login fields
+    try {
+      const raw = localStorage.getItem('lastRegistered')
+      if (raw) {
+        const obj = JSON.parse(raw)
+        if (obj) {
+          if (obj.identifier) setIdentifier(obj.identifier)
+          if (obj.password) setPassword(obj.password)
+        }
+        localStorage.removeItem('lastRegistered')
+      }
+    } catch (e) {}
   }, [])
 
   const handleSubmit = (e) => {

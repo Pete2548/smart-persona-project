@@ -32,8 +32,9 @@ function Signup() {
       alert(res.message || 'Registration failed')
       return
     }
-    // success -> navigate to dashboard
-    navigate('/dashboard')
+    // success -> store credentials so the login form can be pre-filled, then go back to home
+    try { localStorage.setItem('lastRegistered', JSON.stringify({ identifier: username || email, password })) } catch (e) {}
+    navigate('/')
   };
 
   return (
