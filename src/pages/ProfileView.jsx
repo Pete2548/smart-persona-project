@@ -29,6 +29,7 @@ const ProfileView = () => {
   const [audioFile, setAudioFile] = useState(null)
   const audioRef = useRef(null)
   const [isMuted, setIsMuted] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // load saved profile
@@ -98,7 +99,11 @@ const ProfileView = () => {
       setProfile(null)
       setAudioFile(null)
     }
-    loadProfile()
+    
+    loadProfile().finally(() => {
+      // Minimum loading time for smooth animation
+      setTimeout(() => setIsLoading(false), 1000)
+    })
   }, [username, profileType])
 
   // Handle audio playback with start/end time
@@ -241,9 +246,13 @@ const ProfileView = () => {
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       minHeight: '100vh',
-      padding: '48px 16px'
+      padding: '48px 16px',
+      fontFamily: profile.fontFamily || '"Inter", sans-serif'
     }
-  })() : { background: profile.bgColor || '#050505' }
+  })() : { 
+    background: profile?.bgColor || '#050505',
+    fontFamily: profile?.fontFamily || '"Inter", sans-serif'
+  }
 
   // Get layout type from profile or default
   const layoutType = profile.layout || 'default'
@@ -793,6 +802,30 @@ const ProfileView = () => {
 
     // Fallback to default if unknown layout
     return renderLayout.call({ layoutType: 'default' })
+  }
+
+  // Loading screen
+  if (isLoading) {
+    return (
+      <div className="profile-loading-screen">
+        <div className="loading-logo-container">
+          <svg className="loading-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 1 }} />
+                <stop offset="50%" style={{ stopColor: '#e5e5e5', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#ffffff', stopOpacity: 1 }} />
+              </linearGradient>
+            </defs>
+            <circle className="logo-ring" cx="50" cy="50" r="45" fill="none" stroke="url(#logoGradient)" strokeWidth="3" />
+            <circle className="logo-ring-2" cx="50" cy="50" r="35" fill="none" stroke="url(#logoGradient)" strokeWidth="2" opacity="0.7" />
+            <path d="M 35 38 L 50 62 L 65 38" stroke="url(#logoGradient)" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="50" cy="50" r="3" fill="url(#logoGradient)" opacity="0.8" />
+          </svg>
+          <div className="loading-text">Loading Profile</div>
+        </div>
+      </div>
+    )
   }
 
   return (

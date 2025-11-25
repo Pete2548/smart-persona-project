@@ -20,7 +20,7 @@ export const getProfiles = getAllProfiles
 export function getActiveProfileId() {
   try {
     return localStorage.getItem(ACTIVE_PROFILE_KEY) || null
-  } catch (err) {
+  } catch {
     return null
   }
 }
