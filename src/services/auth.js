@@ -35,7 +35,10 @@ export function getCurrentUser() {
 export function logout() {
   try {
     localStorage.removeItem(CURRENT_USER_KEY)
-    // keep user_profile for viewing, but you may want to remove it in some apps
+    // clear social links on logout so the Links page returns to its initial state
+    try { localStorage.removeItem('socialLinks') } catch (e) {}
+    // remove stored profile so UI (profile card) shows no name after logout
+    try { localStorage.removeItem(PROFILE_KEY) } catch (e) {}
   } catch (e) {}
 }
 
