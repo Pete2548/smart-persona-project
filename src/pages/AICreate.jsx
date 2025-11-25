@@ -1,5 +1,8 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
+import LoginModal from '../components/LoginModal'
+import { getCurrentUser } from '../services/auth'
 import './dashboard.css'
 
 import AIControls from '../components/AIControls'
@@ -19,13 +22,26 @@ function mockGenerate({ template, tone, length, keywords, existing }) {
 }
 
 function AICreate() {
+  const navigate = useNavigate()
   const [params, setParams] = useState({ template: 'Personal', tone: 'Friendly', length: 'short', keywords: [] })
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState([])
   const [applied, setApplied] = useState(null)
   const [appliedAvatar, setAppliedAvatar] = useState(null)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+
+  const handleSwitchToSignup = () => {
+    setShowLoginModal(false)
+    navigate('/signup')
+  }
 
   const onGenerate = async (p) => {
+    const user = getCurrentUser()
+    if (!user) {
+      setShowLoginModal(true)
+      return
+    }
+
     setParams(p)
     setLoading(true)
     // simulate network
@@ -37,7 +53,21 @@ function AICreate() {
   }
 
   const onApply = (text) => {
+    const user = getCurrentUser()
+    if (!user) {
+      setShowLoginModal(true)
+      return
+    }
     setApplied(text)
+  }
+
+  const onApplyAvatar = (url) => {
+    const user = getCurrentUser()
+    if (!user) {
+      setShowLoginModal(true)
+      return
+    }
+    setAppliedAvatar(url)
   }
 
   return (
@@ -61,7 +91,7 @@ function AICreate() {
 
               <div className="mt-3 p-3 card-like">
                 <h6 className="mb-2">Generate profile image</h6>
-                <AIImageGenerator onApply={(u) => setAppliedAvatar(u)} />
+                <AIImageGenerator onApply={onApplyAvatar} />
               </div>
             </div>
 
@@ -74,6 +104,12 @@ function AICreate() {
           </div>
         </main>
       </div>
+
+      <LoginModal 
+        show={showLoginModal} 
+        onHide={() => setShowLoginModal(false)}
+        onSwitchToSignup={handleSwitchToSignup}
+      />
     </div>
   )
 }

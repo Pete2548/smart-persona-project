@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { getProfile } from '../services/auth'
-
 function ProfileCard({ name: _name, title: _title, bio: _bio }) {
   const [profile, setProfile] = useState(null)
 
@@ -23,12 +22,26 @@ function ProfileCard({ name: _name, title: _title, bio: _bio }) {
     <div className="profile-card d-flex align-items-center p-3">
       <div className="avatar me-3">
         <div className="avatar-inner">{initial}</div>
+        {avatar ? (
+          <img 
+            src={avatar} 
+            alt={displayName}
+            style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: '50%',
+              objectFit: 'cover'
+            }}
+          />
+        ) : (
+          <div className="avatar-inner">{firstLetter}</div>
+        )}
       </div>
 
       <div className="profile-meta">
-        <div className="profile-name fw-bold">{name}</div>
-        <div className="profile-title text-muted">{title}</div>
-        <div className="profile-bio small mt-2 text-muted">{bio}</div>
+        <div className="profile-name fw-bold">{displayName}</div>
+        <div className="profile-title text-muted">@{username}</div>
+        <div className="profile-bio small mt-2 text-muted">{description}</div>
       </div>
     </div>
   )

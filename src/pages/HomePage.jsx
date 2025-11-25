@@ -1,12 +1,32 @@
 import { Container, Row, Col, Button, Stack } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import connectingDots from "../img/connecting dot polygon.jpg";
 import Image from "react-bootstrap/Image";
 import shareIcon from "../img/share.png";
 import aiIcon from "../img/ai.png";
 import profile from "../img/profile.png";
 import logo from "../img/logo.png";
+import { getCurrentUser } from "../services/auth";
+import LoginModal from "../components/LoginModal";
 
 function HomePage() {
+  const navigate = useNavigate();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const handleCreatePersona = () => {
+    const user = getCurrentUser();
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      setShowLoginModal(true);
+    }
+  };
+
+  const handleSwitchToSignup = () => {
+    setShowLoginModal(false);
+    navigate('/signup');
+  };
   // สมมติ Header สูงประมาณ 56px (มาตรฐานของ Bootstrap Navbar)
   const heroRemainingHeight = "calc(100vh - 56px)";
 
@@ -43,10 +63,10 @@ function HomePage() {
             />
             <h2 className="h4">Illuminate your true self with AI.</h2>
             <Stack direction="horizontal" gap={3} className="mx-auto">
-              <Button variant="secondary" size="lg">
+              <Button variant="secondary" size="lg" onClick={handleCreatePersona}>
                 Create Persona
               </Button>
-              <Button variant="secondary" size="lg">
+              <Button variant="secondary" size="lg" onClick={() => navigate('/dashboard')}>
                 Explore Others
               </Button>
             </Stack>
@@ -103,12 +123,19 @@ function HomePage() {
               size="lg"
               className="mx-auto"
               style={{ width: "200px" }}
+              onClick={handleCreatePersona}
             >
               Start Now
             </Button>
           </Stack>
         </Container>
       </div>
+
+      <LoginModal 
+        show={showLoginModal} 
+        onHide={() => setShowLoginModal(false)}
+        onSwitchToSignup={handleSwitchToSignup}
+      />
     </>
   );
 }

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
+import LoginModal from '../components/LoginModal'
+import { getCurrentUser } from '../services/auth'
 import './dashboard.css'
 import Image from "react-bootstrap/Image";
 import ig from "../img/ig.png";
@@ -48,6 +51,7 @@ function Links() {
     try { localStorage.setItem('socialLinks', JSON.stringify(next)) } catch (e) { console.error(e) }
   }
 
+
   return (
     <div className="dashboard-shell p-4">
       <div className="dashboard-card d-flex">
@@ -57,7 +61,6 @@ function Links() {
           <div className="links-card p-4">
             <h4 className="mb-1">Link your social media profiles.</h4>
             <p className="text-muted small mb-3">Pick a social media to add to your profile.</p>
-
             <div className="social-icons d-flex gap-3" style={{ position: 'relative' }}>
               <button className="btn p-0" onClick={() => handleSocialClick('ig')} title={links.ig ? links.ig : 'Add Instagram'}>
                 <Image src={ig} rounded className="social-img" />
@@ -108,6 +111,12 @@ function Links() {
           <div style={{ height: 420 }}></div>
         </main>
       </div>
+
+      <LoginModal 
+        show={showLoginModal} 
+        onHide={() => setShowLoginModal(false)}
+        onSwitchToSignup={handleSwitchToSignup}
+      />
     </div>
   )
 }
