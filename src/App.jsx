@@ -10,6 +10,11 @@ import ProfileView from './pages/ProfileView'
 import Themes from './pages/Themes'
 import Explore from './pages/Explore'
 import MyProfiles from './pages/MyProfiles'
+import RequireAdmin from './admin/RequireAdmin'
+import AdminDashboard from './admin/AdminDashboard'
+import Tables from './admin/Tables'
+import AdminLogin from './admin/AdminLogin'
+import AdminSetup from './admin/AdminSetup'
 import './App.css'
 
 function App() {
@@ -34,6 +39,12 @@ function App() {
         <Route path="/ai-create" element={<AICreate />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/create-account" element={<Signup />} />
+        {/* Admin routes (protected) */}
+        <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+        <Route path="/admin/tables" element={<RequireAdmin><Tables /></RequireAdmin>} />
+        {/* Admin auth / setup */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/setup" element={<AdminSetup />} />
       </Routes>
     </>
   )

@@ -28,6 +28,11 @@ function setCurrentUser(u) {
   writeJSON(CURRENT_USER_KEY, u)
 }
 
+// Exported helper to set session (wraps internal setCurrentUser)
+export function setSession(u) {
+  setCurrentUser(u)
+}
+
 export function getCurrentUser() {
   return readJSON(CURRENT_USER_KEY)
 }
@@ -79,4 +84,24 @@ export function login(identifier, password) {
 
 export function getProfile() {
   return readJSON(PROFILE_KEY)
+}
+
+// Returns true if current user has role 'admin'
+export function isAdmin() {
+  const cur = getCurrentUser()
+  if (!cur || !cur.username) return false
+  const users = getUsers()
+  const found = users.find(u => u.username === cur.username)
+  return !!(found && found.role === 'admin')
+}
+
+// Development helper: promote a user to admin role and persist
+export function promoteUserToAdmin(username) {
+  if (!username) return false
+  const users = getUsers()
+  const idx = users.findIndex(u => u.username === username)
+  if (idx === -1) return false
+  users[idx].role = 'admin'
+  saveUsers(users)
+  return true
 }
