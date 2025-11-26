@@ -3,11 +3,13 @@ import React, { useEffect, useState } from 'react'
 import { Navbar, Container, Nav, Dropdown, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { login, getCurrentUser, logout } from '../services/auth'
+import LoginModal from './LoginModal'
 
 function VereHeader() {
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [current, setCurrent] = useState(getCurrentUser())
+  const [showLoginModal, setShowLoginModal] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -45,8 +47,19 @@ function VereHeader() {
     navigate('/')
   }
 
+  const handleDashboardClick = (e) => {
+    e.preventDefault()
+    const user = getCurrentUser()
+    if (!user) {
+      setShowLoginModal(true)
+    } else {
+      navigate('/dashboard')
+    }
+  }
+
   return (
-    // Layout 3 ส่วน (flex: 1) ยังคงอยู่เหมือนเดิม เพื่อ "ล็อค" โลโก้ไว้
+    <>
+    {/* Layout 3 ส่วน (flex: 1) ยังคงอยู่เหมือนเดิม เพื่อ "ล็อค" โลโก้ไว้ */}
     <Navbar bg="light" expand={false} className="shadow">
       <Container fluid className="d-flex justify-content-between align-items-center">
 
@@ -57,7 +70,7 @@ function VereHeader() {
               <i className="bi bi-list fs-4"></i>
             </Dropdown.Toggle>
             <Dropdown.Menu>
-              <Dropdown.Item href="/dashboard">Dashboard</Dropdown.Item>
+              <Dropdown.Item onClick={handleDashboardClick}>Dashboard</Dropdown.Item>
               <Dropdown.Item href="/about">About</Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
@@ -112,6 +125,16 @@ function VereHeader() {
 
       </Container>
     </Navbar>
+    {showLoginModal && (
+      <LoginModal 
+        onClose={() => setShowLoginModal(false)}
+        onSwitchToSignup={() => {
+          setShowLoginModal(false)
+          navigate('/signup')
+        }}
+      />
+    )}
+    </>
   )
 }
 

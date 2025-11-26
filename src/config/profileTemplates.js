@@ -160,6 +160,38 @@ export const profileTemplates = {
       description: 'Describe your business, services, and value proposition',
       social: 'Add LinkedIn, company website, and business contacts'
     }
+  },
+
+  vtree: {
+    name: 'Vtree',
+    icon: 'bi-link-45deg',
+    description: 'Link tree style for all your important links',
+    
+    defaultSettings: {
+      layout: 'linktree',
+      nameColor: '#39ff14',
+      blockColor: '#ffffff',
+      bgColor: '#000000',
+      descColor: '#b4f8c8',
+      bgOverlay: 0.2
+    },
+    
+    placeholders: {
+      displayName: 'Your Name',
+      description: 'All my links in one place 🔗',
+    },
+    
+    recommendedThemes: [
+      { id: 7, name: 'Neon City' },
+      { id: 4, name: 'Mint Fresh' },
+      { id: 5, name: 'Emerald Dream' }
+    ],
+    
+    hints: {
+      avatar: 'Profile photo or logo',
+      description: 'Brief intro or tagline',
+      social: 'Add all your social media and important links'
+    }
   }
 }
 
