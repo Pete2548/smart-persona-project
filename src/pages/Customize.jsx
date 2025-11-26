@@ -6,6 +6,7 @@ import VisualEditor from '../components/VisualEditor'
 import AIContentGenerator from '../components/AIContentGenerator'
 import AIThemeRecommender from '../components/AIThemeRecommender'
 import SectionManager from '../components/SectionManager'
+import VtreeCustomize from '../components/VtreeCustomize'
 import { getCurrentUser } from '../services/auth'
 import { getAllProfiles, getActiveProfile, getActiveProfileId, setActiveProfile, updateProfile, migrateOldProfile, getProfiles } from '../services/profileManager'
 import './customize.css';
@@ -87,6 +88,9 @@ const Customize = () => {
     
     // Multi-Section System
     const [profileSections, setProfileSections] = useState([])
+    
+    // Social Links
+    const [socialLinks, setSocialLinks] = useState({})
     
     // AI Theme Recommender
     const [showAIThemeRecommender, setShowAIThemeRecommender] = useState(false)
@@ -171,6 +175,7 @@ const Customize = () => {
                     setAudioEndTime(data.audioEndTime || 0)
                     setIsPublic(data.isPublic !== undefined ? data.isPublic : true)
                     setProfileSections(data.sections || [])
+                    setSocialLinks(data.socialLinks || {})
                     
                     // Load advanced layout settings
                     if (data.layoutSettings) {
@@ -412,6 +417,58 @@ const Customize = () => {
                     }}
                     onSave={handleVisualEditorSave}
                 />
+            </div>
+        )
+    }
+
+    // If Vtree profile type, show VtreeCustomize interface
+    if (profileType === 'vtree') {
+        return (
+            <div className="dashboard-shell p-4">
+                <div className="dashboard-card d-flex">
+                    <Sidebar />
+                    <main className="dashboard-main p-0" style={{ flex: 1 }}>
+                        <VtreeCustomize 
+                            profiles={profiles}
+                            currentProfileId={currentProfileId}
+                            onProfileSwitch={handleProfileSwitch}
+                            navigate={navigate}
+                            profile={{
+                                displayName,
+                                nameColor,
+                                bgColor,
+                                descColor,
+                                blockColor,
+                                avatar: avatarPreview,
+                                profileImageLayout: layoutSettings.profileImageLayout,
+                                titleStyle: layoutSettings.titleStyle,
+                                titleFont: layoutSettings.titleFont,
+                                titleSize: layoutSettings.titleSize,
+                                socialLinks: socialLinks
+                            }}
+                            onUpdate={(updates) => {
+                                if (updates.displayName !== undefined) setDisplayName(updates.displayName)
+                                if (updates.nameColor !== undefined) setNameColor(updates.nameColor)
+                                if (updates.bgColor !== undefined) setBgColor(updates.bgColor)
+                                if (updates.descColor !== undefined) setDescColor(updates.descColor)
+                                if (updates.blockColor !== undefined) setBlockColor(updates.blockColor)
+                                
+                                // Update layout settings
+                                const newLayoutSettings = { ...layoutSettings }
+                                if (updates.profileImageLayout) newLayoutSettings.profileImageLayout = updates.profileImageLayout
+                                if (updates.titleStyle) newLayoutSettings.titleStyle = updates.titleStyle
+                                if (updates.titleFont) newLayoutSettings.titleFont = updates.titleFont
+                                if (updates.titleSize) newLayoutSettings.titleSize = updates.titleSize
+                                setLayoutSettings(newLayoutSettings)
+                            }}
+                            onSave={saveProfile}
+                        />
+                    </main>
+                </div>
+                
+                {showLoginModal && (
+                    <LoginModal onClose={() => setShowLoginModal(false)} onSwitchToSignup={handleSwitchToSignup} />
+                )}
             </div>
         )
     }
