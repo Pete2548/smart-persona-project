@@ -1,7 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { getAllProfiles } from '../services/profileManager'
+import { getCurrentUser } from '../services/auth'
+import SectionRenderer from '../components/SectionRenderer'
 import './profileview.css'
+import ig from "../img/ig.png"
+import facebook from "../img/facebook.png"
+import x from "../img/twitter.png"
+import spotify from "../img/spotify.png"
+import discord from "../img/discord.png"
+import google from "../img/google.png"
+import Line from "../img/Line.png"
+import tiktok from "../img/tiktok.png"
+import github from "../img/github.png"
 
 // IndexedDB helper
 const getAudioFromDB = async () => {
@@ -179,6 +190,78 @@ const ProfileView = () => {
       </div>
     )
   }
+
+  // Check if profile is private
+  const currentUser = getCurrentUser()
+  const isOwner = currentUser && currentUser.username === profile.username
+  const isPrivate = profile.isPublic === false
+  
+  if (isPrivate && !isOwner) {
+    return (
+      <div className="profile-view-wrapper" style={{ 
+        backgroundColor: '#050505',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+          border: '1px solid #333',
+          borderRadius: '16px',
+          padding: '48px',
+          maxWidth: '500px',
+          textAlign: 'center',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+        }}>
+          <div style={{
+            width: '80px',
+            height: '80px',
+            margin: '0 auto 24px',
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 16px rgba(255,107,107,0.4)'
+          }}>
+            <i className="bi bi-lock-fill" style={{ fontSize: '40px', color: 'white' }}></i>
+          </div>
+          
+          <h2 style={{ 
+            color: '#ffffff', 
+            marginBottom: '16px',
+            fontSize: '28px',
+            fontWeight: '600'
+          }}>
+            This Profile is Private
+          </h2>
+          
+          <p style={{ 
+            color: '#a0a0a0', 
+            marginBottom: '24px',
+            fontSize: '16px',
+            lineHeight: '1.6'
+          }}>
+            The owner of this profile has set it to private. Only they can view this content.
+          </p>
+          
+          <div style={{
+            padding: '16px',
+            background: 'rgba(255,107,107,0.1)',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,107,107,0.2)'
+          }}>
+            <i className="bi bi-info-circle me-2" style={{ color: '#ff6b6b' }}></i>
+            <span style={{ color: '#e0e0e0', fontSize: '14px' }}>
+              If you own this profile, please log in to view it.
+            </span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const cardStyle = {
     background: profile.bgImage ? 'transparent' : (profile.blockColor || undefined),
   }
@@ -238,6 +321,78 @@ const ProfileView = () => {
   const bg = profile.bgColor || '#050505'
   const descColor = profile.descColor ? profile.descColor : (hexLuminance(bg) > 0.6 ? 'rgba(17,24,39,0.9)' : 'rgba(255,255,255,0.85)')
 
+  // Social icons mapping
+  const socialIcons = {
+    ig: { icon: ig, name: 'Instagram' },
+    facebook: { icon: facebook, name: 'Facebook' },
+    x: { icon: x, name: 'X / Twitter' },
+    spotify: { icon: spotify, name: 'Spotify' },
+    discord: { icon: discord, name: 'Discord' },
+    google: { icon: google, name: 'Google' },
+    line: { icon: Line, name: 'Line' },
+    tiktok: { icon: tiktok, name: 'TikTok' },
+    github: { icon: github, name: 'GitHub' }
+  }
+
+  // Get social links from profile
+  const socialLinks = profile.socialLinks || {}
+  const activeSocialLinks = Object.entries(socialLinks).filter(([key, url]) => url && url.trim() !== '')
+
+  // Render social icons (logo only)
+  const renderSocialIcons = () => {
+    if (activeSocialLinks.length === 0) return null
+    
+    return (
+      <div style={{
+        display: 'flex',
+        gap: '12px',
+        justifyContent: 'center',
+        marginTop: '24px',
+        flexWrap: 'wrap'
+      }}>
+        {activeSocialLinks.map(([key, url]) => {
+          const social = socialIcons[key]
+          if (!social) return null
+          
+          return (
+            <a
+              key={key}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={social.name}
+              style={{
+                display: 'inline-block',
+                transition: 'transform 0.2s, opacity 0.2s',
+                opacity: 0.9,
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)'
+                e.currentTarget.style.opacity = '1'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+                e.currentTarget.style.opacity = '0.9'
+              }}
+            >
+              <img 
+                src={social.icon} 
+                alt={social.name}
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  objectFit: 'contain'
+                }}
+              />
+            </a>
+          )
+        })}
+      </div>
+    )
+  }
+
 
   const wrapperStyle = profile && profile.bgImage ? (() => {
     const overlay = typeof profile.bgOverlay === 'number' ? profile.bgOverlay : 0.3
@@ -249,7 +404,7 @@ const ProfileView = () => {
       padding: '48px 16px',
       fontFamily: profile.fontFamily || '"Inter", sans-serif'
     }
-  })() : { 
+  })() : {
     background: profile?.bgColor || '#050505',
     fontFamily: profile?.fontFamily || '"Inter", sans-serif'
   }
@@ -445,6 +600,14 @@ const ProfileView = () => {
               )}
               <div className="username-glow" style={usernameStyle}>{profile.username}</div>
               <div className="profile-description" style={{color: descColor, marginTop: 8, fontSize: 16, textAlign: 'center'}}>{profile.description}</div>
+              {renderSocialIcons()}
+              
+              {/* Render profile sections */}
+              <SectionRenderer 
+                sections={profile.sections || []} 
+                theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
+              />
+              
               {commonAudioElement}
             </div>
           </div>
@@ -495,6 +658,14 @@ const ProfileView = () => {
             }}>
               {profile.description}
             </p>
+            {renderSocialIcons()}
+            
+            {/* Render profile sections */}
+            <SectionRenderer 
+              sections={profile.sections || []} 
+              theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
+            />
+            
             {/* Placeholder for link buttons */}
             <div style={{
               display: 'flex',
@@ -569,9 +740,17 @@ const ProfileView = () => {
                   }}>
                     {profile.description}
                   </p>
+                  {renderSocialIcons()}
                 </div>
               </div>
             </div>
+            
+            {/* Render profile sections */}
+            <SectionRenderer 
+              sections={profile.sections || []} 
+              theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
+            />
+            
             {/* Content Section Placeholder */}
             <div style={{
               background: profile.blockColor || '#fff',
@@ -652,6 +831,14 @@ const ProfileView = () => {
             }}>
               {profile.description}
             </p>
+            {renderSocialIcons()}
+            
+            {/* Render profile sections */}
+            <SectionRenderer 
+              sections={profile.sections || []} 
+              theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
+            />
+            
             {commonAudioElement}
           </div>
         </>
@@ -699,6 +886,16 @@ const ProfileView = () => {
             }}>
               {profile.description}
             </p>
+            <div style={{ marginTop: 24 }}>
+              {renderSocialIcons()}
+            </div>
+            
+            {/* Render profile sections */}
+            <SectionRenderer 
+              sections={profile.sections || []} 
+              theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
+            />
+            
             {commonAudioElement}
           </div>
         </>
@@ -788,11 +985,21 @@ const ProfileView = () => {
                   color: descColor,
                   lineHeight: 1.6,
                   textAlign: getTextAlign(settings.descAlignment),
-                  margin: 0
+                  margin: 0,
+                  marginBottom: settings.elementSpacing
                 }}>
                   {profile.description}
                 </p>
               )}
+              
+              {/* Social Icons */}
+              {renderSocialIcons()}
+              
+              {/* Render profile sections */}
+              <SectionRenderer 
+                sections={profile.sections || []} 
+                theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
+              />
             </div>
             {commonAudioElement}
           </div>

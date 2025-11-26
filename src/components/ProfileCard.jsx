@@ -1,27 +1,48 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { getActiveProfile } from '../services/profileManager'
 import { getProfile } from '../services/auth'
+
 function ProfileCard({ name: _name, title: _title, bio: _bio }) {
+  const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
+  const [authUser, setAuthUser] = useState(null)
 
   useEffect(() => {
     try {
-      const p = getProfile()
-      if (p) setProfile(p)
+      const activeProfile = getActiveProfile()
+      if (activeProfile && activeProfile.data) {
+        setProfile(activeProfile.data)
+      }
+      
+      const user = getProfile()
+      if (user) {
+        setAuthUser(user)
+      }
     } catch (e) {
       setProfile(null)
+      setAuthUser(null)
     }
   }, [])
 
-  const name = profile ? (profile.firstName || profile.username || _name || 'Kotchakorn') : (_name || 'Kotchakorn')
-  const title = profile ? (profile.title || _title || 'Product Designer') : (_title || 'Product Designer')
-  const bio = profile ? (profile.description || _bio || 'Make beautiful micro-interactions.') : (_bio || 'Make beautiful micro-interactions.')
+  const displayName = profile ? (profile.displayName || profile.firstName || _name || 'User') : (_name || 'User')
+  const username = authUser ? (authUser.username || 'username') : 'username'
+  const avatar = profile ? profile.avatar : null
+  const firstLetter = displayName.charAt(0).toUpperCase()
 
-  const initial = (profile && (profile.firstName || profile.username)) ? (profile.firstName ? profile.firstName.charAt(0).toUpperCase() : profile.username.charAt(0).toUpperCase()) : 'K'
+  const handleClick = () => {
+    if (username && username !== 'username') {
+      navigate(`/u/${username}`)
+    }
+  }
 
   return (
-    <div className="profile-card d-flex align-items-center p-3">
+    <div 
+      className="profile-card d-flex align-items-center p-3"
+      onClick={handleClick}
+      style={{ cursor: username && username !== 'username' ? 'pointer' : 'default' }}
+    >
       <div className="avatar me-3">
-        <div className="avatar-inner">{initial}</div>
         {avatar ? (
           <img 
             src={avatar} 
@@ -41,7 +62,6 @@ function ProfileCard({ name: _name, title: _title, bio: _bio }) {
       <div className="profile-meta">
         <div className="profile-name fw-bold">{displayName}</div>
         <div className="profile-title text-muted">@{username}</div>
-        <div className="profile-bio small mt-2 text-muted">{description}</div>
       </div>
     </div>
   )

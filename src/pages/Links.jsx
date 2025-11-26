@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import LoginModal from '../components/LoginModal'
 import { getCurrentUser } from '../services/auth'
+import { getActiveProfile, updateProfile } from '../services/profileManager'
 import './dashboard.css'
 import Image from "react-bootstrap/Image";
 import ig from "../img/ig.png";
@@ -17,14 +18,31 @@ import github from "../img/github.png";
 import AddSocialModal from '../components/AddSocialModal'
 
 function Links() {
+  const navigate = useNavigate()
   const [modalVisible, setModalVisible] = useState(false)
   const [selectedSocial, setSelectedSocial] = useState('')
   const [links, setLinks] = useState({ ig: '', facebook: '', x: '', spotify: '', discord: '', google: '', line: '', tiktok: '', github: '' })
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [activeProfileId, setActiveProfileId] = useState(null)
+
+  const handleSwitchToSignup = () => {
+    setShowLoginModal(false)
+    navigate('/signup')
+  }
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem('socialLinks')
-      if (raw) setLinks(JSON.parse(raw))
+      const activeProfile = getActiveProfile()
+      if (activeProfile) {
+        setActiveProfileId(activeProfile.id)
+        if (activeProfile.data.socialLinks) {
+          setLinks(activeProfile.data.socialLinks)
+        }
+      } else {
+        // Fallback to old localStorage
+        const raw = localStorage.getItem('socialLinks')
+        if (raw) setLinks(JSON.parse(raw))
+      }
     } catch (e) {
       console.error('load social links', e)
     }
@@ -48,7 +66,22 @@ function Links() {
   const handleAdd = (social, url) => {
     const next = { ...links, [social]: url }
     setLinks(next)
-    try { localStorage.setItem('socialLinks', JSON.stringify(next)) } catch (e) { console.error(e) }
+    
+    // Save to active profile
+    if (activeProfileId) {
+      try {
+        updateProfile(activeProfileId, { socialLinks: next })
+      } catch (e) {
+        console.error('Failed to update profile with social links', e)
+      }
+    }
+    
+    // Also save to localStorage for backward compatibility
+    try { 
+      localStorage.setItem('socialLinks', JSON.stringify(next)) 
+    } catch (e) { 
+      console.error(e) 
+    }
   }
 
 
@@ -62,40 +95,202 @@ function Links() {
             <h4 className="mb-1">Link your social media profiles.</h4>
             <p className="text-muted small mb-3">Pick a social media to add to your profile.</p>
             <div className="social-icons d-flex gap-3" style={{ position: 'relative' }}>
-              <button className="btn p-0" onClick={() => handleSocialClick('ig')} title={links.ig ? links.ig : 'Add Instagram'}>
+              <button className="btn p-0" onClick={() => handleSocialClick('ig')} title={links.ig ? links.ig : 'Add Instagram'} style={{ position: 'relative' }}>
                 <Image src={ig} rounded className="social-img" />
+                {links.ig && links.ig.trim() !== '' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <i className="bi bi-check" style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}></i>
+                  </div>
+                )}
               </button>
 
-              <button className="btn p-0" onClick={() => handleSocialClick('facebook')} title={links.facebook ? links.facebook : 'Add Facebook'}>
+              <button className="btn p-0" onClick={() => handleSocialClick('facebook')} title={links.facebook ? links.facebook : 'Add Facebook'} style={{ position: 'relative' }}>
                 <Image src={facebook} rounded className="social-img" />
+                {links.facebook && links.facebook.trim() !== '' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <i className="bi bi-check" style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}></i>
+                  </div>
+                )}
               </button>
 
-              <button className="btn p-0" onClick={() => handleSocialClick('x')} title={links.x ? links.x : 'Add X / Twitter'}>
+              <button className="btn p-0" onClick={() => handleSocialClick('x')} title={links.x ? links.x : 'Add X / Twitter'} style={{ position: 'relative' }}>
                 <Image src={x} rounded className="social-img" />
+                {links.x && links.x.trim() !== '' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <i className="bi bi-check" style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}></i>
+                  </div>
+                )}
               </button>
 
-              <button className="btn p-0" onClick={() => handleSocialClick('spotify')} title={links.spotify ? links.spotify : 'Add Spotify'}>
+              <button className="btn p-0" onClick={() => handleSocialClick('spotify')} title={links.spotify ? links.spotify : 'Add Spotify'} style={{ position: 'relative' }}>
                 <Image src={spotify} rounded className="social-img" />
+                {links.spotify && links.spotify.trim() !== '' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <i className="bi bi-check" style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}></i>
+                  </div>
+                )}
               </button>
 
-              <button className="btn p-0" onClick={() => handleSocialClick('discord')} title={links.discord ? links.discord : 'Add Discord'}>
+              <button className="btn p-0" onClick={() => handleSocialClick('discord')} title={links.discord ? links.discord : 'Add Discord'} style={{ position: 'relative' }}>
                 <Image src={discord} rounded className="social-img" />
+                {links.discord && links.discord.trim() !== '' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <i className="bi bi-check" style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}></i>
+                  </div>
+                )}
               </button>
 
-              <button className="btn p-0" onClick={() => handleSocialClick('google')} title={links.google ? links.google : 'Add Google'}>
+              <button className="btn p-0" onClick={() => handleSocialClick('google')} title={links.google ? links.google : 'Add Google'} style={{ position: 'relative' }}>
                 <Image src={google} rounded className="social-img" />
+                {links.google && links.google.trim() !== '' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <i className="bi bi-check" style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}></i>
+                  </div>
+                )}
               </button>
 
-              <button className="btn p-0" onClick={() => handleSocialClick('line')} title={links.line ? links.line : 'Add Line'}>
+              <button className="btn p-0" onClick={() => handleSocialClick('line')} title={links.line ? links.line : 'Add Line'} style={{ position: 'relative' }}>
                 <Image src={Line} rounded className="social-img" />
+                {links.line && links.line.trim() !== '' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <i className="bi bi-check" style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}></i>
+                  </div>
+                )}
               </button>
 
-              <button className="btn p-0" onClick={() => handleSocialClick('tiktok')} title={links.tiktok ? links.tiktok : 'Add TikTok'}>
+              <button className="btn p-0" onClick={() => handleSocialClick('tiktok')} title={links.tiktok ? links.tiktok : 'Add TikTok'} style={{ position: 'relative' }}>
                 <Image src={tiktok} rounded className="social-img" />
+                {links.tiktok && links.tiktok.trim() !== '' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <i className="bi bi-check" style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}></i>
+                  </div>
+                )}
               </button>
 
-              <button className="btn p-0" onClick={() => handleSocialClick('github')} title={links.github ? links.github : 'Add GitHub'}>
+              <button className="btn p-0" onClick={() => handleSocialClick('github')} title={links.github ? links.github : 'Add GitHub'} style={{ position: 'relative' }}>
                 <Image src={github} rounded className="social-img" />
+                {links.github && links.github.trim() !== '' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <i className="bi bi-check" style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}></i>
+                  </div>
+                )}
               </button>
 
               <AddSocialModal

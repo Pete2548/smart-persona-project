@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar'
 import LoginModal from '../components/LoginModal'
 import VisualEditor from '../components/VisualEditor'
+import AIContentGenerator from '../components/AIContentGenerator'
+import AIThemeRecommender from '../components/AIThemeRecommender'
+import SectionManager from '../components/SectionManager'
 import { getCurrentUser } from '../services/auth'
 import { getAllProfiles, getActiveProfile, getActiveProfileId, setActiveProfile, updateProfile, migrateOldProfile, getProfiles } from '../services/profileManager'
 import './customize.css';
@@ -61,6 +64,7 @@ const Customize = () => {
     const [showLoginModal, setShowLoginModal] = useState(false)
     const [profiles, setProfiles] = useState([])
     const [currentProfileId, setCurrentProfileId] = useState(null)
+    const [profileType, setProfileType] = useState('professional')
     const [username, setUsername] = useState('')
     const [displayName, setDisplayName] = useState('')
     const [description, setDescription] = useState('')
@@ -77,6 +81,15 @@ const Customize = () => {
     const [audioStartTime, setAudioStartTime] = useState(0)
     const [audioEndTime, setAudioEndTime] = useState(0)
     const [audioDuration, setAudioDuration] = useState(0)
+    
+    // Privacy Setting
+    const [isPublic, setIsPublic] = useState(true)
+    
+    // Multi-Section System
+    const [profileSections, setProfileSections] = useState([])
+    
+    // AI Theme Recommender
+    const [showAIThemeRecommender, setShowAIThemeRecommender] = useState(false)
     
     // Visual Editor Mode
     const [visualEditorMode, setVisualEditorMode] = useState(false)
@@ -142,6 +155,7 @@ const Customize = () => {
                     const user = currentUser ? JSON.parse(currentUser) : null
                     
                     setUsername(user?.username || data.username || '')
+                    setProfileType(activeProfile.type || 'professional')
                     setDisplayName(data.displayName || '')
                     setDescription(data.description || '')
                     setAvatarPreview(data.avatar || null)
@@ -155,6 +169,8 @@ const Customize = () => {
                     setAudioFileName(data.audioFileName || '')
                     setAudioStartTime(data.audioStartTime || 0)
                     setAudioEndTime(data.audioEndTime || 0)
+                    setIsPublic(data.isPublic !== undefined ? data.isPublic : true)
+                    setProfileSections(data.sections || [])
                     
                     // Load advanced layout settings
                     if (data.layoutSettings) {
@@ -315,6 +331,8 @@ const Customize = () => {
                 audioFileName: audioFileName || '',
                 audioStartTime: audioStartTime || 0,
                 audioEndTime: audioEndTime || 0,
+                isPublic: isPublic,
+                sections: profileSections,
             }
             
             updateProfile(currentProfileId, updates)
@@ -458,6 +476,87 @@ const Customize = () => {
                                 </div>
                             </div>
 
+                            {/* Multi-Section Manager - Hide for Personal profile type */}
+                            {profileType !== 'personal' && (
+                                <div className="customize-row mt-4">
+                                    <div className="form-group w-100">
+                                        <SectionManager
+                                            sections={profileSections}
+                                            onChange={setProfileSections}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Privacy Setting */}
+                            <div className="customize-row mt-3">
+                                <div className="form-group w-100">
+                                    <label className="form-label d-flex align-items-center gap-2">
+                                        <i className={`bi ${isPublic ? 'bi-globe' : 'bi-lock-fill'}`}></i>
+                                        Profile Visibility
+                                    </label>
+                                    <div className="btn-group w-100" role="group">
+                                        <button 
+                                            type="button" 
+                                            className={`btn ${isPublic ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                            onClick={() => setIsPublic(true)}
+                                            style={{ flex: 1 }}
+                                        >
+                                            <i className="bi bi-globe me-2"></i>
+                                            Public
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            className={`btn ${!isPublic ? 'btn-warning' : 'btn-outline-secondary'}`}
+                                            onClick={() => setIsPublic(false)}
+                                            style={{ flex: 1 }}
+                                        >
+                                            <i className="bi bi-lock-fill me-2"></i>
+                                            Private
+                                        </button>
+                                    </div>
+                                    <small className="text-muted mt-1 d-block">
+                                        {isPublic 
+                                            ? '✓ Anyone can view your profile' 
+                                            : '🔒 Only you can view this profile (visitors will see a private message)'}
+                                    </small>
+                                </div>
+                            </div>
+
+                            {/* AI Theme Recommender */}
+                            <div className="customize-row mt-3">
+                                <div className="form-group w-100">
+                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <label className="form-label mb-0">
+                                            <i className="bi bi-palette me-2"></i>
+                                            Color Customization
+                                        </label>
+                                        <button 
+                                            type="button"
+                                            className="btn btn-sm btn-outline-primary"
+                                            onClick={() => setShowAIThemeRecommender(!showAIThemeRecommender)}
+                                        >
+                                            <i className="bi bi-stars me-1"></i>
+                                            {showAIThemeRecommender ? 'Hide AI Recommender' : 'Get AI Theme Suggestions'}
+                                        </button>
+                                    </div>
+                                    
+                                    {showAIThemeRecommender && (
+                                        <div className="mb-3">
+                                            <AIThemeRecommender
+                                                profileType={profiles.find(p => p.id === currentProfileId)?.type || 'professional'}
+                                                onThemeApplied={(colors) => {
+                                                    setNameColor(colors.nameColor)
+                                                    setBgColor(colors.bgColor)
+                                                    setDescColor(colors.descColor)
+                                                    setShowAIThemeRecommender(false)
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
                             <div className="customize-row mt-3">
                                 <div className="form-group">
                                     <label className="form-label">Name color</label>
@@ -487,26 +586,6 @@ const Customize = () => {
                                         <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} className="form-control form-control-color" style={{width:56, height:36, padding:4}} />
                                         <input type="text" value={bgColor} onChange={e => setBgColor(e.target.value)} className="form-control neutral-input" style={{maxWidth:140}} />
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Layout Selector */}
-                            <div className="customize-row mt-3">
-                                <div className="form-group w-100">
-                                    <label className="form-label">Profile Layout</label>
-                                    <select 
-                                        className="form-select"
-                                        value={layout}
-                                        onChange={(e) => setLayout(e.target.value)}
-                                    >
-                                        <option value="default">Default - Classic Card</option>
-                                        <option value="linktree">Linktree Style - Centered Links</option>
-                                        <option value="linkedin">LinkedIn Style - Professional</option>
-                                        <option value="guns">Guns.lol Style - Neon/Dark</option>
-                                        <option value="minimal">Minimal - Clean & Simple</option>
-                                        <option value="custom">Custom - Advanced Edit Mode</option>
-                                    </select>
-                                    <small className="text-muted">Choose how your profile will be displayed</small>
                                 </div>
                             </div>
 

@@ -4,50 +4,10 @@ import Sidebar from '../components/Sidebar'
 import LoginModal from '../components/LoginModal'
 import { getCurrentUser } from '../services/auth'
 import { getAllProfiles, createProfile, deleteProfile, setActiveProfile, getActiveProfileId, migrateOldProfile } from '../services/profileManager'
+import { getProfileTypes } from '../config/profileTemplates'
 import './dashboard.css'
 
-const profileTypes = [
-  { 
-    value: 'professional', 
-    label: 'Professional', 
-    icon: 'bi-briefcase', 
-    color: '#0a66c2',
-    layout: 'LinkedIn Style',
-    description: 'Perfect for job applications and professional networking'
-  },
-  { 
-    value: 'freelance', 
-    label: 'Freelance', 
-    icon: 'bi-palette', 
-    color: '#6c5ce7',
-    layout: 'Linktree Style',
-    description: 'Showcase your services and portfolio links'
-  },
-  { 
-    value: 'personal', 
-    label: 'Personal', 
-    icon: 'bi-person', 
-    color: '#2d3436',
-    layout: 'Minimal Style',
-    description: 'Share your personal story and interests'
-  },
-  { 
-    value: 'creative', 
-    label: 'Creative', 
-    icon: 'bi-brush', 
-    color: '#00ff88',
-    layout: 'Guns.lol Neon',
-    description: 'Stand out with bold neon effects and dark theme'
-  },
-  { 
-    value: 'business', 
-    label: 'Business', 
-    icon: 'bi-building', 
-    color: '#0652dd',
-    layout: 'Default Card',
-    description: 'Professional business presentation'
-  }
-]
+const profileTypes = getProfileTypes()
 
 function MyProfiles() {
   const navigate = useNavigate()
@@ -316,38 +276,55 @@ function MyProfiles() {
                     onChange={(e) => setNewProfileType(e.target.value)}
                   >
                     {profileTypes.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
+                      <option key={type.key} value={type.key}>{type.name}</option>
                     ))}
                   </select>
                   
                   {/* Show description for selected type */}
-                  {profileTypes.find(t => t.value === newProfileType) && (
+                  {profileTypes.find(t => t.key === newProfileType) && (
                     <div 
                       className="mt-3 p-3 rounded" 
                       style={{ 
                         backgroundColor: '#f8f9fa',
-                        border: `2px solid ${profileTypes.find(t => t.value === newProfileType).color}`
+                        border: '2px solid #6c5ce7'
                       }}
                     >
                       <div className="d-flex align-items-center mb-2">
                         <i 
-                          className={`${profileTypes.find(t => t.value === newProfileType).icon} me-2`}
-                          style={{ 
-                            fontSize: '24px',
-                            color: profileTypes.find(t => t.value === newProfileType).color
-                          }}
+                          className={`${profileTypes.find(t => t.key === newProfileType).icon} me-2`}
+                          style={{ fontSize: '24px', color: '#6c5ce7' }}
                         ></i>
-                        <strong style={{ color: profileTypes.find(t => t.value === newProfileType).color }}>
-                          {profileTypes.find(t => t.value === newProfileType).label}
+                        <strong style={{ color: '#6c5ce7' }}>
+                          {profileTypes.find(t => t.key === newProfileType).name}
                         </strong>
                       </div>
-                      <p className="mb-1 small text-muted">
-                        {profileTypes.find(t => t.value === newProfileType).description}
+                      <p className="mb-2 small text-muted">
+                        {profileTypes.find(t => t.key === newProfileType).description}
                       </p>
-                      <div className="d-flex align-items-center mt-2">
-                        <i className="bi bi-layout-text-sidebar me-2" style={{ fontSize: '14px' }}></i>
-                        <small className="fw-bold">
-                          Default Layout: {profileTypes.find(t => t.value === newProfileType).layout}
+                      
+                      {/* Template Preview */}
+                      <div className="mt-3 p-2 rounded" style={{ backgroundColor: 'white', border: '1px solid #dee2e6' }}>
+                        <small className="fw-bold d-block mb-2">
+                          <i className="bi bi-magic me-1"></i>
+                          Auto-applied settings:
+                        </small>
+                        <div className="d-flex flex-wrap gap-1 mb-1">
+                          <span className="badge bg-primary">
+                            <i className="bi bi-layout-text-sidebar me-1"></i>
+                            {profileTypes.find(t => t.key === newProfileType).defaultSettings.layout} layout
+                          </span>
+                          <span className="badge bg-secondary">
+                            <i className="bi bi-palette me-1"></i>
+                            Optimized colors
+                          </span>
+                          <span className="badge bg-success">
+                            <i className="bi bi-lightbulb me-1"></i>
+                            Smart placeholders
+                          </span>
+                        </div>
+                        <small className="text-muted">
+                          <i className="bi bi-info-circle me-1"></i>
+                          Everything can be customized later
                         </small>
                       </div>
                     </div>
