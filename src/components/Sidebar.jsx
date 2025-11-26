@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { getCurrentUser } from '../services/auth'
+import { getActiveProfile } from '../services/profileManager'
 import LoginModal from './LoginModal'
 import '../pages/dashboard.css'
 
@@ -32,18 +33,32 @@ function Sidebar() {
     navigate('/signup')
   }
 
-  // Read saved profile from localStorage to build the view-profile link
+  // Read active profile from multi-profile system
   let profile = null
+  let viewPath = '/customize'
+  
   try {
-    const raw = localStorage.getItem('user_profile')
-    profile = raw ? JSON.parse(raw) : null
+    const activeProfile = getActiveProfile()
+    if (activeProfile && activeProfile.data) {
+      profile = activeProfile.data
+      if (profile.username) {
+        viewPath = `/u/${profile.username}`
+        if (activeProfile.type) {
+          viewPath = `/u/${profile.username}/${activeProfile.type}`
+        }
+      }
+    } else {
+      // Fallback to old single profile system
+      const raw = localStorage.getItem('user_profile')
+      profile = raw ? JSON.parse(raw) : null
+      if (profile && profile.username) {
+        viewPath = `/u/${profile.username}`
+      }
+    }
   } catch (err) {
-    // if parsing fails, log and continue with null
-    console.warn('Failed to read user_profile from localStorage', err)
+    console.warn('Failed to read profile', err)
     profile = null
   }
-
-  const viewPath = profile && profile.username ? `/u/${profile.username}` : '/customize'
 
   return (
     <aside className="dashboard-sidebar d-flex flex-column">

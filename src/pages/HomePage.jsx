@@ -23,6 +23,15 @@ function HomePage() {
     }
   };
 
+  const handleExploreDashboard = () => {
+    const user = getCurrentUser();
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      setShowLoginModal(true);
+    }
+  };
+
   const handleSwitchToSignup = () => {
     setShowLoginModal(false);
     navigate('/signup');
@@ -66,7 +75,7 @@ function HomePage() {
               <Button variant="secondary" size="lg" onClick={handleCreatePersona}>
                 Create Persona
               </Button>
-              <Button variant="secondary" size="lg" onClick={() => navigate('/dashboard')}>
+              <Button variant="secondary" size="lg" onClick={handleExploreDashboard}>
                 Explore Others
               </Button>
             </Stack>

@@ -1,4 +1,6 @@
 // Profile Management System for Multiple Profile Versions
+import { applyTemplate } from '../config/profileTemplates'
+
 const PROFILES_KEY = 'user_profiles' // All profile versions
 const ACTIVE_PROFILE_KEY = 'active_profile_id' // Currently selected profile
 
@@ -42,58 +44,12 @@ export function getActiveProfile() {
   return getProfileById(activeId)
 }
 
-// Get default template based on profile type
-function getDefaultTemplate(type) {
-  const templates = {
-    professional: {
-      layout: 'linkedin',
-      nameColor: '#0a66c2',
-      blockColor: '#f3f6f8',
-      bgColor: '#ffffff',
-      descColor: '#191919',
-      description: 'Professional with experience in...'
-    },
-    freelance: {
-      layout: 'linktree',
-      nameColor: '#6c5ce7',
-      blockColor: '#ffffff',
-      bgColor: '#f5f5f5',
-      descColor: '#666666',
-      description: 'Freelance designer & developer'
-    },
-    personal: {
-      layout: 'minimal',
-      nameColor: '#2d3436',
-      blockColor: '#fafafa',
-      bgColor: '#ffffff',
-      descColor: '#636e72',
-      description: 'Welcome to my personal space'
-    },
-    creative: {
-      layout: 'guns',
-      nameColor: '#00ff88',
-      blockColor: '#1a1a1a',
-      bgColor: '#0a0a0a',
-      descColor: '#888888',
-      description: 'Creative artist & designer'
-    },
-    business: {
-      layout: 'default',
-      nameColor: '#0652dd',
-      blockColor: '#ffffff',
-      bgColor: '#0984e3',
-      descColor: '#2d3436',
-      description: 'Business professional'
-    }
-  }
-  
-  return templates[type] || templates.personal
-}
-
 // Create new profile
 export function createProfile({ type, name }) {
   const profiles = getAllProfiles()
-  const template = getDefaultTemplate(type)
+  
+  // Use new template system
+  const templateData = applyTemplate(type)
   
   const newProfile = {
     id: `profile_${Date.now()}`,
@@ -102,20 +58,13 @@ export function createProfile({ type, name }) {
     createdAt: new Date().toISOString(),
     data: {
       username: '',
-      displayName: '',
-      description: template.description,
-      avatar: null,
-      bgImage: null,
-      bgOverlay: 0.3,
-      nameColor: template.nameColor,
-      blockColor: template.blockColor,
-      bgColor: template.bgColor,
-      descColor: template.descColor,
-      layout: template.layout,
+      ...templateData, // Apply all template settings
       hasAudio: false,
       audioFileName: '',
       audioStartTime: 0,
-      audioEndTime: 0
+      audioEndTime: 0,
+      isPublic: true,
+      socialLinks: {}
     }
   }
   
