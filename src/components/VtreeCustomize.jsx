@@ -15,6 +15,11 @@ export default function VtreeCustomize({
   const [activeTab, setActiveTab] = useState('header')
   const [showFontModal, setShowFontModal] = useState(false)
   const [fontModalType, setFontModalType] = useState('title') // 'title' or 'page'
+  const [showVcreateModal, setShowVcreateModal] = useState(false)
+  const [vcreatePrompt, setVcreatePrompt] = useState('')
+  const [selectedPreset, setSelectedPreset] = useState(null)
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   // Profile settings state
   const [profileImage, setProfileImage] = useState(profile.profileImage || '')
@@ -95,8 +100,716 @@ export default function VtreeCustomize({
     ]
   }
 
+  // Style Presets for Vcreate AI
+  const stylePresets = {
+    professional: {
+      name: 'Professional',
+      icon: '💼',
+      description: 'Clean and trustworthy for business',
+      config: {
+        profileImageLayout: 'classic',
+        titleFont: 'Inter',
+        pageFont: 'Inter',
+        buttonStyle: 'solid',
+        buttonCorners: 33,
+        buttonShadow: 25,
+        buttonColor: '#2563eb',
+        buttonTextColor: '#ffffff',
+        bgColor: '#1e293b',
+        pageTextColor: '#ffffff',
+        titleColor: '#ffffff'
+      }
+    },
+    creative: {
+      name: 'Creative',
+      icon: '🎨',
+      description: 'Bold and colorful for creators',
+      config: {
+        profileImageLayout: 'vfull',
+        titleFont: 'Righteous',
+        pageFont: 'Poppins',
+        buttonStyle: 'solid',
+        buttonCorners: 67,
+        buttonShadow: 50,
+        buttonColor: '#ec4899',
+        buttonTextColor: '#ffffff',
+        bgColor: '#7c3aed',
+        pageTextColor: '#ffffff',
+        titleColor: '#ffffff'
+      }
+    },
+    minimal: {
+      name: 'Minimal',
+      icon: '✨',
+      description: 'Simple and elegant design',
+      config: {
+        profileImageLayout: 'classic',
+        titleFont: 'DM Sans',
+        pageFont: 'DM Sans',
+        buttonStyle: 'outline',
+        buttonCorners: 33,
+        buttonShadow: 0,
+        buttonColor: '#000000',
+        buttonTextColor: '#000000',
+        bgColor: '#f5f5f5',
+        pageTextColor: '#000000',
+        titleColor: '#000000'
+      }
+    },
+    bold: {
+      name: 'Bold',
+      icon: '⚡',
+      description: 'Eye-catching and dynamic',
+      config: {
+        profileImageLayout: 'vfull',
+        titleFont: 'Bebas Neue',
+        pageFont: 'Roboto',
+        buttonStyle: 'solid',
+        buttonCorners: 0,
+        buttonShadow: 75,
+        buttonColor: '#dc2626',
+        buttonTextColor: '#ffffff',
+        bgColor: '#0a0a0a',
+        pageTextColor: '#ffffff',
+        titleColor: '#ffffff'
+      }
+    },
+    elegant: {
+      name: 'Elegant',
+      icon: '👑',
+      description: 'Sophisticated and refined',
+      config: {
+        profileImageLayout: 'classic',
+        titleFont: 'Playfair Display',
+        pageFont: 'Lora',
+        buttonStyle: 'solid',
+        buttonCorners: 67,
+        buttonShadow: 25,
+        buttonColor: '#92400e',
+        buttonTextColor: '#ffffff',
+        bgColor: '#fef3c7',
+        pageTextColor: '#78350f',
+        titleColor: '#78350f'
+      }
+    }
+  }
+
+  const applyPreset = (presetKey) => {
+    const preset = stylePresets[presetKey]
+    if (!preset) return
+
+    const config = preset.config
+    
+    // Update all states
+    setProfileImageLayout(config.profileImageLayout)
+    setTitleFont(config.titleFont)
+    setPageFont(config.pageFont)
+    setButtonStyle(config.buttonStyle)
+    setButtonCorners(config.buttonCorners)
+    setButtonShadow(config.buttonShadow)
+    setButtonColor(config.buttonColor)
+    setButtonTextColor(config.buttonTextColor)
+    setWallpaperColor(config.bgColor)
+    setPageTextColor(config.pageTextColor)
+    setTitleColor(config.titleColor)
+
+    // Update profile
+    handleUpdate({
+      profileImageLayout: config.profileImageLayout,
+      titleFont: config.titleFont,
+      pageFont: config.pageFont,
+      buttonStyle: config.buttonStyle,
+      buttonCorners: config.buttonCorners,
+      buttonShadow: config.buttonShadow,
+      buttonColor: config.buttonColor,
+      buttonTextColor: config.buttonTextColor,
+      bgColor: config.bgColor,
+      pageTextColor: config.pageTextColor,
+      titleColor: config.titleColor,
+      nameColor: config.titleColor
+    })
+
+    setSelectedPreset(presetKey)
+  }
+
+  // AI Generation from prompt (Thai & English support)
+  const generateFromPrompt = () => {
+    if (!vcreatePrompt.trim()) {
+      alert('กรุณาใส่คำอธิบายสไตล์ที่ต้องการก่อนครับ / Please describe your desired style first')
+      return
+    }
+
+    const prompt = vcreatePrompt.toLowerCase()
+    console.log('Analyzing prompt:', prompt)
+    
+    // Color palette mapping (Thai & English) - All colors supported
+    const colorPalettes = {
+      pink: {
+        keywords: ['pink', 'ชมพู', 'rosa'],
+        colors: { bg: '#ec4899', button: '#f472b6', text: '#ffffff' }
+      },
+      blue: {
+        keywords: ['blue', 'น้ำเงิน', 'ฟ้า'],
+        colors: { bg: '#2563eb', button: '#3b82f6', text: '#ffffff' }
+      },
+      purple: {
+        keywords: ['purple', 'violet', 'ม่วง', 'ไวโอเลต'],
+        colors: { bg: '#7c3aed', button: '#8b5cf6', text: '#ffffff' }
+      },
+      green: {
+        keywords: ['green', 'เขียว'],
+        colors: { bg: '#059669', button: '#10b981', text: '#ffffff' }
+      },
+      red: {
+        keywords: ['red', 'แดง'],
+        colors: { bg: '#dc2626', button: '#ef4444', text: '#ffffff' }
+      },
+      orange: {
+        keywords: ['orange', 'ส้ม'],
+        colors: { bg: '#ea580c', button: '#f97316', text: '#ffffff' }
+      },
+      yellow: {
+        keywords: ['yellow', 'เหลือง'],
+        colors: { bg: '#eab308', button: '#fbbf24', text: '#000000' }
+      },
+      brown: {
+        keywords: ['brown', 'น้ำตาล', 'coffee', 'กาแฟ'],
+        colors: { bg: '#78350f', button: '#92400e', text: '#ffffff' }
+      },
+      black: {
+        keywords: ['black', 'dark', 'ดำ', 'มืด', 'เข้ม', 'ดาร์ค'],
+        colors: { bg: '#0a0a0a', button: '#1f1f1f', text: '#ffffff' }
+      },
+      white: {
+        keywords: ['white', 'light', 'ขาว', 'สว่าง', 'อ่อน'],
+        colors: { bg: '#f5f5f5', button: '#e5e5e5', text: '#000000' }
+      },
+      gold: {
+        keywords: ['gold', 'ทอง', 'golden'],
+        colors: { bg: '#fef3c7', button: '#92400e', text: '#78350f' }
+      },
+      silver: {
+        keywords: ['silver', 'เงิน', 'grey', 'gray', 'เทา'],
+        colors: { bg: '#6b7280', button: '#9ca3af', text: '#ffffff' }
+      },
+      teal: {
+        keywords: ['teal', 'cyan', 'เขียวน้ำทะเล', 'ฟ้าเขียว'],
+        colors: { bg: '#0891b2', button: '#06b6d4', text: '#ffffff' }
+      },
+      indigo: {
+        keywords: ['indigo', 'คราม', 'น้ำเงินเข้ม'],
+        colors: { bg: '#4f46e5', button: '#6366f1', text: '#ffffff' }
+      },
+      lime: {
+        keywords: ['lime', 'เขียวมะนาว', 'เขียวอ่อน'],
+        colors: { bg: '#65a30d', button: '#84cc16', text: '#ffffff' }
+      },
+      emerald: {
+        keywords: ['emerald', 'เขียวมรกต'],
+        colors: { bg: '#047857', button: '#059669', text: '#ffffff' }
+      },
+      rose: {
+        keywords: ['rose', 'ชมพูกุหลาบ'],
+        colors: { bg: '#e11d48', button: '#f43f5e', text: '#ffffff' }
+      },
+      fuchsia: {
+        keywords: ['fuchsia', 'magenta', 'บานเย็น', 'ชมพูม่วง'],
+        colors: { bg: '#c026d3', button: '#d946ef', text: '#ffffff' }
+      },
+      sky: {
+        keywords: ['sky', 'ฟ้าอ่อน', 'skyblue'],
+        colors: { bg: '#0284c7', button: '#0ea5e9', text: '#ffffff' }
+      },
+      violet: {
+        keywords: ['violet', 'ม่วงอ่อน'],
+        colors: { bg: '#7c3aed', button: '#8b5cf6', text: '#ffffff' }
+      },
+      amber: {
+        keywords: ['amber', 'เหลืองอำพัน'],
+        colors: { bg: '#d97706', button: '#f59e0b', text: '#ffffff' }
+      },
+      mint: {
+        keywords: ['mint', 'เขียวมิ้นต์', 'เขียวพาสเทล'],
+        colors: { bg: '#6ee7b7', button: '#34d399', text: '#000000' }
+      },
+      lavender: {
+        keywords: ['lavender', 'ม่วงลาเวนเดอร์', 'ม่วงพาสเทล'],
+        colors: { bg: '#a78bfa', button: '#8b5cf6', text: '#ffffff' }
+      },
+      peach: {
+        keywords: ['peach', 'ส้มพีช', 'ส้มอ่อน'],
+        colors: { bg: '#fb923c', button: '#f97316', text: '#ffffff' }
+      },
+      navy: {
+        keywords: ['navy', 'น้ำเงินกรม', 'น้ำเงินเข้ม'],
+        colors: { bg: '#1e3a8a', button: '#1e40af', text: '#ffffff' }
+      },
+      maroon: {
+        keywords: ['maroon', 'แดงเข้ม', 'แดงคล้ำ'],
+        colors: { bg: '#7f1d1d', button: '#991b1b', text: '#ffffff' }
+      },
+      olive: {
+        keywords: ['olive', 'เขียวมะกอก'],
+        colors: { bg: '#65a30d', button: '#84cc16', text: '#ffffff' }
+      },
+      coral: {
+        keywords: ['coral', 'ปะการัง', 'ส้มแดง'],
+        colors: { bg: '#f87171', button: '#fb923c', text: '#ffffff' }
+      },
+      turquoise: {
+        keywords: ['turquoise', 'เขียวเทอร์ควอยซ์'],
+        colors: { bg: '#14b8a6', button: '#2dd4bf', text: '#ffffff' }
+      },
+      beige: {
+        keywords: ['beige', 'เบจ', 'ครีม', 'cream'],
+        colors: { bg: '#fef3c7', button: '#fde68a', text: '#78350f' }
+      }
+    }
+
+    // Style/Mood keywords
+    const styleKeywords = {
+      professional: ['professional', 'business', 'corporate', 'formal', 'work', 'มืออาชีพ', 'ธุรกิจ', 'ทำงาน', 'บริษัท', 'ออฟฟิศ'],
+      creative: ['creative', 'colorful', 'fun', 'playful', 'artist', 'designer', 'สร้างสรรค์', 'สีสัน', 'สดใส', 'สนุก', 'ศิลปิน', 'ดีไซเนอร์', 'คอนเทนต์'],
+      minimal: ['minimal', 'minimalist', 'simple', 'clean', 'basic', 'มินิมอล', 'เรียบง่าย', 'สะอาด', 'เรียบ'],
+      bold: ['bold', 'strong', 'powerful', 'intense', 'edgy', 'cool', 'โดดเด่น', 'แรง', 'ทรงพลัง', 'เท่', 'คูล'],
+      elegant: ['elegant', 'luxury', 'sophisticated', 'premium', 'classy', 'refined', 'หรูหรา', 'สง่างาม', 'ระดับ', 'ประณีต', 'คลาสสิก'],
+      cute: ['cute', 'kawaii', 'sweet', 'lovely', 'adorable', 'น่ารัก', 'หวาน', 'คาวาอี้'],
+      modern: ['modern', 'contemporary', 'trendy', 'hip', 'ทันสมัย', 'โมเดิร์น', 'ฮิป'],
+      vintage: ['vintage', 'retro', 'classic', 'old school', 'วินเทจ', 'เรโทร', 'โบราณ']
+    }
+
+    // Detect color
+    let selectedColor = null
+    Object.entries(colorPalettes).forEach(([colorName, colorData]) => {
+      colorData.keywords.forEach(keyword => {
+        if (prompt.includes(keyword)) {
+          selectedColor = colorData.colors
+        }
+      })
+    })
+
+    // Detect style
+    let styleScore = {}
+    Object.entries(styleKeywords).forEach(([style, keywords]) => {
+      let score = 0
+      keywords.forEach(keyword => {
+        if (prompt.includes(keyword)) score++
+      })
+      if (score > 0) styleScore[style] = score
+    })
+
+    // Get best matching style
+    let bestStyle = Object.keys(styleScore).reduce((a, b) => 
+      styleScore[a] > styleScore[b] ? a : b, 'professional'
+    )
+
+    // Build custom config
+    const config = {
+      profileImageLayout: ['bold', 'creative', 'modern'].includes(bestStyle) ? 'vfull' : 'classic',
+      titleFont: {
+        professional: 'Inter',
+        creative: 'Righteous',
+        minimal: 'DM Sans',
+        bold: 'Bebas Neue',
+        elegant: 'Playfair Display',
+        cute: 'Caveat',
+        modern: 'Urbanist',
+        vintage: 'Old Standard TT'
+      }[bestStyle] || 'Inter',
+      pageFont: {
+        professional: 'Inter',
+        creative: 'Poppins',
+        minimal: 'DM Sans',
+        bold: 'Roboto',
+        elegant: 'Lora',
+        cute: 'Quicksand',
+        modern: 'Outfit',
+        vintage: 'Merriweather'
+      }[bestStyle] || 'Inter',
+      buttonStyle: ['minimal', 'vintage'].includes(bestStyle) ? 'outline' : 'solid',
+      buttonCorners: {
+        professional: 33,
+        creative: 67,
+        minimal: 33,
+        bold: 0,
+        elegant: 67,
+        cute: 67,
+        modern: 33,
+        vintage: 33
+      }[bestStyle] || 33,
+      buttonShadow: {
+        professional: 25,
+        creative: 50,
+        minimal: 0,
+        bold: 75,
+        elegant: 25,
+        cute: 25,
+        modern: 50,
+        vintage: 0
+      }[bestStyle] || 25,
+      buttonColor: selectedColor?.button || '#2563eb',
+      buttonTextColor: selectedColor?.text || '#ffffff',
+      bgColor: selectedColor?.bg || '#1e293b',
+      pageTextColor: selectedColor?.text || '#ffffff',
+      titleColor: selectedColor?.text || '#ffffff'
+    }
+
+    console.log('Detected style:', bestStyle)
+    console.log('Detected color:', selectedColor ? 'Custom' : 'Default')
+    console.log('Generated config:', config)
+
+    // Apply custom config
+    setProfileImageLayout(config.profileImageLayout)
+    setTitleFont(config.titleFont)
+    setPageFont(config.pageFont)
+    setButtonStyle(config.buttonStyle)
+    setButtonCorners(config.buttonCorners)
+    setButtonShadow(config.buttonShadow)
+    setButtonColor(config.buttonColor)
+    setButtonTextColor(config.buttonTextColor)
+    setWallpaperColor(config.bgColor)
+    setPageTextColor(config.pageTextColor)
+    setTitleColor(config.titleColor)
+
+    handleUpdate({
+      profileImageLayout: config.profileImageLayout,
+      titleFont: config.titleFont,
+      pageFont: config.pageFont,
+      buttonStyle: config.buttonStyle,
+      buttonCorners: config.buttonCorners,
+      buttonShadow: config.buttonShadow,
+      buttonColor: config.buttonColor,
+      buttonTextColor: config.buttonTextColor,
+      bgColor: config.bgColor,
+      pageTextColor: config.pageTextColor,
+      titleColor: config.titleColor,
+      nameColor: config.titleColor
+    })
+
+    // Show success notification
+    const styleName = bestStyle.charAt(0).toUpperCase() + bestStyle.slice(1)
+    const colorInfo = selectedColor ? ' พร้อมสีที่กำหนดเอง' : ''
+    setSuccessMessage(`สร้างโปรไฟล์สไตล์ "${styleName}"${colorInfo} สำเร็จ!`)
+    setShowSuccessNotification(true)
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+      setShowSuccessNotification(false)
+    }, 3000)
+  }
+
   return (
     <div className="vtree-customize">
+      {/* Success Notification */}
+      {showSuccessNotification && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 2000
+        }}>
+          <style>{`
+            @keyframes fadeIn {
+              from {
+                opacity: 0;
+              }
+              to {
+                opacity: 1;
+              }
+            }
+            @keyframes spin {
+              from { transform: translate(-50%, -50%) rotate(0deg); }
+              to { transform: translate(-50%, -50%) rotate(360deg); }
+            }
+            @keyframes fadeOut {
+              from { opacity: 1; }
+              to { opacity: 0; }
+            }
+          `}</style>
+          
+          <div style={{
+            background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
+            borderRadius: '24px',
+            padding: '40px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(255,255,255,0.1)',
+            textAlign: 'center',
+            minWidth: '320px',
+            border: '1px solid rgba(255,255,255,0.2)',
+            position: 'relative',
+            animation: showSuccessNotification ? 'fadeIn 0.3s ease-out, fadeOut 0.3s ease-in 2.7s' : 'none'
+          }}>
+            {/* V Logo with spinning arc effect */}
+            <div style={{
+              width: '120px',
+              height: '120px',
+              margin: '0 auto 20px',
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {/* Spinning arc */}
+              <svg
+                width="120"
+                height="120"
+                viewBox="0 0 120 120"
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  animation: 'spin 2s linear infinite'
+                }}
+              >
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="52"
+                  fill="none"
+                  stroke="url(#arcGradient)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray="140 180"
+                  filter="drop-shadow(0 0 8px rgba(255,255,255,0.8))"
+                />
+                <defs>
+                  <linearGradient id="arcGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 0.2 }} />
+                    <stop offset="50%" style={{ stopColor: '#ffffff', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: '#ffffff', stopOpacity: 0.2 }} />
+                  </linearGradient>
+                </defs>
+              </svg>
+              
+              {/* V Logo */}
+              <svg
+                width="120"
+                height="120"
+                viewBox="0 0 120 120"
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 1,
+                  filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))'
+                }}
+              >
+                <text
+                  x="60"
+                  y="75"
+                  fontSize="80"
+                  fontWeight="900"
+                  fontFamily="Arial, sans-serif"
+                  fill="url(#vGradient)"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                >
+                  V
+                </text>
+                <defs>
+                  <linearGradient id="vGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: '#a0a0a0', stopOpacity: 1 }} />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+
+            {/* Success message */}
+            <p style={{
+              color: '#ffffff',
+              fontSize: '16px',
+              fontWeight: '600',
+              margin: '0',
+              textShadow: '0 2px 10px rgba(255,255,255,0.3)'
+            }}>
+              {successMessage}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Vcreate AI Modal */}
+      {showVcreateModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          zIndex: 1050,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '700px',
+            maxHeight: '85vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }} onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%)',
+              padding: '24px',
+              color: 'white',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 4px 20px rgba(255,255,255,0.1)'
+            }}>
+              {/* Shine effect */}
+              <div style={{
+                position: 'absolute',
+                top: '-50%',
+                left: '-50%',
+                width: '200%',
+                height: '200%',
+                background: 'linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent)',
+                animation: 'shine 3s infinite',
+                pointerEvents: 'none'
+              }} />
+              <style>{`
+                @keyframes shine {
+                  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+                  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+                }
+              `}</style>
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h4 className="mb-1" style={{ fontWeight: '700' }}>Vcreate AI Assistant</h4>
+                  <p className="mb-0" style={{ opacity: 0.9, fontSize: '14px' }}>Let AI design your perfect profile</p>
+                </div>
+                <button 
+                  onClick={() => setShowVcreateModal(false)}
+                  style={{
+                    border: 'none',
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+                  onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+              {/* AI Prompt Section */}
+              <div className="mb-4">
+                <label className="form-label fw-semibold mb-2">
+                  Describe your style
+                </label>
+                <textarea
+                  className="form-control"
+                  rows="3"
+                  placeholder="ตัวอย่าง: ขอแบบเท่ๆ คูลๆ โทนสีดำ | อยากได้น่ารักๆ โทนชมพู | ให้มันดูมืออาชีพ สีน้ำเงิน"
+                  value={vcreatePrompt}
+                  onChange={(e) => setVcreatePrompt(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.stopPropagation()}
+                  style={{
+                    borderRadius: '12px',
+                    border: '2px solid #e5e7eb',
+                    padding: '12px',
+                    fontSize: '14px',
+                    resize: 'none'
+                  }}
+                />
+                <button 
+                  className="btn btn-primary mt-2 w-100"
+                  style={{
+                    borderRadius: '12px',
+                    padding: '12px',
+                    fontWeight: '600',
+                    background: 'linear-gradient(135deg, #000000 0%, #2a2a2a 100%)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    boxShadow: '0 0 20px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.1)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.boxShadow = '0 0 30px rgba(255,255,255,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
+                    e.target.style.transform = 'translateY(-2px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.boxShadow = '0 0 20px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.1)'
+                    e.target.style.transform = 'translateY(0)'
+                  }}
+                  onClick={() => {
+                    generateFromPrompt()
+                  }}
+                >
+                  Generate with AI
+                </button>
+              </div>
+
+              <div className="text-center my-3">
+                <span className="text-muted small">── OR CHOOSE A PRESET ──</span>
+              </div>
+
+              {/* Style Presets */}
+              <div className="row g-3">
+                {Object.entries(stylePresets).map(([key, preset]) => (
+                  <div key={key} className="col-md-6">
+                    <button
+                      className={`w-100 p-3 ${selectedPreset === key ? 'border-primary' : ''}`}
+                      style={{
+                        border: selectedPreset === key ? '3px solid #667eea' : '2px solid #e5e7eb',
+                        borderRadius: '16px',
+                        background: selectedPreset === key ? '#f0f4ff' : 'white',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        textAlign: 'left'
+                      }}
+                      onClick={() => applyPreset(key)}
+                      onMouseEnter={(e) => {
+                        if (selectedPreset !== key) {
+                          e.currentTarget.style.background = '#f9fafb'
+                          e.currentTarget.style.borderColor = '#d1d5db'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedPreset !== key) {
+                          e.currentTarget.style.background = 'white'
+                          e.currentTarget.style.borderColor = '#e5e7eb'
+                        }
+                      }}
+                    >
+                      <div className="d-flex align-items-start gap-3">
+                        <div style={{ fontSize: '32px' }}>{preset.icon}</div>
+                        <div>
+                          <div className="fw-semibold mb-1">{preset.name}</div>
+                          <div className="text-muted small">{preset.description}</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Font Modal */}
       {showFontModal && (
         <div style={{
@@ -233,6 +946,34 @@ export default function VtreeCustomize({
       }}>
         <div className="container-fluid px-4">
           <div className="d-flex justify-content-between align-items-center" style={{ position: 'relative' }}>
+            {/* Left: Vcreate AI Button */}
+            <button
+              onClick={() => setShowVcreateModal(true)}
+              className="btn btn-primary d-flex align-items-center gap-2"
+              style={{
+                background: 'linear-gradient(135deg, #000000 0%, #2a2a2a 50%, #000000 100%)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '12px',
+                padding: '10px 20px',
+                fontWeight: '600',
+                boxShadow: '0 0 20px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1)',
+                transition: 'all 0.3s ease',
+                zIndex: 10,
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 0 30px rgba(255,255,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 0 20px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
+              }}
+            >
+              <span>Vcreate</span>
+            </button>
+
             {/* Center: Tab Navigation */}
             <div className="d-flex gap-2 overflow-auto" style={{
               flexWrap: 'nowrap',
