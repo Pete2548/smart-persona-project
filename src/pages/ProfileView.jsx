@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom'
 import { getAllProfiles } from '../services/profileManager'
+import { getProfessionalProfileByUsername } from '../services/professionalProfileManager'
 import { getCurrentUser } from '../services/auth'
 import { recordProfileView } from '../services/profileAnalytics'
 import SectionRenderer from '../components/SectionRenderer'
@@ -134,6 +135,15 @@ const ProfileView = () => {
       
       if (targetProfile) {
         recordProfileView(targetProfile.id, viewerUsername)
+      }
+
+      try {
+        const professionalProfile = getProfessionalProfileByUsername(profile.username)
+        if (professionalProfile) {
+          recordProfileView(professionalProfile.id, viewerUsername)
+        }
+      } catch (err) {
+        console.warn('Failed to record professional profile view', err)
       }
     }
   }, [profile])

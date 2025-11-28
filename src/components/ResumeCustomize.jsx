@@ -1,9 +1,26 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+import { generateCvPdf } from '../utils/exportCv'
 
 function ResumeCustomize({ profile, onUpdate }) {
   const navigate = useNavigate()
+  const themeMeta = profile?.themeMeta
+  const themeTokens = profile?.themeTokens || {}
+  const themeSourceLabel = themeMeta
+    ? (
+        {
+          builtin: 'Official Library',
+          community: 'Community Gallery',
+          saved: 'My Themes'
+        }[themeMeta.source] || 'Custom Theme'
+      )
+    : ''
+  const onUpdateRef = useRef(onUpdate)
+
+  useEffect(() => {
+    onUpdateRef.current = onUpdate
+  }, [onUpdate])
 
   // AI Generator Modal State
   const [showAIModal, setShowAIModal] = useState(false)
@@ -37,8 +54,8 @@ function ResumeCustomize({ profile, onUpdate }) {
     medium: profile?.medium || '',
     website: profile?.website || '',
     profilePhoto: profile?.profilePhoto || '',
-    headerBgColor: profile?.headerBgColor || '#2c5f7c',
-    titleColor: profile?.titleColor || '#f9a825',
+    headerBgColor: profile?.headerBgColor || themeTokens.sectionBg || themeTokens.blockColor || '#2c5f7c',
+    titleColor: profile?.titleColor || themeTokens.nameColor || themeTokens.headingColor || '#f9a825',
     
     // Summary
     summary: profile?.summary || '',
@@ -66,19 +83,97 @@ function ResumeCustomize({ profile, onUpdate }) {
     colorScheme: profile?.colorScheme || 'brown-beige',
     layout: profile?.layout || 'single-column',
     fontSize: profile?.fontSize || 'medium',
-    fontFamily: profile?.fontFamily || 'Inter',
+    fontFamily: profile?.fontFamily || themeTokens.fontFamily || 'Inter',
     spacing: profile?.spacing || 'normal',
     
     // Advanced Styling
-    leftColumnBg: profile?.leftColumnBg || '#2c5f7c',
-    rightColumnBg: profile?.rightColumnBg || '#f5f5f5',
-    accentColor: profile?.accentColor || '#f9a825',
+    leftColumnBg: profile?.leftColumnBg || themeTokens.blockColor || '#2c5f7c',
+    rightColumnBg: profile?.rightColumnBg || themeTokens.bgColor || '#f5f5f5',
+    accentColor: profile?.accentColor || themeTokens.headingColor || themeTokens.nameColor || '#f9a825',
     showSectionIcons: profile?.showSectionIcons !== undefined ? profile.showSectionIcons : true,
     sectionIconStyle: profile?.sectionIconStyle || 'filled'
   })
 
+  useEffect(() => {
+    if (!themeMeta?.id) return
+    const hasTokens = Object.keys(themeTokens).length > 0
+    if (!hasTokens) return
+    setResumeData(prev => {
+      const themedValues = {
+        headerBgColor: themeTokens.sectionBg || themeTokens.blockColor || prev.headerBgColor,
+        leftColumnBg: themeTokens.blockColor || themeTokens.bgColor || prev.leftColumnBg,
+        rightColumnBg: themeTokens.bgColor || prev.rightColumnBg,
+        accentColor: themeTokens.headingColor || themeTokens.nameColor || themeTokens.accentColor || prev.accentColor,
+        titleColor: themeTokens.nameColor || themeTokens.headingColor || prev.titleColor,
+        fontFamily: themeTokens.fontFamily || prev.fontFamily,
+        colorScheme: 'custom-theme'
+      }
+      const nextState = { ...prev, ...themedValues }
+      onUpdateRef.current?.(themedValues)
+      return nextState
+    })
+  }, [themeMeta?.id, themeTokens])
+
   // Active Tab State
   const [activeTab, setActiveTab] = useState('ai-generator')
+
+  const buildExportPayload = () => {
+    const skills = (resumeData.skills || [])
+      .map((skill) => (typeof skill === 'string' ? skill : skill.name))
+      .filter(Boolean)
+    const experience = (resumeData.experiences || []).map((exp) => {
+      const [periodStart = '', periodEnd = ''] = (exp.period || '')
+        .split('-')
+        .map((part) => part.trim())
+      return {
+        position: exp.position || '',
+        company: exp.company || '',
+        location: exp.location || '',
+        startDate: exp.startDate || periodStart,
+        endDate: exp.current ? '' : (exp.endDate || periodEnd),
+        description: exp.description || exp.summary || '',
+        bullets: Array.isArray(exp.bulletPoints) ? exp.bulletPoints.filter(Boolean) : []
+      }
+    })
+    const education = (resumeData.education || []).map((edu) => ({
+      school: edu.school || '',
+      degree: edu.degree || '',
+      location: edu.location || '',
+      startDate: edu.startDate || '',
+      endDate: edu.graduationDate || edu.endDate || ''
+    }))
+
+    return {
+      username: profile?.username || '',
+      displayName: resumeData.fullName || profile?.fullName || profile?.displayName || 'Resume',
+      jobTitle: resumeData.title || profile?.title || '',
+      description: resumeData.summary || '',
+      skills,
+      experience,
+      education,
+      contact: {
+        email: resumeData.email || profile?.email || '',
+        phone: resumeData.phone || profile?.phone || '',
+        address: resumeData.location || profile?.location || '',
+        links: profile?.contact?.links || []
+      }
+    }
+  }
+
+  const handleDownloadResumePdf = async () => {
+    try {
+      const payload = buildExportPayload()
+      const slug = (payload.displayName || payload.username || 'resume')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+      await generateCvPdf(payload, { filename: `${slug || 'resume'}-cv.pdf` })
+    } catch (error) {
+      console.error('Failed to export resume PDF', error)
+      window.alert('ไม่สามารถดาวน์โหลด Resume ได้ โปรดลองอีกครั้ง')
+    }
+  }
 
   // Template options
   const templates = [
@@ -1289,7 +1384,11 @@ function ResumeCustomize({ profile, onUpdate }) {
                   <i className="bi bi-clock-history me-1"></i>
                   Auto-saved
                 </small>
-                <button className="btn btn-outline-primary btn-sm" style={{ borderRadius: '8px' }}>
+                <button
+                  className="btn btn-outline-primary btn-sm"
+                  style={{ borderRadius: '8px' }}
+                  onClick={handleDownloadResumePdf}
+                >
                   <i className="bi bi-download me-1"></i> Export PDF
                 </button>
               </div>
@@ -1354,6 +1453,51 @@ function ResumeCustomize({ profile, onUpdate }) {
                   </svg>
                   <span style={{ position: 'relative', zIndex: 1 }}>สร้าง Resume ด้วย AI</span>
                 </button>
+                {themeMeta && (
+                  <div
+                    className="mt-3"
+                    style={{
+                      borderRadius: '14px',
+                      padding: '16px',
+                      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                      color: '#f8fafc',
+                      boxShadow: '0 10px 25px rgba(15,23,42,0.25)'
+                    }}
+                  >
+                    <div className="d-flex justify-content-between align-items-start">
+                      <div>
+                        <div className="text-uppercase small" style={{ letterSpacing: '0.08em', opacity: 0.65 }}>
+                          Active Theme
+                        </div>
+                        <div className="fw-semibold" style={{ fontSize: '16px' }}>{themeMeta.name}</div>
+                        <div className="small" style={{ opacity: 0.7 }}>{themeSourceLabel}</div>
+                        <div className="d-flex gap-2 mt-2">
+                          {[themeTokens.bgColor, themeTokens.blockColor, themeTokens.headingColor]
+                            .filter(Boolean)
+                            .map((color, idx) => (
+                              <span
+                                key={`${color}-${idx}`}
+                                style={{
+                                  width: '18px',
+                                  height: '18px',
+                                  borderRadius: '6px',
+                                  backgroundColor: color,
+                                  border: '1px solid rgba(255,255,255,0.3)'
+                                }}
+                              ></span>
+                            ))}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => navigate('/themes')}
+                        className="btn btn-sm btn-light"
+                        style={{ borderRadius: '8px', fontWeight: 600 }}
+                      >
+                        Change
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Tabs */}
@@ -2310,7 +2454,11 @@ function ResumeCustomize({ profile, onUpdate }) {
               <div className="card-header bg-white border-0 p-4">
                 <div className="d-flex justify-content-between align-items-center">
                   <h5 className="mb-0 fw-bold">Preview</h5>
-                  <button className="btn btn-outline-dark btn-sm" style={{ borderRadius: '8px' }}>
+                  <button
+                    className="btn btn-outline-dark btn-sm"
+                    style={{ borderRadius: '8px' }}
+                    onClick={handleDownloadResumePdf}
+                  >
                     <i className="bi bi-download me-1"></i> Export PDF
                   </button>
                 </div>

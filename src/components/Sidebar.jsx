@@ -92,12 +92,6 @@ function Sidebar() {
               <span className="nav-label">{t('explore_people')}</span>
             </NavLink>
           </li>
-          <li className="nav-item mb-3">
-            <NavLink to="/saved-profiles" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
-              <i className="bi bi-heart fs-4 me-2"></i>
-              <span className="nav-label">{t('saved_profiles')}</span>
-            </NavLink>
-          </li>
           
           <li><hr className="my-3" /></li>
           
@@ -117,6 +111,12 @@ function Sidebar() {
             <NavLink to="/themes" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
               <i className="bi bi-palette fs-4 me-2"></i>
               <span className="nav-label">{t('themes')}</span>
+            </NavLink>
+          </li>
+          <li className="nav-item mb-3">
+            <NavLink to="/saved-profiles" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
+              <i className="bi bi-heart fs-4 me-2"></i>
+              <span className="nav-label">{t('saved_profiles')}</span>
             </NavLink>
           </li>
           <li className="nav-item mb-3">

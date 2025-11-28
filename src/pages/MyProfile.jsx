@@ -1,13 +1,57 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Badge, InputGroup, FormControl, Modal, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../services/auth';
-import { getCurrentUserProfessionalProfile, createProfessionalProfile } from '../services/professionalProfileManager';
+import { 
+  getCurrentUserProfessionalProfile, 
+  createProfessionalProfile, 
+  updateProfessionalProfile,
+  addExperience,
+  addEducation,
+  addSkill,
+  addFeaturedItem,
+  addActivityEntry,
+  deleteExperience,
+  deleteEducation,
+  removeSkill,
+  removeFeaturedItem,
+  removeActivityEntry
+} from '../services/professionalProfileManager';
 import { getProfileAnalytics } from '../services/profileAnalytics';
 import Sidebar from '../components/Sidebar';
 import LoginModal from '../components/LoginModal';
+import { fetchSocialProfile, SOCIAL_PROVIDERS } from '../services/socialSync';
+import { generateAIProfileDraft, AI_TONES, AI_FOCUS_OPTIONS } from '../services/aiAssistant';
 import './myprofile.css';
+
+const APP_LINK_OPTIONS = [
+  { id: 'linkedin', label: 'LinkedIn', icon: 'bi-linkedin', color: '#0a66c2', iconColor: '#ffffff', placeholder: 'https://www.linkedin.com/in/username' },
+  { id: 'facebook', label: 'Facebook', icon: 'bi-facebook', color: '#1778f2', iconColor: '#ffffff', placeholder: 'https://www.facebook.com/username' },
+  { id: 'instagram', label: 'Instagram', icon: 'bi-instagram', color: '#d62976', iconColor: '#ffffff', placeholder: 'https://www.instagram.com/username' },
+  { id: 'tiktok', label: 'TikTok', icon: 'bi-tiktok', color: '#000000', iconColor: '#ffffff', placeholder: 'https://www.tiktok.com/@username' },
+  { id: 'line', label: 'LINE', icon: 'bi-chat-dots-fill', color: '#06c755', iconColor: '#ffffff', placeholder: 'https://line.me/ti/p/your-id' },
+  { id: 'youtube', label: 'YouTube', icon: 'bi-youtube', color: '#ff0000', iconColor: '#ffffff', placeholder: 'https://www.youtube.com/@channel' },
+  { id: 'telegram', label: 'Telegram', icon: 'bi-telegram', color: '#229ed9', iconColor: '#ffffff', placeholder: 'https://t.me/username' },
+  { id: 'whatsapp', label: 'WhatsApp', icon: 'bi-whatsapp', color: '#25d366', iconColor: '#ffffff', placeholder: 'https://wa.me/123456789' },
+  { id: 'github', label: 'GitHub', icon: 'bi-github', color: '#24292e', iconColor: '#ffffff', placeholder: 'https://github.com/username' },
+  { id: 'website', label: 'Website', icon: 'bi-globe', color: '#0f172a', iconColor: '#ffffff', placeholder: 'https://your-site.com' },
+  { id: 'custom', label: 'Custom', icon: 'bi-link-45deg', color: '#475569', iconColor: '#ffffff', placeholder: 'https://your-link.com' }
+];
+
+const APP_LINK_MAP = APP_LINK_OPTIONS.reduce((acc, option) => {
+  acc[option.id] = option;
+  return acc;
+}, {});
+
+const normalizeContactLinks = (links = []) => {
+  const timestamp = Date.now();
+  return (links || []).map((link, index) => ({
+    id: link.id || `contact-link-${timestamp}-${index}`,
+    service: link.service || 'custom',
+    url: link.url || ''
+  }));
+};
 
 function MyProfile() {
   const { t } = useTranslation();
@@ -16,6 +60,66 @@ function MyProfile() {
   const [profile, setProfile] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [showFullAbout, setShowFullAbout] = useState(false);
+  const [profileId, setProfileId] = useState(null);
+  const [showSharePanel, setShowSharePanel] = useState(false);
+  const [showAddHighlight, setShowAddHighlight] = useState(false);
+  const [showAddActivity, setShowAddActivity] = useState(false);
+  const [showAddExperience, setShowAddExperience] = useState(false);
+  const [showAddEducation, setShowAddEducation] = useState(false);
+  const [showAddSkill, setShowAddSkill] = useState(false);
+  const [showAddContact, setShowAddContact] = useState(false);
+  const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
+  const highlightInitialState = {
+    title: '',
+    type: 'Project',
+    description: '',
+    url: '',
+    cover: ''
+  };
+  const activityInitialState = {
+    type: 'Update',
+    title: '',
+    description: '',
+    icon: 'bi-activity'
+  };
+  const experienceInitialState = {
+    position: '',
+    company: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+    description: '',
+    bullets: ''
+  };
+  const educationInitialState = {
+    school: '',
+    degree: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+    coursework: ''
+  };
+  const [highlightForm, setHighlightForm] = useState(highlightInitialState);
+  const [activityForm, setActivityForm] = useState(activityInitialState);
+  const [experienceForm, setExperienceForm] = useState(experienceInitialState);
+  const [educationForm, setEducationForm] = useState(educationInitialState);
+  const [skillsInput, setSkillsInput] = useState('');
+  const [contactForm, setContactForm] = useState({ email: '', phone: '', address: '', tagline: '', links: [] });
+  const avatarInputRef = React.useRef(null);
+  const coverInputRef = React.useRef(null);
+  const [showSocialImport, setShowSocialImport] = useState(false);
+  const [socialForm, setSocialForm] = useState({ provider: 'linkedin', handle: '' });
+  const [socialPreview, setSocialPreview] = useState(null);
+  const [socialStatus, setSocialStatus] = useState({ loading: false, error: '' });
+  const [showAIBuild, setShowAIBuild] = useState(false);
+  const [aiForm, setAiForm] = useState({ role: '', tone: 'professional', focus: 'job_search' });
+  const [aiDraft, setAiDraft] = useState(null);
+  const [aiStatus, setAiStatus] = useState({ loading: false, error: '' });
+
+  const setProfileFromRecord = (record) => {
+    if (!record) return;
+    setProfile({ ...record.data, username: record.username });
+  };
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -27,6 +131,12 @@ function MyProfile() {
     loadProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (profile?.username) {
+      setSocialForm(prev => ({ ...prev, handle: prev.handle || profile.username }));
+    }
+  }, [profile?.username]);
 
   const loadProfile = () => {
     const currentUser = getCurrentUser();
@@ -42,7 +152,15 @@ function MyProfile() {
     }
 
     if (professionalProfile) {
-      setProfile(professionalProfile.data);
+      setProfileId(professionalProfile.id);
+      setProfileFromRecord(professionalProfile);
+      setContactForm({
+        email: professionalProfile.data.contact?.email || '',
+        phone: professionalProfile.data.contact?.phone || '',
+        address: professionalProfile.data.contact?.address || '',
+        tagline: professionalProfile.data.tagline || '',
+        links: normalizeContactLinks(professionalProfile.data.contact?.links || [])
+      });
       
       // Get analytics
       const analyticsData = getProfileAnalytics(professionalProfile.id);
@@ -50,9 +168,410 @@ function MyProfile() {
     }
   };
 
+  const handleAvatarClick = () => {
+    if (avatarInputRef.current) avatarInputRef.current.click();
+  };
+
+  const handleCoverClick = () => {
+    if (coverInputRef.current) coverInputRef.current.click();
+  };
+
+  const handleFileChange = async (e, type) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      if (type === 'avatar') {
+        setProfile(prev => ({ ...prev, avatar: dataUrl }));
+        if (profileId) {
+          updateProfessionalProfile(profileId, { avatar: dataUrl });
+        }
+      } else if (type === 'cover') {
+        setProfile(prev => ({ ...prev, bgImage: dataUrl }));
+        if (profileId) {
+          updateProfessionalProfile(profileId, { bgImage: dataUrl });
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSwitchToSignup = () => {
     setShowLoginModal(false);
     navigate('/signup');
+  };
+
+  const handleShareProfile = () => {
+    if (profile?.isPublic === false) {
+      window.alert(t('profile_private_share_warning', { defaultValue: 'Switch your profile to public before sharing.' }));
+      return;
+    }
+    if (typeof window === 'undefined') return;
+
+    const profileUrl = getProfileUrl();
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      navigator
+        .share({
+          title: profile?.displayName || 'My Profile',
+          text: profile?.jobTitle || 'Check out my professional profile',
+          url: profileUrl
+        })
+        .catch(() => {});
+      return;
+    }
+
+    setShowSharePanel(true);
+  };
+
+  const handleVisibilityChange = (makePublic) => {
+    if (!profileId || !profile || isUpdatingVisibility) return;
+    const nextValue = !!makePublic;
+    if ((profile.isPublic !== false) === nextValue) return;
+
+    if (nextValue === false) {
+      const confirmed = window.confirm(t('confirm_private_profile', { defaultValue: 'Hide this profile from public view?' }));
+      if (!confirmed) return;
+    }
+
+    setIsUpdatingVisibility(true);
+    const updated = updateProfessionalProfile(profileId, { isPublic: nextValue });
+    if (updated) {
+      setProfileFromRecord(updated);
+    }
+    setIsUpdatingVisibility(false);
+  };
+
+  const getProfileUrl = () => {
+    if (typeof window === 'undefined') return '';
+    return profile?.username
+      ? `${window.location.origin}/pro/${profile.username}`
+      : window.location.href;
+  };
+
+  const handleSharePlatform = (platform) => {
+    const profileUrl = getProfileUrl();
+    const title = encodeURIComponent(profile?.displayName || 'Professional Profile');
+    const text = encodeURIComponent(profile?.jobTitle || 'Check out this professional profile');
+    const encodedUrl = encodeURIComponent(profileUrl);
+
+    const shareUrl = platform.buildUrl({ url: encodedUrl, rawUrl: profileUrl, title, text });
+    window.open(shareUrl, '_blank', 'noopener');
+  };
+
+  const handleCopyLink = () => {
+    const profileUrl = getProfileUrl();
+    if (!profileUrl) return;
+
+    if (
+      typeof navigator !== 'undefined' &&
+      navigator.clipboard &&
+      typeof navigator.clipboard.writeText === 'function'
+    ) {
+      navigator.clipboard
+        .writeText(profileUrl)
+        .then(() => {
+          window.dispatchEvent(new CustomEvent('profile-link-copied'));
+        })
+        .catch(() => {
+          window.prompt('Copy profile URL', profileUrl);
+        });
+    } else {
+      window.prompt('Copy profile URL', profileUrl);
+    }
+  };
+
+  const handleCloseSocialModal = () => {
+    setShowSocialImport(false);
+    setSocialPreview(null);
+    setSocialStatus({ loading: false, error: '' });
+    setSocialForm(prev => ({ ...prev, handle: profile?.username || '' }));
+  };
+
+  const handleCloseAIModal = () => {
+    setShowAIBuild(false);
+    setAiDraft(null);
+    setAiStatus({ loading: false, error: '' });
+  };
+
+  const uniqueMergeList = (source = [], target = [], keyFn) => {
+    const seen = new Set((target || []).map(item => keyFn(item)));
+    const merged = [...(target || [])];
+    (source || []).forEach(item => {
+      const key = keyFn(item);
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.unshift(item);
+      }
+    });
+    return merged;
+  };
+
+  const handleSocialLookup = async (event) => {
+    if (event) event.preventDefault();
+    if (!socialForm.handle) {
+      setSocialStatus({ loading: false, error: 'กรุณาใส่ชื่อผู้ใช้หรือ URL' });
+      return;
+    }
+    setSocialPreview(null);
+    setSocialStatus({ loading: true, error: '' });
+    try {
+      const data = await fetchSocialProfile(socialForm.provider, socialForm.handle);
+      setSocialPreview(data);
+    } catch (err) {
+      setSocialPreview(null);
+      setSocialStatus({ loading: false, error: err.message || 'ไม่สามารถเชื่อมต่อโซเชียลได้' });
+      return;
+    }
+    setSocialStatus({ loading: false, error: '' });
+  };
+
+  const handleApplySocialPreview = () => {
+    if (!profileId || !socialPreview) return;
+    const mergedExperience = uniqueMergeList(socialPreview.experience, profile.experience, (item = {}) => `${item.company}-${item.position}-${item.startDate}`);
+    const mergedEducation = uniqueMergeList(socialPreview.education, profile.education, (item = {}) => `${item.school}-${item.degree}`);
+    const mergedSkills = Array.from(new Set([...(profile.skills || []), ...(socialPreview.skills || [])]));
+    const contactLinksFromSocial = (socialPreview.contact?.links || []).filter(link => link.url);
+    const mergedLinks = uniqueMergeList(contactLinksFromSocial, profile.contact?.links || [], (link) => `${link.service}-${link.url}`);
+    const updates = {
+      displayName: socialPreview.displayName || profile.displayName,
+      jobTitle: socialPreview.jobTitle || profile.jobTitle,
+      tagline: socialPreview.tagline || profile.tagline,
+      description: socialPreview.summary || profile.description,
+      experience: mergedExperience,
+      education: mergedEducation,
+      skills: mergedSkills,
+      contact: {
+        email: socialPreview.contact?.email || profile.contact?.email || '',
+        phone: socialPreview.contact?.phone || profile.contact?.phone || '',
+        address: socialPreview.contact?.address || profile.contact?.address || '',
+        links: mergedLinks
+      }
+    };
+    const updated = updateProfessionalProfile(profileId, updates);
+    if (updated) {
+      setProfileFromRecord(updated);
+      setContactForm({
+        email: updates.contact.email,
+        phone: updates.contact.phone,
+        address: updates.contact.address,
+        tagline: updates.tagline || profile.tagline || '',
+        links: normalizeContactLinks(updates.contact.links)
+      });
+      setSocialPreview(null);
+      setSocialStatus({ loading: false, error: '' });
+      setShowSocialImport(false);
+    }
+  };
+
+  const handleGenerateAIDraft = async (event) => {
+    if (event) event.preventDefault();
+    if (!aiForm.role) {
+      setAiStatus({ loading: false, error: 'ระบุตำแหน่งหรือบทบาทก่อน' });
+      return;
+    }
+    setAiDraft(null);
+    setAiStatus({ loading: true, error: '' });
+    try {
+      const draft = await generateAIProfileDraft({
+        ...aiForm,
+        existingSkills: profile?.skills || [],
+        location: profile?.contact?.address || '',
+        username: profile?.username || ''
+      });
+      setAiDraft(draft);
+      setAiStatus({ loading: false, error: '' });
+    } catch (err) {
+      setAiStatus({ loading: false, error: err.message || 'สร้างข้อมูลด้วย AI ไม่สำเร็จ' });
+    }
+  };
+
+  const handleApplyAIDraft = () => {
+    if (!profileId || !aiDraft) return;
+    const mergedSkills = Array.from(new Set([...(aiDraft.skills || []), ...(profile.skills || [])]));
+    const mergedExperience = uniqueMergeList(aiDraft.experience, profile.experience, (item = {}) => `${item.company}-${item.position}-${item.startDate}`);
+    const mergedHighlights = uniqueMergeList(aiDraft.featuredItems, profile.featuredItems || profile.featured || [], (item = {}) => `${item.title}-${item.url}`);
+    const updates = {
+      displayName: aiDraft.displayName || profile.displayName,
+      jobTitle: aiDraft.jobTitle || profile.jobTitle,
+      tagline: aiDraft.tagline || profile.tagline,
+      description: aiDraft.summary || profile.description,
+      skills: mergedSkills,
+      experience: mergedExperience,
+      featuredItems: mergedHighlights,
+      recentActivity: uniqueMergeList(aiDraft.recentActivity, profile.recentActivity || [], (item = {}) => `${item.title}-${item.timestamp}`)
+    };
+    const updated = updateProfessionalProfile(profileId, updates);
+    if (updated) {
+      setProfileFromRecord(updated);
+      setAiDraft(null);
+      setAiStatus({ loading: false, error: '' });
+      setShowAIBuild(false);
+    }
+  };
+
+  const handleHighlightSubmit = (event) => {
+    event.preventDefault();
+    if (!profileId) return;
+    const updated = addFeaturedItem(profileId, highlightForm);
+    if (updated) {
+      setProfileFromRecord(updated);
+      setHighlightForm(highlightInitialState);
+      setShowAddHighlight(false);
+    }
+  };
+
+  const handleActivitySubmit = (event) => {
+    event.preventDefault();
+    if (!profileId) return;
+    const updated = addActivityEntry(profileId, activityForm);
+    if (updated) {
+      setProfileFromRecord(updated);
+      setActivityForm(activityInitialState);
+      setShowAddActivity(false);
+    }
+  };
+
+  const handleExperienceSubmit = (event) => {
+    event.preventDefault();
+    if (!profileId) return;
+    const payload = {
+      ...experienceForm,
+      bullets: experienceForm.bullets
+        ? experienceForm.bullets.split('\n').map(item => item.trim()).filter(Boolean)
+        : []
+    };
+    const updated = addExperience(profileId, payload);
+    if (updated) {
+      setProfileFromRecord(updated);
+      setExperienceForm(experienceInitialState);
+      setShowAddExperience(false);
+    }
+  };
+
+  const handleEducationSubmit = (event) => {
+    event.preventDefault();
+    if (!profileId) return;
+    const updated = addEducation(profileId, educationForm);
+    if (updated) {
+      setProfileFromRecord(updated);
+      setEducationForm(educationInitialState);
+      setShowAddEducation(false);
+    }
+  };
+
+  const handleSkillSubmit = (event) => {
+    event.preventDefault();
+    if (!profileId || !skillsInput.trim()) return;
+    const entries = skillsInput
+      .split(/[,\n]/)
+      .map(skill => skill.trim())
+      .filter(Boolean);
+
+    let updatedProfile = null;
+    entries.forEach(skill => {
+      const result = addSkill(profileId, skill);
+      if (result) {
+        updatedProfile = result;
+      }
+    });
+
+    if (updatedProfile) {
+      setProfileFromRecord(updatedProfile);
+      setSkillsInput('');
+      setShowAddSkill(false);
+    }
+  };
+
+  const handleDeleteHighlight = (itemId, fallbackIndex) => {
+    if (!profileId) return;
+    if (typeof window !== 'undefined' && !window.confirm(t('confirm_delete_highlight', { defaultValue: 'Remove this highlight?' }))) return;
+    let updated = itemId ? removeFeaturedItem(profileId, itemId) : null;
+    if (!updated) {
+      const nextItems = (profile.featuredItems || []).filter((_, idx) => idx !== fallbackIndex);
+      updated = updateProfessionalProfile(profileId, { featuredItems: nextItems });
+    }
+    if (updated) {
+      setProfileFromRecord(updated);
+    }
+  };
+
+  const handleDeleteActivity = (entryId, fallbackIndex) => {
+    if (!profileId) return;
+    if (typeof window !== 'undefined' && !window.confirm(t('confirm_delete_activity', { defaultValue: 'Remove this activity entry?' }))) return;
+    let updated = entryId ? removeActivityEntry(profileId, entryId) : null;
+    if (!updated) {
+      const nextItems = (profile.recentActivity || []).filter((_, idx) => idx !== fallbackIndex);
+      updated = updateProfessionalProfile(profileId, { recentActivity: nextItems });
+    }
+    if (updated) {
+      setProfileFromRecord(updated);
+    }
+  };
+
+  const handleDeleteExperience = (expId, fallbackIndex) => {
+    if (!profileId) return;
+    if (typeof window !== 'undefined' && !window.confirm(t('confirm_delete_experience', { defaultValue: 'Remove this experience?' }))) return;
+    let updated = expId ? deleteExperience(profileId, expId) : null;
+    if (!updated) {
+      const nextItems = (profile.experience || []).filter((_, idx) => idx !== fallbackIndex);
+      updated = updateProfessionalProfile(profileId, { experience: nextItems });
+    }
+    if (updated) {
+      setProfileFromRecord(updated);
+    }
+  };
+
+  const handleDeleteEducation = (eduId, fallbackIndex) => {
+    if (!profileId) return;
+    if (typeof window !== 'undefined' && !window.confirm(t('confirm_delete_education', { defaultValue: 'Remove this education entry?' }))) return;
+    let updated = eduId ? deleteEducation(profileId, eduId) : null;
+    if (!updated) {
+      const nextItems = (profile.education || []).filter((_, idx) => idx !== fallbackIndex);
+      updated = updateProfessionalProfile(profileId, { education: nextItems });
+    }
+    if (updated) {
+      setProfileFromRecord(updated);
+    }
+  };
+
+  const handleDeleteSkill = (skill) => {
+    if (!profileId) return;
+    const updated = removeSkill(profileId, skill);
+    if (updated) {
+      setProfileFromRecord(updated);
+    }
+  };
+
+  const handleAddContactLink = () => {
+    setContactForm(prev => ({
+      ...prev,
+      links: [
+        ...prev.links,
+        {
+          id: `contact-link-${Date.now()}`,
+          service: APP_LINK_OPTIONS[0]?.id || 'custom',
+          url: ''
+        }
+      ]
+    }));
+  };
+
+  const handleContactLinkChange = (linkId, field, value) => {
+    setContactForm(prev => ({
+      ...prev,
+      links: prev.links.map(link =>
+        link.id === linkId ? { ...link, [field]: value } : link
+      )
+    }));
+  };
+
+  const handleRemoveContactLink = (linkId) => {
+    setContactForm(prev => ({
+      ...prev,
+      links: prev.links.filter(link => link.id !== linkId)
+    }));
   };
 
   if (!profile) {
@@ -80,52 +599,153 @@ function MyProfile() {
   const experience = profile.experience || [];
   const education = profile.education || [];
   const skills = profile.skills || [];
+  const featuredItems = profile.featuredItems || profile.featured || [];
+  const recentActivity = profile.recentActivity || profile.activity || [];
+  const contactLinks = (profile.contact?.links || [])
+    .map(link => ({
+      ...link,
+      url: link.url?.trim()
+    }))
+    .filter(link => Boolean(link.url));
+  const primaryLocation = profile.contact?.address || profile.location || '';
+  const vheartLikes = profile.vheartLikes ?? profile.followers ?? 0;
+  const vheartCount = (analytics?.uniqueViewers || 0) + vheartLikes;
+  const selectedProvider = SOCIAL_PROVIDERS.find(item => item.id === socialForm.provider) || SOCIAL_PROVIDERS[0];
+
+  const sharePlatforms = [
+    {
+      id: 'linkedin',
+      label: 'LinkedIn',
+      icon: 'bi-linkedin',
+      color: '#0a66c2',
+      buildUrl: ({ url }) => `https://www.linkedin.com/sharing/share-offsite/?url=${url}`
+    },
+    {
+      id: 'facebook',
+      label: 'Facebook',
+      icon: 'bi-facebook',
+      color: '#1778f2',
+      buildUrl: ({ url }) => `https://www.facebook.com/sharer/sharer.php?u=${url}`
+    },
+    {
+      id: 'twitter',
+      label: 'X / Twitter',
+      icon: 'bi-twitter-x',
+      color: '#000000',
+      buildUrl: ({ url, text }) => `https://twitter.com/intent/tweet?url=${url}&text=${text}`
+    },
+    {
+      id: 'whatsapp',
+      label: 'WhatsApp',
+      icon: 'bi-whatsapp',
+      color: '#25d366',
+      buildUrl: ({ rawUrl, text }) => `https://api.whatsapp.com/send?text=${text}%20${encodeURIComponent(rawUrl)}`
+    },
+    {
+      id: 'email',
+      label: 'Email',
+      icon: 'bi-envelope-fill',
+      color: '#d44638',
+      buildUrl: ({ rawUrl, title }) => `mailto:?subject=${title}&body=${encodeURIComponent('Check out my profile: ' + rawUrl)}`
+    }
+  ];
 
   return (
     <div className="dashboard-shell p-4">
       <div className="dashboard-card d-flex">
         <Sidebar />
 
-        <main className="dashboard-main p-4">
-          <Container className="linkedin-profile">
+        <main className="dashboard-main p-4 d-flex justify-content-center">
+          <Container className="linkedin-profile" style={{ maxWidth: '1200px', width: '100%' }}>
             {/* Header Card */}
             <Card className="profile-header-card border-0 shadow-sm mb-3">
               {/* Cover Photo */}
               <div 
-                className="cover-photo"
+                className="cover-photo position-relative"
                 style={{
                   height: '200px',
                   background: profile.bgColor || profile.bgImage 
                     ? `url(${profile.bgImage}) center/cover` 
-                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  backgroundColor: profile.bgColor || '#667eea'
+                    : 'linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)',
+                  backgroundColor: profile.bgColor || '#f43f5e',
+                  cursor: 'pointer'
                 }}
-              />
+                onClick={handleCoverClick}
+              >
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => handleFileChange(e, 'cover')}
+                />
+                <Button 
+                  variant="light" 
+                  size="sm"
+                  className="position-absolute"
+                  style={{ 
+                    top: '10px', 
+                    right: '10px',
+                    borderRadius: '8px'
+                  }}
+                >
+                  <i className="bi bi-camera me-1"></i>
+                  เพิ่มรูปภาพหน้าปก
+                </Button>
+              </div>
 
               <Card.Body className="profile-header-body">
-                <div className="d-flex align-items-start">
+                <div className="d-flex flex-column align-items-center text-center">
                   {/* Profile Photo */}
-                  <div className="profile-photo-container">
+                  <div 
+                    className="profile-photo-container position-relative"
+                    style={{ cursor: 'pointer' }}
+                    onClick={handleAvatarClick}
+                  >
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleFileChange(e, 'avatar')}
+                    />
                     <img
                       src={profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.displayName || 'User')}&background=0D47A1&color=fff&size=200`}
                       alt={profile.displayName}
                       className="profile-photo"
                     />
+                    <div 
+                      className="position-absolute bg-white rounded-circle d-flex align-items-center justify-content-center"
+                      style={{
+                        bottom: '5px',
+                        right: '5px',
+                        width: '40px',
+                        height: '40px',
+                        border: '2px solid #fff',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                      }}
+                    >
+                      <i className="bi bi-camera-fill" style={{ fontSize: '18px', color: '#666' }}></i>
+                    </div>
                   </div>
 
                   {/* Profile Info */}
-                  <div className="flex-grow-1 ms-3">
+                  <div className="mt-3">
                     <h2 className="profile-name mb-1">{profile.displayName || 'Your Name'}</h2>
                     
                     {profile.jobTitle && (
                       <p className="profile-headline mb-2">{profile.jobTitle}</p>
                     )}
 
+                    {profile.tagline && (
+                      <p className="profile-tagline text-muted mb-2">{profile.tagline}</p>
+                    )}
+
                     <div className="profile-meta text-muted small">
-                      {profile.location && (
+                      {primaryLocation && (
                         <span className="me-3">
                           <i className="bi bi-geo-alt me-1"></i>
-                          {profile.location}
+                          {primaryLocation}
                         </span>
                       )}
                       {analytics && (
@@ -142,29 +762,210 @@ function MyProfile() {
                       )}
                     </div>
 
+                    {/* Visibility Control */}
+                    <div className="profile-visibility-panel mt-3">
+                      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div>
+                          <small className="text-muted text-uppercase fw-semibold">{t('profile_visibility', { defaultValue: 'Profile visibility' })}</small>
+                          <div className="d-flex align-items-center gap-2 mt-1">
+                            <Badge bg={(profile?.isPublic === false) ? 'secondary' : 'success'}>{(profile?.isPublic === false) ? t('private', { defaultValue: 'Private' }) : t('public', { defaultValue: 'Public' })}</Badge>
+                            <small className="text-muted">
+                              {(profile?.isPublic === false)
+                                ? t('profile_private_note', { defaultValue: 'Only you can view this profile.' })
+                                : t('profile_public_note', { defaultValue: 'Anyone with the link can view.' })}
+                            </small>
+                          </div>
+                        </div>
+                        <div className="visibility-icon-toggle" role="group" aria-label={t('profile_visibility', { defaultValue: 'Profile visibility' })}>
+                          <button
+                            type="button"
+                            className={`visibility-toggle-btn ${profile?.isPublic === false ? '' : 'active'}`}
+                            title={t('make_public', { defaultValue: 'Make profile public' })}
+                            aria-pressed={profile?.isPublic !== false}
+                            disabled={isUpdatingVisibility || profile?.isPublic !== false}
+                            onClick={() => handleVisibilityChange(true)}
+                          >
+                            <i className="bi bi-globe"></i>
+                          </button>
+                          <button
+                            type="button"
+                            className={`visibility-toggle-btn ${profile?.isPublic === false ? 'active' : ''}`}
+                            title={t('make_private', { defaultValue: 'Hide profile (private)' })}
+                            aria-pressed={profile?.isPublic === false}
+                            disabled={isUpdatingVisibility || profile?.isPublic === false}
+                            onClick={() => handleVisibilityChange(false)}
+                          >
+                            <i className="bi bi-lock-fill"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Action Buttons */}
-                    <div className="mt-3 d-flex gap-2">
+                    <div className="profile-action-bar mt-3">
                       <Button 
-                        variant="primary" 
+                        variant="outline-primary" 
                         size="sm"
-                        onClick={() => navigate('/edit-professional-profile')}
+                        onClick={() => navigate('/links')}
                       >
-                        <i className="bi bi-pencil me-1"></i>
-                        {t('edit_profile')}
+                        <i className="bi bi-chat-dots me-1"></i>
+                        {t('message', { defaultValue: 'Message' })}
                       </Button>
                       <Button 
                         variant="outline-secondary" 
                         size="sm"
-                        onClick={() => window.open(`/u/${profile.username}`, '_blank')}
+                        onClick={() => profile?.isPublic === false ? null : window.open(`/pro/${profile.username}`, '_blank')}
+                        disabled={profile?.isPublic === false}
                       >
                         <i className="bi bi-eye me-1"></i>
-                        {t('view_public_profile')}
+                        {t('view_public_profile', { defaultValue: 'View Public Profile' })}
                       </Button>
-                      <Button variant="outline-secondary" size="sm">
+                      <Button 
+                        variant="outline-secondary" 
+                        size="sm"
+                        onClick={handleShareProfile}
+                        disabled={profile?.isPublic === false}
+                      >
                         <i className="bi bi-share me-1"></i>
-                        {t('share')}
+                        {t('share', { defaultValue: 'Share' })}
+                      </Button>
+                      <Button 
+                        variant="outline-secondary" 
+                        size="sm"
+                        onClick={() => setShowAddContact(true)}
+                      >
+                        <i className="bi bi-person-lines-fill me-1"></i>
+                        {t('add_contact', { defaultValue: 'Add contact' })}
                       </Button>
                     </div>
+
+                    <div className="profile-smart-tools mt-3">
+                      <div className="smart-tools-header">
+                        <div>
+                          <small className="text-muted text-uppercase fw-semibold">Smart assistants</small>
+                          <h6 className="mb-0">Automate profile updates & exports</h6>
+                        </div>
+                        <Badge bg="light" text="dark">Beta</Badge>
+                      </div>
+                      <div className="smart-tools-grid">
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="smart-tool-btn"
+                          onClick={() => setShowSocialImport(true)}
+                        >
+                          <i className="bi bi-cloud-arrow-down me-1"></i>
+                          Import from social
+                        </Button>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="smart-tool-btn"
+                          onClick={() => setShowAIBuild(true)}
+                        >
+                          <i className="bi bi-stars me-1"></i>
+                          AI Draft Builder
+                        </Button>
+                      </div>
+                      <small className="smart-tools-caption">
+                        Use these assistants to sync profile data instantly.
+                      </small>
+                    </div>
+
+                    <div className="profile-vheart mt-3">
+                      <div className="vheart-icon" aria-label="Vheart">
+                        <i className="bi bi-heart-fill vheart-heart" aria-hidden="true"></i>
+                        <span className="vheart-count">{vheartCount}</span>
+                      </div>
+                      <span className="vheart-label">Vheart</span>
+                    </div>
+
+                    {(profile.contact?.email || profile.contact?.phone || contactLinks.length > 0) && (
+                      <div className="profile-contact-grid mt-3">
+                        {profile.contact?.email && (
+                          <div className="contact-field">
+                            <small className="text-muted">Email</small>
+                            <div className="contact-value">{profile.contact.email}</div>
+                          </div>
+                        )}
+                        {profile.contact?.phone && (
+                          <div className="contact-field">
+                            <small className="text-muted">{t('phone', { defaultValue: 'Phone' })}</small>
+                            <div className="contact-value">{profile.contact.phone}</div>
+                          </div>
+                        )}
+                        {contactLinks.length > 0 && (
+                          <div className="contact-field">
+                            <div className="profile-app-links">
+                              {contactLinks.map((link, index) => {
+                                const config = APP_LINK_MAP[link.service] || APP_LINK_MAP.custom;
+                                return (
+                                  <button
+                                    type="button"
+                                    key={link.id || `${config.id}-${index}`}
+                                    className="app-link-pill"
+                                    style={{
+                                      backgroundColor: config.color,
+                                      color: config.iconColor || '#ffffff'
+                                    }}
+                                    onClick={() => window.open(link.url, '_blank', 'noopener')}
+                                    title={config.label}
+                                    aria-label={`${config.label} link`}
+                                  >
+                                    <i className={`bi ${config.icon}`}></i>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {showSharePanel && (
+                      <div className="share-panel shadow-sm mt-3">
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <div>
+                            <h6 className="mb-0">{t('share_profile', { defaultValue: 'Share your profile' })}</h6>
+                            <small className="text-muted">{t('share_profile_helper', { defaultValue: 'Copy your profile link or share directly to your favorite network.' })}</small>
+                          </div>
+                          <Button variant="light" size="sm" onClick={() => setShowSharePanel(false)}>
+                            <i className="bi bi-x"></i>
+                          </Button>
+                        </div>
+
+                        <InputGroup className="share-link-box mb-3">
+                          <FormControl
+                            readOnly
+                            value={getProfileUrl()}
+                            aria-label="Profile share link"
+                          />
+                          <Button variant="outline-secondary" onClick={handleCopyLink}>
+                            <i className="bi bi-clipboard"></i>
+                            <span className="ms-2">{t('copy_link', { defaultValue: 'Copy link' })}</span>
+                          </Button>
+                        </InputGroup>
+
+                        <div className="share-options-grid">
+                          {sharePlatforms.map((platform) => (
+                            <button
+                              key={platform.id}
+                              type="button"
+                              className="share-option"
+                              onClick={() => handleSharePlatform(platform)}
+                            >
+                              <span
+                                className="share-option-icon"
+                                style={{ backgroundColor: platform.color }}
+                              >
+                                <i className={`bi ${platform.icon}`}></i>
+                              </span>
+                              <span className="share-option-label">{platform.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -202,6 +1003,141 @@ function MyProfile() {
               </Card.Body>
             </Card>
 
+            {/* Highlights Section */}
+            <Card className="section-card border-0 shadow-sm mb-3">
+              <Card.Body>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5 className="section-title mb-0">{t('highlights', { defaultValue: 'Highlights' })}</h5>
+                  <Button 
+                    variant="outline-primary" 
+                    size="sm"
+                    onClick={() => setShowAddHighlight(true)}
+                  >
+                    <i className="bi bi-plus-lg me-1"></i>
+                    {t('add_featured', { defaultValue: 'Add Featured' })}
+                  </Button>
+                </div>
+
+                {featuredItems.length === 0 ? (
+                  <div className="empty-state text-center py-4">
+                    <i className="bi bi-bookmark-star display-4 text-muted"></i>
+                    <p className="text-muted mt-2">
+                      {t('no_featured_items', { defaultValue: 'Showcase links, projects, or media to highlight your best work.' })}
+                    </p>
+                    <Button 
+                      variant="primary" 
+                      size="sm"
+                      onClick={() => setShowAddHighlight(true)}
+                    >
+                      {t('add_your_first_featured', { defaultValue: 'Add Your First Highlight' })}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="highlights-grid">
+                    {featuredItems.map((item, index) => (
+                      <div key={item.id || index} className="highlight-card">
+                        <button
+                          type="button"
+                          className="section-card-action"
+                          aria-label={t('delete_highlight', { defaultValue: 'Delete highlight' })}
+                          onClick={() => handleDeleteHighlight(item.id, index)}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                        {item.cover && (
+                          <div 
+                            className="highlight-cover"
+                            style={{ backgroundImage: `url(${item.cover})` }}
+                          />
+                        )}
+                        <div className="highlight-meta">
+                          <div className="highlight-label text-uppercase small text-muted">{item.type || t('featured', { defaultValue: 'Featured' })}</div>
+                          <h6 className="highlight-title mb-1">{item.title || t('untitled', { defaultValue: 'Untitled highlight' })}</h6>
+                          {item.description && (
+                            <p className="text-muted small mb-2">{item.description}</p>
+                          )}
+                          {item.url && (
+                            <Button 
+                              variant="link" 
+                              size="sm"
+                              className="p-0"
+                              onClick={() => window.open(item.url, '_blank')}
+                            >
+                              {t('view', { defaultValue: 'View' })}
+                              <i className="bi bi-box-arrow-up-right ms-1"></i>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
+
+            {/* Activity Section */}
+            <Card className="section-card border-0 shadow-sm mb-3">
+              <Card.Body>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5 className="section-title mb-0">{t('activity', { defaultValue: 'Activity' })}</h5>
+                  <Button 
+                    variant="outline-primary" 
+                    size="sm"
+                    onClick={() => setShowAddActivity(true)}
+                  >
+                    <i className="bi bi-pencil-square me-1"></i>
+                    {t('share_update', { defaultValue: 'Share an update' })}
+                  </Button>
+                </div>
+
+                {recentActivity.length === 0 ? (
+                  <div className="empty-state text-center py-4">
+                    <i className="bi bi-activity display-4 text-muted"></i>
+                    <p className="text-muted mt-2">
+                      {t('no_activity_yet', { defaultValue: 'Post updates, articles, or comments to start building your activity feed.' })}
+                    </p>
+                    <Button 
+                      variant="primary" 
+                      size="sm"
+                      onClick={() => setShowAddActivity(true)}
+                    >
+                      {t('create_first_post', { defaultValue: 'Create your first post' })}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="activity-timeline">
+                    {recentActivity.map((item, index) => (
+                      <div key={item.id || index} className="activity-item position-relative">
+                        <div className="activity-badge">
+                          <i className="bi bi-dot"></i>
+                          {item.type || t('update', { defaultValue: 'Update' })}
+                        </div>
+                        <div className="activity-content">
+                          <div className="d-flex justify-content-between align-items-start">
+                            <h6 className="activity-title mb-1">{item.title || item.summary || t('activity_item', { defaultValue: 'New activity' })}</h6>
+                            {item.timestamp && (
+                              <span className="activity-meta text-muted small">{item.timestamp}</span>
+                            )}
+                          </div>
+                          {item.description && (
+                            <p className="text-muted small mb-0">{item.description}</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="section-card-action"
+                          aria-label={t('delete_activity', { defaultValue: 'Delete activity' })}
+                          onClick={() => handleDeleteActivity(item.id, index)}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
+
             {/* About Section */}
             {profile.description && (
               <Card className="section-card border-0 shadow-sm mb-3">
@@ -233,7 +1169,7 @@ function MyProfile() {
                   <Button 
                     variant="outline-primary" 
                     size="sm"
-                    onClick={() => navigate('/edit-professional-profile')}
+                    onClick={() => setShowAddExperience(true)}
                   >
                     <i className="bi bi-plus-lg me-1"></i>
                     {t('add_experience')}
@@ -247,7 +1183,7 @@ function MyProfile() {
                     <Button 
                       variant="primary" 
                       size="sm"
-                      onClick={() => navigate('/edit-professional-profile')}
+                      onClick={() => setShowAddExperience(true)}
                     >
                       {t('add_your_first_experience')}
                     </Button>
@@ -255,12 +1191,20 @@ function MyProfile() {
                 ) : (
                   <div className="experience-list">
                     {experience.map((exp, index) => (
-                      <div key={index} className="experience-item">
+                      <div key={exp.id || index} className="experience-item">
                         <div className="d-flex gap-3">
                           <div className="experience-icon">
                             <i className="bi bi-building"></i>
                           </div>
-                          <div className="flex-grow-1">
+                          <div className="flex-grow-1 section-item-content">
+                            <button
+                              type="button"
+                              className="section-card-action"
+                              aria-label={t('delete_experience', { defaultValue: 'Delete experience' })}
+                              onClick={() => handleDeleteExperience(exp.id, index)}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
                             <h6 className="experience-position mb-1">{exp.position}</h6>
                             <div className="experience-company mb-1">{exp.company}</div>
                             <div className="experience-meta text-muted small mb-2">
@@ -294,7 +1238,7 @@ function MyProfile() {
                   <Button 
                     variant="outline-primary" 
                     size="sm"
-                    onClick={() => navigate('/edit-professional-profile')}
+                    onClick={() => setShowAddEducation(true)}
                   >
                     <i className="bi bi-plus-lg me-1"></i>
                     {t('add_education')}
@@ -308,7 +1252,7 @@ function MyProfile() {
                     <Button 
                       variant="primary" 
                       size="sm"
-                      onClick={() => navigate('/edit-professional-profile')}
+                      onClick={() => setShowAddEducation(true)}
                     >
                       {t('add_your_first_education')}
                     </Button>
@@ -316,12 +1260,20 @@ function MyProfile() {
                 ) : (
                   <div className="education-list">
                     {education.map((edu, index) => (
-                      <div key={index} className="education-item">
+                      <div key={edu.id || index} className="education-item">
                         <div className="d-flex gap-3">
                           <div className="education-icon">
                             <i className="bi bi-mortarboard"></i>
                           </div>
-                          <div className="flex-grow-1">
+                          <div className="flex-grow-1 section-item-content">
+                            <button
+                              type="button"
+                              className="section-card-action"
+                              aria-label={t('delete_education', { defaultValue: 'Delete education entry' })}
+                              onClick={() => handleDeleteEducation(edu.id, index)}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
                             <h6 className="education-school mb-1">{edu.school}</h6>
                             <div className="education-degree mb-1">{edu.degree}</div>
                             <div className="education-meta text-muted small mb-2">
@@ -350,7 +1302,7 @@ function MyProfile() {
                   <Button 
                     variant="outline-primary" 
                     size="sm"
-                    onClick={() => navigate('/edit-professional-profile')}
+                    onClick={() => setShowAddSkill(true)}
                   >
                     <i className="bi bi-plus-lg me-1"></i>
                     {t('add_skills')}
@@ -364,7 +1316,7 @@ function MyProfile() {
                     <Button 
                       variant="primary" 
                       size="sm"
-                      onClick={() => navigate('/edit-professional-profile')}
+                      onClick={() => setShowAddSkill(true)}
                     >
                       {t('add_your_first_skill')}
                     </Button>
@@ -376,9 +1328,17 @@ function MyProfile() {
                         key={index}
                         bg="light"
                         text="dark"
-                        className="skill-badge"
+                        className="skill-badge closable"
                       >
-                        {skill}
+                        <span>{skill}</span>
+                        <button
+                          type="button"
+                          className="skill-remove"
+                          aria-label={t('delete_skill', { defaultValue: 'Delete skill' })}
+                          onClick={() => handleDeleteSkill(skill)}
+                        >
+                          <i className="bi bi-x"></i>
+                        </button>
                       </Badge>
                     ))}
                   </div>
@@ -388,6 +1348,701 @@ function MyProfile() {
           </Container>
         </main>
       </div>
+
+      {/* Highlight Modal */}
+      <Modal
+        show={showSocialImport}
+        onHide={handleCloseSocialModal}
+        centered
+        dialogClassName="sheet-modal"
+      >
+        <Form onSubmit={handleSocialLookup}>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title>ดึงข้อมูลจากโซเชียล</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Row className="g-3">
+              <Col md={5}>
+                <Form.Label>แพลตฟอร์ม</Form.Label>
+                <Form.Select
+                  value={socialForm.provider}
+                  onChange={(e) => {
+                    setSocialForm(prev => ({ ...prev, provider: e.target.value }));
+                    setSocialStatus({ loading: false, error: '' });
+                    setSocialPreview(null);
+                  }}
+                >
+                  {SOCIAL_PROVIDERS.map(provider => (
+                    <option key={provider.id} value={provider.id}>
+                      {provider.label}
+                    </option>
+                  ))}
+                </Form.Select>
+                <small className="text-muted d-block mt-1">
+                  {selectedProvider?.description}
+                </small>
+              </Col>
+              <Col md={7}>
+                <Form.Label>ชื่อผู้ใช้หรือ URL</Form.Label>
+                <InputGroup>
+                  <FormControl
+                    value={socialForm.handle}
+                    placeholder={selectedProvider?.placeholder || 'profile' }
+                    onChange={(e) => {
+                      setSocialForm(prev => ({ ...prev, handle: e.target.value }));
+                      setSocialStatus({ loading: false, error: '' });
+                    }}
+                  />
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={socialStatus.loading}
+                  >
+                    {socialStatus.loading ? (
+                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    ) : (
+                      <i className="bi bi-search"></i>
+                    )}
+                  </Button>
+                </InputGroup>
+              </Col>
+            </Row>
+
+            {socialStatus.error && (
+              <div className="alert alert-danger mt-3" role="alert">
+                {socialStatus.error}
+              </div>
+            )}
+
+            {socialPreview && (
+              <div className="social-preview-card mt-4">
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h5 className="mb-1">{socialPreview.displayName}</h5>
+                    <p className="mb-1 text-muted">{socialPreview.jobTitle}</p>
+                    <small className="text-muted">{socialPreview.tagline}</small>
+                  </div>
+                  <Badge bg="light" text="dark" className="text-uppercase">
+                    {socialPreview.provider}
+                  </Badge>
+                </div>
+
+                <div className="social-preview-section mt-3">
+                  <strong>สรุป</strong>
+                  <p className="text-muted small mb-0">{socialPreview.summary}</p>
+                </div>
+
+                <div className="social-preview-section mt-3">
+                  <strong>ทักษะ</strong>
+                  <div className="ai-skill-pill-group">
+                    {(socialPreview.skills || []).map((skill, idx) => (
+                      <span key={idx} className="ai-skill-pill">{skill}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="social-preview-grid mt-3">
+                  <div>
+                    <strong>ประสบการณ์ล่าสุด</strong>
+                    <ul className="social-preview-list">
+                      {(socialPreview.experience || []).slice(0, 2).map((exp, idx) => (
+                        <li key={idx}>
+                          <div className="fw-semibold">{exp.position}</div>
+                          <small className="text-muted">{exp.company}</small>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <strong>การศึกษา</strong>
+                    <ul className="social-preview-list">
+                      {(socialPreview.education || []).slice(0, 2).map((edu, idx) => (
+                        <li key={idx}>
+                          <div className="fw-semibold">{edu.school}</div>
+                          <small className="text-muted">{edu.degree}</small>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </Modal.Body>
+          <Modal.Footer className="border-0 d-flex justify-content-between">
+            <Button variant="link" onClick={handleCloseSocialModal}>
+              ยกเลิก
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!socialPreview}
+              onClick={handleApplySocialPreview}
+            >
+              เพิ่มข้อมูลเข้าสู่โปรไฟล์
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      <Modal
+        show={showAIBuild}
+        onHide={handleCloseAIModal}
+        centered
+        dialogClassName="sheet-modal"
+      >
+        <Form onSubmit={handleGenerateAIDraft}>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title>AI Draft Builder</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Row className="g-3">
+              <Col md={6}>
+                <Form.Label>ตำแหน่ง/บทบาท</Form.Label>
+                <Form.Control
+                  value={aiForm.role}
+                  placeholder="เช่น Product Marketing Lead"
+                  onChange={(e) => setAiForm(prev => ({ ...prev, role: e.target.value }))}
+                  required
+                />
+              </Col>
+              <Col md={3}>
+                <Form.Label>โทนเสียง</Form.Label>
+                <Form.Select
+                  value={aiForm.tone}
+                  onChange={(e) => setAiForm(prev => ({ ...prev, tone: e.target.value }))}
+                >
+                  {AI_TONES.map(option => (
+                    <option key={option.id} value={option.id}>{option.label}</option>
+                  ))}
+                </Form.Select>
+              </Col>
+              <Col md={3}>
+                <Form.Label>เป้าหมาย</Form.Label>
+                <Form.Select
+                  value={aiForm.focus}
+                  onChange={(e) => setAiForm(prev => ({ ...prev, focus: e.target.value }))}
+                >
+                  {AI_FOCUS_OPTIONS.map(option => (
+                    <option key={option.id} value={option.id}>{option.label}</option>
+                  ))}
+                </Form.Select>
+              </Col>
+            </Row>
+
+            {aiStatus.error && (
+              <div className="alert alert-danger mt-3" role="alert">
+                {aiStatus.error}
+              </div>
+            )}
+
+            <div className="d-flex justify-content-end mt-3">
+              <Button type="submit" variant="primary" disabled={aiStatus.loading}>
+                {aiStatus.loading ? 'กำลังสร้าง...' : 'สร้างร่างโปรไฟล์'}
+              </Button>
+            </div>
+
+            {aiDraft && (
+              <div className="ai-draft-card mt-4">
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h5 className="mb-1">{aiDraft.displayName}</h5>
+                    <p className="text-muted mb-1">{aiDraft.jobTitle}</p>
+                    <small className="text-muted">{aiDraft.tagline}</small>
+                  </div>
+                  <Badge bg="light" text="dark">AI</Badge>
+                </div>
+
+                <div className="ai-draft-section mt-3">
+                  <strong>สรุป</strong>
+                  <p className="text-muted small mb-0">{aiDraft.summary}</p>
+                </div>
+
+                <div className="ai-draft-section mt-3">
+                  <strong>ทักษะที่แนะนำ</strong>
+                  <div className="ai-skill-pill-group">
+                    {(aiDraft.skills || []).map((skill, idx) => (
+                      <span key={idx} className="ai-skill-pill">{skill}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="ai-draft-section mt-3">
+                  <strong>ประสบการณ์</strong>
+                  <ul className="ai-draft-list">
+                    {(aiDraft.experience || []).map((exp, idx) => (
+                      <li key={idx}>
+                        <span className="fw-semibold">{exp.position}</span>
+                        <small className="text-muted d-block">{exp.company} • {exp.startDate} - {exp.endDate || 'ปัจจุบัน'}</small>
+                        <small className="text-muted">{exp.description}</small>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </Modal.Body>
+          <Modal.Footer className="border-0 d-flex justify-content-between">
+            <Button variant="link" onClick={handleCloseAIModal}>
+              ปิด
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!aiDraft}
+              onClick={handleApplyAIDraft}
+            >
+              ใช้ร่าง AI กับโปรไฟล์
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Highlight Modal */}
+      <Modal
+        show={showAddHighlight}
+        onHide={() => setShowAddHighlight(false)}
+        centered
+        dialogClassName="spotlight-modal"
+      >
+        <Form onSubmit={handleHighlightSubmit}>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title>{t('add_featured', { defaultValue: 'Add Highlight' })}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('title', { defaultValue: 'Title' })}</Form.Label>
+              <Form.Control
+                value={highlightForm.title}
+                onChange={(e) => setHighlightForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder={t('highlight_title_placeholder', { defaultValue: 'e.g. Product launch, keynote, case study' })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('type', { defaultValue: 'Type' })}</Form.Label>
+              <Form.Select
+                value={highlightForm.type}
+                onChange={(e) => setHighlightForm(prev => ({ ...prev, type: e.target.value }))}
+              >
+                <option value="Project">Project</option>
+                <option value="Article">Article</option>
+                <option value="Media">Media</option>
+                <option value="Award">Award</option>
+                <option value="Presentation">Presentation</option>
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('description', { defaultValue: 'Description' })}</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={highlightForm.description}
+                onChange={(e) => setHighlightForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder={t('highlight_description_placeholder', { defaultValue: 'Why is this highlight memorable?' })}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>URL</Form.Label>
+              <Form.Control
+                type="url"
+                value={highlightForm.url}
+                onChange={(e) => setHighlightForm(prev => ({ ...prev, url: e.target.value }))}
+                placeholder="https://"
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>{t('cover_image', { defaultValue: 'Cover image URL' })}</Form.Label>
+              <Form.Control
+                type="url"
+                value={highlightForm.cover}
+                onChange={(e) => setHighlightForm(prev => ({ ...prev, cover: e.target.value }))}
+                placeholder={t('optional', { defaultValue: 'Optional' })}
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer className="border-0 d-flex justify-content-between">
+            <Button variant="link" onClick={() => setShowAddHighlight(false)}>
+              {t('cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button type="submit" variant="primary">
+              {t('save_highlight', { defaultValue: 'Save highlight' })}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Activity Modal */}
+      <Modal
+        show={showAddActivity}
+        onHide={() => setShowAddActivity(false)}
+        centered
+        dialogClassName="spotlight-modal"
+      >
+        <Form onSubmit={handleActivitySubmit}>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title>{t('share_update', { defaultValue: 'Share an update' })}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('type', { defaultValue: 'Type' })}</Form.Label>
+              <Form.Select
+                value={activityForm.type}
+                onChange={(e) => setActivityForm(prev => ({ ...prev, type: e.target.value }))}
+              >
+                <option value="Update">Update</option>
+                <option value="Launch">Launch</option>
+                <option value="Announcement">Announcement</option>
+                <option value="Achievement">Achievement</option>
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('title', { defaultValue: 'Title' })}</Form.Label>
+              <Form.Control
+                value={activityForm.title}
+                onChange={(e) => setActivityForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder={t('activity_title_placeholder', { defaultValue: 'Share the headline' })}
+                required
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>{t('description', { defaultValue: 'Description' })}</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={activityForm.description}
+                onChange={(e) => setActivityForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder={t('activity_description_placeholder', { defaultValue: 'Add more context or a link' })}
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer className="border-0 d-flex justify-content-between">
+            <Button variant="link" onClick={() => setShowAddActivity(false)}>
+              {t('cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button type="submit" variant="primary">
+              {t('post_update', { defaultValue: 'Post update' })}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Experience Modal */}
+      <Modal
+        show={showAddExperience}
+        onHide={() => setShowAddExperience(false)}
+        centered
+        dialogClassName="sheet-modal"
+      >
+        <Form onSubmit={handleExperienceSubmit}>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title>{t('add_experience', { defaultValue: 'Add Experience' })}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('position', { defaultValue: 'Position' })}</Form.Label>
+              <Form.Control
+                value={experienceForm.position}
+                onChange={(e) => setExperienceForm(prev => ({ ...prev, position: e.target.value }))}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('company', { defaultValue: 'Company' })}</Form.Label>
+              <Form.Control
+                value={experienceForm.company}
+                onChange={(e) => setExperienceForm(prev => ({ ...prev, company: e.target.value }))}
+                required
+              />
+            </Form.Group>
+            <Row className="mb-3">
+              <Col>
+                <Form.Label>{t('start_date', { defaultValue: 'Start date' })}</Form.Label>
+                <Form.Control
+                  type="month"
+                  value={experienceForm.startDate}
+                  onChange={(e) => setExperienceForm(prev => ({ ...prev, startDate: e.target.value }))}
+                />
+              </Col>
+              <Col>
+                <Form.Label>{t('end_date', { defaultValue: 'End date' })}</Form.Label>
+                <Form.Control
+                  type="month"
+                  value={experienceForm.endDate}
+                  onChange={(e) => setExperienceForm(prev => ({ ...prev, endDate: e.target.value }))}
+                />
+              </Col>
+            </Row>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('location', { defaultValue: 'Location' })}</Form.Label>
+              <Form.Control
+                value={experienceForm.location}
+                onChange={(e) => setExperienceForm(prev => ({ ...prev, location: e.target.value }))}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('description', { defaultValue: 'Description' })}</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={experienceForm.description}
+                onChange={(e) => setExperienceForm(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>{t('key_results', { defaultValue: 'Key achievements (one per line)' })}</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={experienceForm.bullets}
+                onChange={(e) => setExperienceForm(prev => ({ ...prev, bullets: e.target.value }))}
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer className="border-0 d-flex justify-content-between">
+            <Button variant="link" onClick={() => setShowAddExperience(false)}>
+              {t('cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button type="submit" variant="primary">
+              {t('save', { defaultValue: 'Save' })}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Education Modal */}
+      <Modal
+        show={showAddEducation}
+        onHide={() => setShowAddEducation(false)}
+        centered
+        dialogClassName="sheet-modal"
+      >
+        <Form onSubmit={handleEducationSubmit}>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title>{t('add_education', { defaultValue: 'Add Education' })}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('school', { defaultValue: 'School' })}</Form.Label>
+              <Form.Control
+                value={educationForm.school}
+                onChange={(e) => setEducationForm(prev => ({ ...prev, school: e.target.value }))}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('degree', { defaultValue: 'Degree' })}</Form.Label>
+              <Form.Control
+                value={educationForm.degree}
+                onChange={(e) => setEducationForm(prev => ({ ...prev, degree: e.target.value }))}
+              />
+            </Form.Group>
+            <Row className="mb-3">
+              <Col>
+                <Form.Label>{t('start_date', { defaultValue: 'Start date' })}</Form.Label>
+                <Form.Control
+                  type="month"
+                  value={educationForm.startDate}
+                  onChange={(e) => setEducationForm(prev => ({ ...prev, startDate: e.target.value }))}
+                />
+              </Col>
+              <Col>
+                <Form.Label>{t('end_date', { defaultValue: 'End date' })}</Form.Label>
+                <Form.Control
+                  type="month"
+                  value={educationForm.endDate}
+                  onChange={(e) => setEducationForm(prev => ({ ...prev, endDate: e.target.value }))}
+                />
+              </Col>
+            </Row>
+            <Form.Group>
+              <Form.Label>{t('coursework', { defaultValue: 'Focus / coursework' })}</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={educationForm.coursework}
+                onChange={(e) => setEducationForm(prev => ({ ...prev, coursework: e.target.value }))}
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer className="border-0 d-flex justify-content-between">
+            <Button variant="link" onClick={() => setShowAddEducation(false)}>
+              {t('cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button type="submit" variant="primary">
+              {t('save', { defaultValue: 'Save' })}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Skills Modal */}
+      <Modal
+        show={showAddSkill}
+        onHide={() => setShowAddSkill(false)}
+        centered
+        dialogClassName="mini-modal"
+      >
+        <Form onSubmit={handleSkillSubmit}>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title>{t('add_skills', { defaultValue: 'Add skills' })}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p className="text-muted small mb-2">
+              {t('skills_helper', { defaultValue: 'Type multiple skills separated by commas or new lines.' })}
+            </p>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={skillsInput}
+              onChange={(e) => setSkillsInput(e.target.value)}
+              placeholder="Product Strategy, Storytelling, UX Research"
+              required
+            />
+          </Modal.Body>
+          <Modal.Footer className="border-0 d-flex justify-content-between">
+            <Button variant="link" onClick={() => setShowAddSkill(false)}>
+              {t('cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button type="submit" variant="primary">
+              {t('add_skills', { defaultValue: 'Add skills' })}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Contact Modal */}
+      <Modal
+        show={showAddContact}
+        onHide={() => setShowAddContact(false)}
+        centered
+        dialogClassName="sheet-modal"
+      >
+        <Form onSubmit={(e) => {
+          e.preventDefault();
+          if (!profileId) return;
+          const formattedLinks = (contactForm.links || [])
+            .map(link => ({
+              id: link.id || `contact-link-${Date.now()}`,
+              service: link.service || 'custom',
+              url: link.url?.trim()
+            }))
+            .filter(link => Boolean(link.url));
+          const updates = {
+            contact: {
+              email: contactForm.email,
+              phone: contactForm.phone,
+              address: contactForm.address,
+              links: formattedLinks
+            },
+            tagline: contactForm.tagline
+          };
+          const updated = updateProfessionalProfile(profileId, updates);
+          if (updated) {
+            setProfileFromRecord(updated);
+            setContactForm({
+              email: updated.data.contact?.email || '',
+              phone: updated.data.contact?.phone || '',
+              address: updated.data.contact?.address || '',
+              tagline: updated.data.tagline || '',
+              links: normalizeContactLinks(updated.data.contact?.links || [])
+            });
+            setShowAddContact(false);
+          }
+        }}>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title>{t('contact_card', { defaultValue: 'Contact card' })}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('tagline', { defaultValue: 'Tagline' })}</Form.Label>
+              <Form.Control
+                value={contactForm.tagline}
+                onChange={(e) => setContactForm(prev => ({ ...prev, tagline: e.target.value }))}
+                placeholder={t('tagline_placeholder', { defaultValue: 'e.g. Product strategist obsessed with community-led growth' })}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                value={contactForm.email}
+                onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('phone', { defaultValue: 'Phone' })}</Form.Label>
+              <Form.Control
+                value={contactForm.phone}
+                onChange={(e) => setContactForm(prev => ({ ...prev, phone: e.target.value }))}
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>{t('address', { defaultValue: 'Address / Location' })}</Form.Label>
+              <Form.Control
+                value={contactForm.address}
+                onChange={(e) => setContactForm(prev => ({ ...prev, address: e.target.value }))}
+              />
+            </Form.Group>
+            <Form.Group className="mt-3">
+              <Form.Label>{t('app_links', { defaultValue: 'App links' })}</Form.Label>
+              <div className="contact-links-editor">
+                {contactForm.links.length === 0 && (
+                  <p className="text-muted small mb-2">
+                    {t('app_links_helper', { defaultValue: 'Add links to other apps so people can reach you anywhere.' })}
+                  </p>
+                )}
+                {contactForm.links.map((link) => {
+                  const linkOption = APP_LINK_MAP[link.service] || APP_LINK_MAP.custom;
+                  return (
+                    <div className="contact-link-row" key={link.id}>
+                      <Form.Select
+                        value={link.service}
+                        onChange={(e) => handleContactLinkChange(link.id, 'service', e.target.value)}
+                      >
+                        {APP_LINK_OPTIONS.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Form.Select>
+                      <Form.Control
+                        type="url"
+                        value={link.url}
+                        placeholder={linkOption.placeholder}
+                        onChange={(e) => handleContactLinkChange(link.id, 'url', e.target.value)}
+                      />
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        type="button"
+                        aria-label={t('delete_link', { defaultValue: 'Delete link' })}
+                        onClick={() => handleRemoveContactLink(link.id)}
+                      >
+                        <i className="bi bi-trash"></i>
+                      </Button>
+                    </div>
+                  );
+                })}
+                <Button
+                  type="button"
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={handleAddContactLink}
+                >
+                  <i className="bi bi-plus-lg me-1"></i>
+                  {t('add_link', { defaultValue: 'Add link' })}
+                </Button>
+              </div>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer className="border-0 d-flex justify-content-between">
+            <Button variant="link" onClick={() => setShowAddContact(false)}>
+              {t('cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button type="submit" variant="primary">
+              {t('save_contact', { defaultValue: 'Save contact card' })}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
 
       <LoginModal 
         show={showLoginModal} 

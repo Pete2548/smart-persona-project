@@ -1,224 +1,251 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { getCurrentUser } from '../services/auth';
-import { getAllProfessionalProfiles } from '../services/professionalProfileManager';
-import { getSavedProfiles, unsaveProfile } from '../services/savedProfiles';
-import Sidebar from '../components/Sidebar';
-import LoginModal from '../components/LoginModal';
+import React, { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+import Sidebar from '../components/Sidebar'
+import LoginModal from '../components/LoginModal'
+import { getCurrentUser } from '../services/auth'
+import {
+  applyThemeToActiveProfile,
+  deleteSavedTheme,
+  getSavedThemes
+} from '../services/themeService'
+import './dashboard.css'
+import './themes.css'
+
+const getTokens = (theme) => theme?.tokens || {}
+
+const getPreviewDescriptor = (theme) => {
+  if (theme?.preview) {
+    return theme.preview
+  }
+  const tokens = getTokens(theme)
+  if (tokens.bgImage) {
+    return { type: 'image', value: tokens.bgImage }
+  }
+  return { type: 'solid', value: tokens.bgColor || '#111827' }
+}
+
+const buildPreviewStyle = (preview) => {
+  if (!preview) {
+    return { background: '#111827' }
+  }
+  if (preview.type === 'image') {
+    return {
+      backgroundImage: `url(${preview.value})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  return { background: preview.value || '#111827' }
+}
 
 function SavedProfiles() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [savedProfiles, setSavedProfiles] = useState([]);
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [savedThemes, setSavedThemes] = useState([])
+  const [toast, setToast] = useState({ show: false, message: '', theme: '' })
 
   useEffect(() => {
-    const user = getCurrentUser();
+    const user = getCurrentUser()
     if (!user) {
-      setShowLoginModal(true);
-      return;
+      setShowLoginModal(true)
+      return
     }
-    loadSavedProfiles();
-  }, []);
+    loadSavedThemes()
+  }, [])
 
-  const loadSavedProfiles = () => {
-    const savedIds = getSavedProfiles();
-    const allProfiles = getAllProfessionalProfiles();
-    
-    // Get profiles that match saved IDs
-    const profiles = allProfiles.filter(p => savedIds.includes(p.id));
-    setSavedProfiles(profiles);
-  };
-
-  const handleUnsave = (profileId) => {
-    unsaveProfile(profileId);
-    setSavedProfiles(prev => prev.filter(p => p.id !== profileId));
-  };
-
-  const handleProfileClick = (profile) => {
-    const username = profile.data?.username;
-    if (username) {
-      navigate(`/u/${username}`);
+  const loadSavedThemes = () => {
+    try {
+      setSavedThemes(getSavedThemes())
+    } catch (err) {
+      console.error('Failed to load saved themes', err)
+      setSavedThemes([])
     }
-  };
+  }
+
+  const showToast = (message, theme = 'success') => {
+    setToast({ show: true, message, theme })
+    setTimeout(() => setToast({ show: false, message: '', theme: '' }), 2500)
+  }
+
+  const handleApply = (theme) => {
+    try {
+      applyThemeToActiveProfile(theme)
+      showToast(t('theme_applied') || 'Theme applied!')
+      setTimeout(() => navigate('/customize'), 1000)
+    } catch (err) {
+      console.error('Failed to apply theme', err)
+      showToast(t('failed_to_apply') || 'Unable to apply theme', 'error')
+    }
+  }
+
+  const handleDelete = (themeId) => {
+    deleteSavedTheme(themeId)
+    setSavedThemes(prev => prev.filter(theme => theme.id !== themeId))
+    showToast(t('theme_removed') || 'Theme removed', 'success')
+  }
 
   const handleSwitchToSignup = () => {
-    setShowLoginModal(false);
-    navigate('/signup');
-  };
+    setShowLoginModal(false)
+    navigate('/signup')
+  }
+
+  const themeCountLabel = useMemo(() => {
+    if (savedThemes.length === 0) {
+      return t('no_saved_themes') || 'No saved themes yet'
+    }
+    return `${savedThemes.length} ${(t('saved_themes') || 'Saved Themes')}`
+  }, [savedThemes, t])
+
+  const groupedThemes = useMemo(() => {
+    return savedThemes.reduce((acc, theme) => {
+      const type = theme.profileType || 'personal'
+      if (!acc[type]) acc[type] = []
+      acc[type].push(theme)
+      return acc
+    }, {})
+  }, [savedThemes])
+
+  const themeTypeSections = useMemo(() => ([
+    { type: 'personal', label: t('saved_themes_personal') || 'Personal Themes' },
+    { type: 'vtree', label: t('saved_themes_vtree') || 'Vtree Themes' },
+    { type: 'resume', label: t('saved_themes_resume') || 'Resume Themes' }
+  ]), [t])
 
   return (
     <div className="dashboard-shell p-4">
+      {toast.show && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 9999,
+            padding: '14px 22px',
+            borderRadius: '10px',
+            background: toast.theme === 'success'
+              ? 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
+              : 'linear-gradient(135deg, #f87171 0%, #dc2626 100%)',
+            color: '#fff',
+            fontWeight: 600,
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center'
+          }}
+        >
+          <i className={`bi ${toast.theme === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}`}></i>
+          {toast.message}
+        </div>
+      )}
+
       <div className="dashboard-card d-flex">
         <Sidebar />
 
         <main className="dashboard-main p-4">
-          <Container>
-            <div className="mb-4">
-              <h2 className="fw-bold mb-2">{t('saved_profiles_title')}</h2>
-              <p className="text-muted">
-                {t('saved_profiles')} ({savedProfiles.length})
-              </p>
+          <div className="themes-container">
+            <div className="d-flex justify-content-between align-items-start mb-4">
+              <div>
+                <h2 className="themes-title">
+                  <i className="bi bi-heart-fill me-2 text-danger"></i>
+                  {t('saved_themes_title') || 'Saved Themes'}
+                </h2>
+                <p className="themes-subtitle">{themeCountLabel}</p>
+              </div>
+              <button
+                type="button"
+                className="workbench-btn secondary"
+                onClick={() => navigate('/themes')}
+              >
+                <i className="bi bi-grid"></i>
+                {t('browse_more_themes') || 'Browse more themes'}
+              </button>
             </div>
 
-            {savedProfiles.length === 0 ? (
-              <div className="text-center py-5">
-                <i className="bi bi-heart display-1 text-muted"></i>
-                <h5 className="mt-3 text-muted">{t('no_saved_profiles')}</h5>
-                <p className="text-muted mb-4">
-                  {t('start_saving')}
-                </p>
-                <Button variant="dark" onClick={() => navigate('/explore')}>
-                  <i className="bi bi-search me-2"></i>
-                  {t('explore_people_btn')}
-                </Button>
+            {savedThemes.length === 0 ? (
+              <div className="no-themes" style={{ minHeight: '320px' }}>
+                <i className="bi bi-heart display-4 text-muted mb-3"></i>
+                <p className="mb-3">{t('save_theme_hint') || 'Save a theme from the Themes page to see it here.'}</p>
+                <button className="btn-use-theme" style={{ maxWidth: '220px' }} onClick={() => navigate('/themes')}>
+                  {t('go_to_themes') || 'Go to Themes'}
+                </button>
               </div>
             ) : (
-              <Row className="g-4">
-                {savedProfiles.map((profile) => {
-                  const data = profile.data || {};
-                  const skills = data.skills || [];
-                  const topSkills = skills.slice(0, 3);
-
-                  return (
-                    <Col key={profile.id} md={6} lg={4}>
-                      <Card 
-                        className="h-100 shadow-sm border-0 position-relative" 
-                        style={{ 
-                          cursor: 'pointer',
-                          transition: 'transform 0.2s, box-shadow 0.2s'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-8px)';
-                          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-                        }}
-                        onClick={() => handleProfileClick(profile)}
-                      >
-                        {/* Remove Button */}
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          className="position-absolute"
-                          style={{
-                            top: '10px',
-                            right: '10px',
-                            zIndex: 10,
-                            borderRadius: '50%',
-                            width: '36px',
-                            height: '36px',
-                            padding: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUnsave(profile.id);
-                          }}
-                        >
-                          <i className="bi bi-heart-fill"></i>
-                        </Button>
-                        
-                        <div 
-                          style={{
-                            height: '100px',
-                            background: data.bgColor || '#6c5ce7',
-                            borderTopLeftRadius: '8px',
-                            borderTopRightRadius: '8px'
-                          }}
-                        />
-                        <Card.Body className="text-center" style={{ marginTop: '-50px' }}>
-                          <img
-                            src={data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.displayName || 'User')}&background=random&color=fff&size=200`}
-                            alt={data.displayName}
-                            style={{
-                              width: '80px',
-                              height: '80px',
-                              borderRadius: '50%',
-                              border: '4px solid white',
-                              marginBottom: '12px',
-                              objectFit: 'cover'
-                            }}
-                          />
-                          
-                          <h5 className="fw-bold mb-1" style={{ fontSize: '18px' }}>
-                            {data.displayName || t('anonymous')}
-                          </h5>
-                          
-                          {data.jobTitle && (
-                            <p className="text-primary mb-2" style={{ fontSize: '14px', fontWeight: '500' }}>
-                              {data.jobTitle}
-                            </p>
-                          )}
-
-                          {data.location && (
-                            <p className="text-muted small mb-2">
-                              <i className="bi bi-geo-alt me-1"></i>
-                              {data.location}
-                            </p>
-                          )}
-
-                          {data.experienceYears > 0 && (
-                            <p className="text-muted small mb-3">
-                              <i className="bi bi-briefcase me-1"></i>
-                              {data.experienceYears} {data.experienceYears === 1 ? 'year' : 'years'} experience
-                            </p>
-                          )}
-
-                          {/* Top Skills */}
-                          {topSkills.length > 0 && (
-                            <div className="d-flex flex-wrap gap-1 justify-content-center mb-3">
-                              {topSkills.map((skill, idx) => (
-                                <Badge 
-                                  key={idx} 
-                                  bg="light" 
-                                  text="dark" 
-                                  className="px-2 py-1"
-                                  style={{ fontSize: '11px', fontWeight: '500' }}
-                                >
-                                  {skill}
-                                </Badge>
-                              ))}
-                              {skills.length > 3 && (
-                                <Badge 
-                                  bg="secondary" 
-                                  className="px-2 py-1"
-                                  style={{ fontSize: '11px' }}
-                                >
-                                  +{skills.length - 3} more
-                                </Badge>
-                              )}
+              themeTypeSections.map(section => {
+                const items = groupedThemes[section.type]
+                if (!items || items.length === 0) {
+                  return null
+                }
+                return (
+                  <div key={section.type} className="mb-5">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h4 className="mb-0 themes-title" style={{ fontSize: '20px' }}>
+                        {section.label} <span className="text-muted" style={{ fontSize: '14px' }}>({items.length})</span>
+                      </h4>
+                    </div>
+                    <div className="themes-grid">
+                      {items.map(theme => {
+                        const tokens = getTokens(theme)
+                        const preview = getPreviewDescriptor(theme)
+                        return (
+                          <div key={theme.id} className="theme-card">
+                            <div className="theme-preview" style={buildPreviewStyle(preview)}>
+                              <div className="theme-mockup" style={{ fontFamily: tokens.fontFamily || 'inherit' }}>
+                                <div className="mockup-avatar" style={{ background: tokens.nameColor || '#6c5ce7' }}>
+                                  <i className="bi bi-person"></i>
+                                </div>
+                                <div className="mockup-name" style={{ color: tokens.nameColor || '#fff' }}>
+                                  Your Name
+                                </div>
+                                <div className="mockup-desc" style={{ color: tokens.descColor || '#ddd' }}>
+                                  Your description here
+                                </div>
+                              </div>
                             </div>
-                          )}
-
-                          <Button variant="dark" size="sm" className="w-100">
-                            {t('view_profile')}
-                          </Button>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                  );
-                })}
-              </Row>
+                            <div className="theme-info">
+                              <div className="theme-header">
+                                <div className="theme-author">
+                                  <i className="bi bi-person-circle"></i>
+                                  <span>@{theme.author || 'you'}</span>
+                                </div>
+                                <div className="theme-stats">
+                                  <span>{theme.profileType || 'personal'}</span>
+                                </div>
+                              </div>
+                              <h3 className="theme-name">{theme.name}</h3>
+                              <div className="theme-actions">
+                                <button className="btn-use-theme" onClick={() => handleApply(theme)}>
+                                  {t('apply') || 'Apply'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-delete-theme"
+                                  onClick={() => handleDelete(theme.id)}
+                                >
+                                  <i className="bi bi-trash me-2"></i>
+                                  {t('remove') || 'Remove'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })
             )}
-          </Container>
+          </div>
         </main>
       </div>
 
-      <LoginModal 
-        show={showLoginModal} 
+      <LoginModal
+        show={showLoginModal}
         onHide={() => setShowLoginModal(false)}
         onSwitchToSignup={handleSwitchToSignup}
       />
     </div>
-  );
+  )
 }
 
-export default SavedProfiles;
+export default SavedProfiles

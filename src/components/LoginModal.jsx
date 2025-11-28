@@ -15,9 +15,9 @@ function LoginModal({ show, onHide, onSwitchToSignup }) {
       alert(res.message || 'Login failed');
       return;
     }
-    // Login สำเร็จ -> ปิด modal และไปหน้า dashboard
+    // Login สำเร็จ -> ปิด modal และไปหน้า my profile
     onHide();
-    navigate('/dashboard');
+    navigate('/my-profile');
   };
 
   return (

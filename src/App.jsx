@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard'
 import Links from './pages/Links'
 import Customize from './pages/Customize'
 import ProfileView from './pages/ProfileView'
+import ProfessionalProfileView from './pages/ProfessionalProfileView'
 import Themes from './pages/Themes'
 import Explore from './pages/Explore'
 import MyProfiles from './pages/MyProfiles'
@@ -41,6 +42,7 @@ function App() {
         <Route path="/themes" element={<Themes />} />
         <Route path="/u/:username" element={<ProfileView />} />
         <Route path="/u/:username/:profileType" element={<ProfileView />} />
+        <Route path="/pro/:username" element={<ProfessionalProfileView />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/create-account" element={<Signup />} />
         {/* Admin routes (protected) */}

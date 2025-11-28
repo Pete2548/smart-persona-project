@@ -14,6 +14,31 @@ import { getAllProfiles, getActiveProfile, getActiveProfileId, setActiveProfile,
 import './customize.css';
 import './dashboard.css'
 
+const THEME_TOKEN_KEYS = [
+    'bgColor',
+    'blockColor',
+    'nameColor',
+    'descColor',
+    'fontFamily',
+    'bgImage',
+    'bgOverlay',
+    'accentColor',
+    'buttonColor',
+    'linkColor',
+    'sectionBg',
+    'textColor',
+    'headingColor'
+]
+
+const THEME_SOURCE_LABELS = {
+    builtin: 'Official Library',
+    community: 'Community Gallery',
+    saved: 'My Themes',
+    custom: 'Custom Theme'
+}
+
+const formatThemeSource = (source) => THEME_SOURCE_LABELS[source] || THEME_SOURCE_LABELS.custom
+
 // IndexedDB helper functions
 const openDB = () => {
     return new Promise((resolve, reject) => {
@@ -87,7 +112,6 @@ const Customize = () => {
     const [audioDuration, setAudioDuration] = useState(0)
     
     // Privacy Setting
-    const [isPublic, setIsPublic] = useState(true)
     
     // Multi-Section System
     const [profileSections, setProfileSections] = useState([])
@@ -117,6 +141,10 @@ const Customize = () => {
         contentPadding: 48,
         elementSpacing: 16
     })
+    const [themeMeta, setThemeMeta] = useState(null)
+    const [themeTokens, setThemeTokens] = useState({})
+
+    const themeSourceLabel = themeMeta ? formatThemeSource(themeMeta.source) : ''
 
     const checkLogin = () => {
         const user = getCurrentUser()
@@ -143,6 +171,17 @@ const Customize = () => {
         // Migrate old profile data first
         migrateOldProfile()
         
+        const collectThemeTokens = (data) => {
+            if (!data) return {}
+            const snapshot = {}
+            THEME_TOKEN_KEYS.forEach((key) => {
+                if (data[key] !== undefined && data[key] !== null) {
+                    snapshot[key] = data[key]
+                }
+            })
+            return snapshot
+        }
+
         const loadProfile = async () => {
             try {
                 // Load all profiles
@@ -176,9 +215,10 @@ const Customize = () => {
                     setAudioFileName(data.audioFileName || '')
                     setAudioStartTime(data.audioStartTime || 0)
                     setAudioEndTime(data.audioEndTime || 0)
-                    setIsPublic(data.isPublic !== undefined ? data.isPublic : true)
                     setProfileSections(data.sections || [])
                     setSocialLinks(data.socialLinks || {})
+                    setThemeMeta(data.themeMeta || null)
+                    setThemeTokens(collectThemeTokens(data))
                     
                     // Load advanced layout settings
                     if (data.layoutSettings) {
@@ -339,7 +379,6 @@ const Customize = () => {
                 audioFileName: audioFileName || '',
                 audioStartTime: audioStartTime || 0,
                 audioEndTime: audioEndTime || 0,
-                isPublic: isPublic,
                 sections: profileSections,
             }
             
@@ -486,7 +525,9 @@ const Customize = () => {
                         <ResumeCustomize 
                             profile={{
                                 fullName: displayName,
-                                ...layoutSettings
+                                ...layoutSettings,
+                                themeMeta,
+                                themeTokens
                             }}
                             onUpdate={(updates) => {
                                 if (updates.fullName !== undefined) setDisplayName(updates.fullName)
@@ -535,6 +576,65 @@ const Customize = () => {
                             )}
                         </div>
 
+                        {themeMeta && (
+                            <div
+                                className="mb-4"
+                                style={{
+                                    borderRadius: '18px',
+                                    padding: '20px',
+                                    background: 'linear-gradient(135deg, #0f172a 0%, #1f2937 100%)',
+                                    color: '#f8fafc',
+                                    boxShadow: '0 12px 30px rgba(15,23,42,0.25)'
+                                }}
+                            >
+                                <div className="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                                    <div>
+                                        <div className="text-uppercase small" style={{ letterSpacing: '0.1em', opacity: 0.65 }}>
+                                            Active Theme
+                                        </div>
+                                        <div className="h5 mb-1" style={{ fontWeight: 700 }}>{themeMeta.name}</div>
+                                        <div className="small" style={{ opacity: 0.75 }}>{themeSourceLabel}</div>
+                                        <div className="d-flex gap-2 mt-3">
+                                            {[themeTokens.bgColor, themeTokens.blockColor, themeTokens.nameColor]
+                                                .filter(Boolean)
+                                                .map((color, idx) => (
+                                                    <span
+                                                        key={`${color}-${idx}`}
+                                                        style={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            borderRadius: '8px',
+                                                            backgroundColor: color,
+                                                            border: '1px solid rgba(255,255,255,0.4)'
+                                                        }}
+                                                    ></span>
+                                                ))}
+                                        </div>
+                                    </div>
+                                    <div className="d-flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            className="btn btn-light"
+                                            style={{ borderRadius: '10px', fontWeight: 600 }}
+                                            onClick={() => navigate('/themes')}
+                                        >
+                                            <i className="bi bi-grid me-2"></i>
+                                            Browse Themes
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-light"
+                                            style={{ borderRadius: '10px', fontWeight: 600 }}
+                                            onClick={() => navigate('/saved-profiles')}
+                                        >
+                                            <i className="bi bi-bookmark-heart me-2"></i>
+                                            My Themes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="customize-card mb-4">
                             <div className="customize-row">
                                 <div className="form-group">
@@ -576,41 +676,6 @@ const Customize = () => {
                                     </div>
                                 </div>
                             )}
-
-                            {/* Privacy Setting */}
-                            <div className="customize-row mt-3">
-                                <div className="form-group w-100">
-                                    <label className="form-label d-flex align-items-center gap-2">
-                                        <i className={`bi ${isPublic ? 'bi-globe' : 'bi-lock-fill'}`}></i>
-                                        {t('profile_visibility') || 'Profile Visibility'}
-                                    </label>
-                                    <div className="btn-group w-100" role="group">
-                                        <button 
-                                            type="button" 
-                                            className={`btn ${isPublic ? 'btn-primary' : 'btn-outline-secondary'}`}
-                                            onClick={() => setIsPublic(true)}
-                                            style={{ flex: 1 }}
-                                        >
-                                            <i className="bi bi-globe me-2"></i>
-                                            {t('public') || 'Public'}
-                                        </button>
-                                        <button 
-                                            type="button" 
-                                            className={`btn ${!isPublic ? 'btn-warning' : 'btn-outline-secondary'}`}
-                                            onClick={() => setIsPublic(false)}
-                                            style={{ flex: 1 }}
-                                        >
-                                            <i className="bi bi-lock-fill me-2"></i>
-                                            {t('private') || 'Private'}
-                                        </button>
-                                    </div>
-                                    <small className="text-muted mt-1 d-block">
-                                        {isPublic 
-                                            ? t('profile_public_note') || '✓ Anyone can view your profile' 
-                                            : t('profile_private_note') || '🔒 Only you can view this profile (visitors will see a private message)'}
-                                    </small>
-                                </div>
-                            </div>
 
                             {/* AI Theme Recommender */}
                             <div className="customize-row mt-3">
@@ -886,7 +951,7 @@ const Customize = () => {
                                         }
                                     }}
                                     style={{
-                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        background: 'linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)',
                                         border: 'none',
                                         fontWeight: 600
                                     }}

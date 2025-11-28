@@ -1,20 +1,32 @@
 import React, { useState, useEffect } from 'react'
 
-function StatsCard() {
-  const [stats, setStats] = useState({ views: 0, clicks: 0, shares: 0 })
+function StatsCard({ analytics }) {
+  const [stats, setStats] = useState({ views: 0, unique: 0, week: 0 })
 
   useEffect(() => {
-    // Load stats from localStorage
+    if (analytics) {
+      setStats({
+        views: analytics.totalViews || 0,
+        unique: analytics.uniqueViewers || 0,
+        week: analytics.last7DaysViews || 0
+      })
+      return
+    }
+
     try {
       const savedStats = localStorage.getItem('profile_stats')
       if (savedStats) {
-        setStats(JSON.parse(savedStats))
+        const parsed = JSON.parse(savedStats)
+        setStats({
+          views: parsed.views || 0,
+          unique: parsed.unique || parsed.clicks || 0,
+          week: parsed.week || parsed.shares || 0
+        })
       } else {
-        // Generate random initial stats for demo
         const randomStats = {
           views: Math.floor(Math.random() * 2000) + 500,
-          clicks: Math.floor(Math.random() * 500) + 100,
-          shares: Math.floor(Math.random() * 50) + 10
+          unique: Math.floor(Math.random() * 500) + 100,
+          week: Math.floor(Math.random() * 200) + 50
         }
         setStats(randomStats)
         localStorage.setItem('profile_stats', JSON.stringify(randomStats))
@@ -22,7 +34,7 @@ function StatsCard() {
     } catch (err) {
       console.warn('Failed to load stats', err)
     }
-  }, [])
+  }, [analytics])
 
   return (
     <div className="stats-card p-3">
@@ -34,15 +46,15 @@ function StatsCard() {
       <div className="row text-center">
         <div className="col">
           <div className="stat-value fw-bold">{stats.views}</div>
-          <div className="text-muted small">Views</div>
+          <div className="text-muted small">Profile Views</div>
         </div>
         <div className="col">
-          <div className="stat-value fw-bold">{stats.clicks}</div>
-          <div className="text-muted small">Link Clicks</div>
+          <div className="stat-value fw-bold">{stats.unique}</div>
+          <div className="text-muted small">Unique Visitors</div>
         </div>
         <div className="col">
-          <div className="stat-value fw-bold">{stats.shares}</div>
-          <div className="text-muted small">Shares</div>
+          <div className="stat-value fw-bold">{stats.week}</div>
+          <div className="text-muted small">Views (7d)</div>
         </div>
       </div>
     </div>
