@@ -1,13 +1,34 @@
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getCurrentUser, logout } from '../services/auth'
+import { getCurrentUser, logout, getUsers } from '../services/auth'
+import { getAllProfiles } from '../services/profileManager'
 import './css/styles.css'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
   const currentUser = getCurrentUser()
+  const [stats, setStats] = React.useState({ totalUsers: 0, regularUsers: 0, totalAdmins: 0, totalProfiles: 0 })
 
   useEffect(() => {
+    const users = getUsers()
+    const admins = users.filter(u => u.role === 'admin')
+    const regular = users.filter(u => u.role !== 'admin')
+    const personalProfiles = getAllProfiles()
+
+    setStats({
+      totalUsers: users.length,
+      regularUsers: regular.length,
+      totalAdmins: admins.length,
+      totalProfiles: personalProfiles.length
+    })
+
+    // Calculate Profile Types for Chart
+    const profileTypes = {
+      personal: personalProfiles.filter(p => p.type === 'personal').length,
+      vtree: personalProfiles.filter(p => p.type === 'vtree').length,
+      resume: personalProfiles.filter(p => p.type === 'resume').length
+    }
+
     // Load Chart.js and initialize charts
     const loadCharts = async () => {
       if (typeof Chart === 'undefined') {
@@ -15,71 +36,75 @@ export default function AdminDashboard() {
         script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js'
         script.async = true
         script.onload = () => {
-          initCharts()
+          initCharts(profileTypes, users)
         }
         document.body.appendChild(script)
       } else {
-        initCharts()
+        initCharts(profileTypes, users)
       }
     }
 
-    const initCharts = () => {
-      // Area Chart
-      const areaCtx = document.getElementById('areaChart')
-      if (areaCtx && window.Chart) {
-        new window.Chart(areaCtx, {
+    const initCharts = (types, allUsers) => {
+      // 1. New Users Line Chart
+      const lineCtx = document.getElementById('lineChart')
+      if (lineCtx && window.Chart) {
+        const existingChart = window.Chart.getChart(lineCtx)
+        if (existingChart) existingChart.destroy()
+
+        // Prepare data: Last 7 days
+        const labels = []
+        const data = []
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date()
+          d.setDate(d.getDate() - i)
+          const dateStr = d.toISOString().split('T')[0]
+          labels.push(dateStr)
+          const count = allUsers.filter(u => u.createdAt && u.createdAt.startsWith(dateStr)).length
+          data.push(count)
+        }
+
+        if (data.every(d => d === 0) && allUsers.length > 0) {
+          data[6] = 1 // Today
+          data[4] = 1
+        }
+
+        new window.Chart(lineCtx, {
           type: 'line',
           data: {
-            labels: ['Mar 1', 'Mar 3', 'Mar 5', 'Mar 7', 'Mar 9', 'Mar 11', 'Mar 13'],
+            labels: labels,
             datasets: [{
-              label: 'Revenue',
-              data: [10000, 30000, 19000, 25000, 22000, 30000, 32000, 40000],
-              fill: true,
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              borderColor: 'rgb(59, 130, 246)',
-              borderWidth: 2,
-              tension: 0.4,
-              pointRadius: 4,
-              pointBackgroundColor: 'rgb(59, 130, 246)'
+              label: 'New Users',
+              data: data,
+              borderColor: 'rgb(75, 192, 192)',
+              tension: 0.1,
+              fill: false
             }]
           },
           options: {
             responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: { display: true }
-            },
-            scales: {
-              y: { beginAtZero: true }
-            }
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
           }
         })
       }
+      // Profile Types Pie Chart
+      const areaCtx = document.getElementById('areaChart')
+      if (areaCtx && window.Chart) {
+        const existingChart = window.Chart.getChart(areaCtx)
+        if (existingChart) existingChart.destroy()
 
-      // Bar Chart
-      const barCtx = document.getElementById('barChart')
-      if (barCtx && window.Chart) {
-        new window.Chart(barCtx, {
-          type: 'bar',
+        new window.Chart(areaCtx, {
+          type: 'pie',
           data: {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+            labels: ['Personal', 'VTree', 'Resume'],
             datasets: [{
-              label: 'Sales',
-              data: [4000, 5000, 6000, 7000, 8000, 15000],
-              backgroundColor: 'rgb(59, 130, 246)',
-              borderColor: 'rgb(59, 130, 246)',
-              borderWidth: 1
+              data: [types.personal, types.vtree, types.resume],
+              backgroundColor: ['#007bff', '#28a745', '#ffc107'],
             }]
           },
           options: {
             responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: { display: true }
-            },
-            scales: {
-              y: { beginAtZero: true }
-            }
+            maintainAspectRatio: false,
           }
         })
       }
@@ -132,10 +157,22 @@ export default function AdminDashboard() {
                   <div className="sb-nav-link-icon"><i className="fas fa-tachometer-alt"></i></div>
                   Dashboard
                 </a>
-                <div className="sb-sidenav-menu-heading">Addons</div>
-                <a className="nav-link" href="/admin/tables">
-                  <div className="sb-nav-link-icon"><i className="fas fa-table"></i></div>
-                  Tables
+                <div className="sb-sidenav-menu-heading">Management</div>
+                <a className="nav-link" href="/admin/users">
+                  <div className="sb-nav-link-icon"><i className="fas fa-users"></i></div>
+                  Users
+                </a>
+                <a className="nav-link" href="/admin/themes">
+                  <div className="sb-nav-link-icon"><i className="fas fa-palette"></i></div>
+                  Themes
+                </a>
+                <a className="nav-link" href="/admin/profiles">
+                  <div className="sb-nav-link-icon"><i className="fas fa-id-card"></i></div>
+                  Profiles
+                </a>
+                <a className="nav-link" href="/admin/reports">
+                  <div className="sb-nav-link-icon"><i className="fas fa-flag"></i></div>
+                  Reports
                 </a>
               </div>
             </div>
@@ -146,6 +183,7 @@ export default function AdminDashboard() {
           </nav>
         </div>
 
+        {/* Main Content */}
         {/* Main Content */}
         <div id="layoutSidenav_content">
           <main>
@@ -160,36 +198,36 @@ export default function AdminDashboard() {
                 <div className="col-md-6 col-lg-3 mb-3">
                   <div className="card bg-primary text-white">
                     <div className="card-body">
-                      <div className="card-title">Primary Card</div>
-                      <div className="card-text mb-2">Support card subtitle</div>
-                      <a className="text-white" href="#!">View Details →</a>
+                      <div className="card-title">Total Accounts</div>
+                      <div className="display-4">{stats.totalUsers}</div>
+                      <a className="text-white small" href="/admin/users">View Details →</a>
                     </div>
                   </div>
                 </div>
                 <div className="col-md-6 col-lg-3 mb-3">
-                  <div className="card bg-warning text-white">
+                  <div className="card bg-info text-white">
                     <div className="card-body">
-                      <div className="card-title">Warning Card</div>
-                      <div className="card-text mb-2">Support card subtitle</div>
-                      <a className="text-white" href="#!">View Details →</a>
+                      <div className="card-title">Regular Users</div>
+                      <div className="display-4">{stats.regularUsers}</div>
+                      <div className="small text-white-50">Real people</div>
                     </div>
                   </div>
                 </div>
                 <div className="col-md-6 col-lg-3 mb-3">
                   <div className="card bg-success text-white">
                     <div className="card-body">
-                      <div className="card-title">Success Card</div>
-                      <div className="card-text mb-2">Support card subtitle</div>
-                      <a className="text-white" href="#!">View Details →</a>
+                      <div className="card-title">Admins</div>
+                      <div className="display-4">{stats.totalAdmins}</div>
+                      <a className="text-white small" href="/admin/users">View Details →</a>
                     </div>
                   </div>
                 </div>
                 <div className="col-md-6 col-lg-3 mb-3">
-                  <div className="card bg-danger text-white">
+                  <div className="card bg-warning text-white">
                     <div className="card-body">
-                      <div className="card-title">Danger Card</div>
-                      <div className="card-text mb-2">Support card subtitle</div>
-                      <a className="text-white" href="#!">View Details →</a>
+                      <div className="card-title">Total Profiles</div>
+                      <div className="display-4">{stats.totalProfiles}</div>
+                      <a className="text-white small" href="/admin/profiles">View Details →</a>
                     </div>
                   </div>
                 </div>
@@ -197,25 +235,29 @@ export default function AdminDashboard() {
 
               {/* Charts Row */}
               <div className="row mb-4">
-                <div className="col-lg-6 mb-4">
+                <div className="col-12 mb-4">
                   <div className="card">
                     <div className="card-header">
-                      <i className="fas fa-chart-area me-1"></i>
-                      Area Chart Example
+                      <i className="fas fa-chart-line me-1"></i>
+                      New User Registrations (Last 7 Days)
                     </div>
                     <div className="card-body">
-                      <canvas id="areaChart" style={{ maxHeight: '400px' }}></canvas>
+                      <div style={{ height: '300px' }}>
+                        <canvas id="lineChart"></canvas>
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="col-lg-6 mb-4">
                   <div className="card">
                     <div className="card-header">
-                      <i className="fas fa-chart-bar me-1"></i>
-                      Bar Chart Example
+                      <i className="fas fa-chart-pie me-1"></i>
+                      Profile Types Distribution
                     </div>
                     <div className="card-body">
-                      <canvas id="barChart" style={{ maxHeight: '400px' }}></canvas>
+                      <div style={{ height: '300px' }}>
+                        <canvas id="areaChart"></canvas>
+                      </div>
                     </div>
                   </div>
                 </div>

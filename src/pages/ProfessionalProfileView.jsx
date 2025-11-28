@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Container, Row, Col, Card, Badge, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card, Badge, Button, Modal, Form } from 'react-bootstrap';
 import { getProfessionalProfileByUsername } from '../services/professionalProfileManager';
+import { createReport } from '../services/reportService';
 import { getProfileAnalytics, recordProfileView } from '../services/profileAnalytics';
 import { getCurrentUser } from '../services/auth';
 import './publicProfile.css';
@@ -37,6 +38,12 @@ const ProfessionalProfileView = () => {
   const [analytics, setAnalytics] = useState(null);
   const [status, setStatus] = useState('loading'); // loading, ready, private, notfound
   const [contactCopied, setContactCopied] = useState(false);
+
+  // Report Modal State
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('Inappropriate Content');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reportSubmitted, setReportSubmitted] = useState(false);
 
   useEffect(() => {
     const record = getProfessionalProfileByUsername(username);
@@ -115,6 +122,24 @@ const ProfessionalProfileView = () => {
     setTimeout(() => setContactCopied(false), 2000);
   };
 
+  const handleReportSubmit = () => {
+    if (!profile) return;
+    createReport({
+      targetUser: profile.username,
+      reporter: getCurrentUser()?.username || 'Anonymous',
+      reason: reportReason,
+      details: reportDetails,
+      profileType: 'professional'
+    });
+    setReportSubmitted(true);
+    setTimeout(() => {
+      setShowReportModal(false);
+      setReportSubmitted(false);
+      setReportDetails('');
+      setReportReason('Inappropriate Content');
+    }, 2000);
+  };
+
   if (status === 'loading') {
     return (
       <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
@@ -155,9 +180,9 @@ const ProfessionalProfileView = () => {
         <Card className="profile-header-card border-0 shadow-sm mb-4">
           <div className="cover-photo" style={{ height: 220, backgroundColor: profile.coverColor || '#0a66c2' }}>
             {profile.bgImage && (
-              <img 
-                src={profile.bgImage} 
-                alt="Cover" 
+              <img
+                src={profile.bgImage}
+                alt="Cover"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             )}
@@ -220,6 +245,15 @@ const ProfessionalProfileView = () => {
                   >
                     <i className="bi bi-person-lines-fill me-1"></i>
                     {contactCopied ? 'Contact copied!' : 'Save contact'}
+                  </Button>
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    className="ms-2"
+                    onClick={() => setShowReportModal(true)}
+                  >
+                    <i className="bi bi-flag me-1"></i>
+                    Report
                   </Button>
                 </div>
 
@@ -492,6 +526,56 @@ const ProfessionalProfileView = () => {
           </Card.Body>
         </Card>
       </Container>
+
+      <Modal show={showReportModal} onHide={() => setShowReportModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Report Profile</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {reportSubmitted ? (
+            <div className="text-center text-success py-4">
+              <i className="bi bi-check-circle display-4 mb-3"></i>
+              <p>Report submitted successfully. Thank you.</p>
+            </div>
+          ) : (
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Reason</Form.Label>
+                <Form.Select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                >
+                  <option>Inappropriate Content</option>
+                  <option>Harassment</option>
+                  <option>Spam / Fake Profile</option>
+                  <option>Intellectual Property Violation</option>
+                  <option>Other</option>
+                </Form.Select>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Details (Optional)</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  placeholder="Please provide more details..."
+                />
+              </Form.Group>
+            </Form>
+          )}
+        </Modal.Body>
+        {!reportSubmitted && (
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowReportModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleReportSubmit}>
+              Submit Report
+            </Button>
+          </Modal.Footer>
+        )}
+      </Modal>
     </div>
   );
 };
