@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import ProfileCard from '../components/ProfileCard'
@@ -6,13 +7,16 @@ import StatsCard from '../components/StatsCard'
 import LoginModal from '../components/LoginModal'
 import { getCurrentUser } from '../services/auth'
 import { getActiveProfile, getAllProfiles } from '../services/profileManager'
+import { getProfileAnalytics } from '../services/profileAnalytics'
 import './dashboard.css'
 
 function Dashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [recentActivity, setRecentActivity] = useState([])
   const [profile, setProfile] = useState(null)
+  const [analytics, setAnalytics] = useState(null)
   const [profileStats, setProfileStats] = useState({
     completeness: 0,
     totalSocialLinks: 0,
@@ -36,6 +40,10 @@ function Dashboard() {
       if (activeProfile && activeProfile.data) {
         const data = activeProfile.data
         setProfile(data)
+        
+        // Get analytics data
+        const analyticsData = getProfileAnalytics(activeProfile.id)
+        setAnalytics(analyticsData)
         
         // Calculate profile completeness
         let completeness = 0
@@ -115,13 +123,13 @@ function Dashboard() {
               
               {/* Profile Overview */}
               <div className="mt-3 p-3 card-like">
-                <h6 className="mb-3">Profile Overview</h6>
+                <h6 className="mb-3">{t('profile_overview') || 'Profile Overview'}</h6>
                 <p className="text-muted small">
-                  Your profile is live and can be viewed by others. Share your unique link to increase visibility and engagement.
+                  {t('profile_live_share') || 'Your profile is live and can be viewed by others. Share your unique link to increase visibility and engagement.'}
                 </p>
                 <div className="mt-3">
                   <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <span className="small">Profile Completeness</span>
+                    <span className="small">{t('profile_completeness') || 'Profile Completeness'}</span>
                     <div className="d-flex align-items-center gap-2">
                       <div style={{ 
                         width: '100px', 
@@ -142,52 +150,84 @@ function Dashboard() {
                     </div>
                   </div>
                   <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <span className="small">Social Links</span>
+                    <span className="small">{t('social_links') || 'Social Links'}</span>
                     <span className="fw-bold">{profileStats.totalSocialLinks}</span>
                   </div>
                   <div className="d-flex justify-content-between align-items-center py-2">
-                    <span className="small">Theme Applied</span>
+                    <span className="small">{t('theme_applied') || 'Theme Applied'}</span>
                     <span className="fw-bold">{profileStats.themeName}</span>
                   </div>
                 </div>
               </div>
+
+              {/* Profile Analytics */}
+              {analytics && (
+                <div className="mt-3 p-3 card-like">
+                  <h6 className="mb-3">
+                    <i className="bi bi-graph-up me-2"></i>
+                    {t('profile_analytics')}
+                  </h6>
+                  <div className="small">
+                    <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
+                      <span className="small">{t('total_views')}</span>
+                      <span className="fw-bold text-primary">{analytics.totalViews}</span>
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
+                      <span className="small">{t('unique_visitors')}</span>
+                      <span className="fw-bold text-success">{analytics.uniqueViewers}</span>
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
+                      <span className="small">{t('views_today')}</span>
+                      <span className="fw-bold">{analytics.todayViews}</span>
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center py-2 border-bottom">
+                      <span className="small">{t('last_7_days')}</span>
+                      <span className="fw-bold">{analytics.last7DaysViews}</span>
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center py-2">
+                      <span className="small">{t('last_30_days')}</span>
+                      <span className="fw-bold">{analytics.last30DaysViews}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Profile Checklist */}
               {profileStats.completeness < 100 && (
                 <div className="mt-3 p-3 card-like">
                   <h6 className="mb-3">
                     <i className="bi bi-list-check me-2"></i>
-                    Complete Your Profile
+                    {t('complete_profile') || 'Complete Your Profile'}
                   </h6>
                   <div className="small">
                     {!profileStats.hasUsername && (
                       <div className="d-flex align-items-center gap-2 mb-2 text-muted">
                         <i className="bi bi-circle"></i>
-                        <span>Add a username</span>
+                        <span>{t('add_username') || 'Add a username'}</span>
                       </div>
                     )}
                     {!profileStats.hasAvatar && (
                       <div className="d-flex align-items-center gap-2 mb-2 text-muted">
                         <i className="bi bi-circle"></i>
-                        <span>Upload a profile picture</span>
+                        <span>{t('upload_profile_picture') || 'Upload a profile picture'}</span>
                       </div>
                     )}
                     {!profileStats.hasDescription && (
                       <div className="d-flex align-items-center gap-2 mb-2 text-muted">
                         <i className="bi bi-circle"></i>
-                        <span>Write a bio description</span>
+                        <span>{t('write_bio_description') || 'Write a bio description'}</span>
                       </div>
                     )}
                     {profileStats.totalSocialLinks === 0 && (
                       <div className="d-flex align-items-center gap-2 mb-2 text-muted">
                         <i className="bi bi-circle"></i>
-                        <span>Add social media links</span>
+                        <span>{t('add_social_links') || 'Add social media links'}</span>
                       </div>
                     )}
                     {profileStats.hasUsername && profileStats.hasAvatar && profileStats.hasDescription && profileStats.totalSocialLinks > 0 && (
                       <div className="d-flex align-items-center gap-2 mb-2 text-success">
                         <i className="bi bi-check-circle-fill"></i>
-                        <span>Looking great! Keep it up!</span>
+                        <span>{t('looking_great') || 'Looking great! Keep it up!'}</span>
                       </div>
                     )}
                   </div>
@@ -196,7 +236,7 @@ function Dashboard() {
             </div>
             <div className="col-12 col-lg-4">
               <div className="p-3 card-like">
-                <h6 className="mb-3">Recent Activity</h6>
+                <h6 className="mb-3">{t('recent_activity')}</h6>
                 {recentActivity.length > 0 ? (
                   <div>
                     {recentActivity.map(item => (
@@ -212,7 +252,7 @@ function Dashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-muted small">No recent activity yet.</div>
+                  <div className="text-muted small">{t('no_recent_activity') || 'No recent activity yet.'}</div>
                 )}
               </div>
             </div>

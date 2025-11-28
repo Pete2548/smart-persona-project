@@ -230,6 +230,15 @@ export default function VtreeCustomize({
     })
 
     setSelectedPreset(presetKey)
+    
+    // Show success notification
+    setSuccessMessage(`สร้างโปรไฟล์สไตล์ "${preset.name}" สำเร็จ!`)
+    setShowSuccessNotification(true)
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+      setShowSuccessNotification(false)
+    }, 3000)
   }
 
   // AI Generation from prompt (Thai & English support)
@@ -951,27 +960,52 @@ export default function VtreeCustomize({
               onClick={() => setShowVcreateModal(true)}
               className="btn btn-primary d-flex align-items-center gap-2"
               style={{
-                background: 'linear-gradient(135deg, #000000 0%, #2a2a2a 50%, #000000 100%)',
-                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%)',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
                 borderRadius: '12px',
-                padding: '10px 20px',
-                fontWeight: '600',
-                boxShadow: '0 0 20px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1)',
+                padding: '12px 24px',
+                fontWeight: '700',
+                fontSize: '15px',
+                boxShadow: '0 0 30px rgba(255, 255, 255, 0.4), 0 4px 15px rgba(255, 255, 255, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
                 transition: 'all 0.3s ease',
                 zIndex: 10,
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                color: '#ffffff',
+                textShadow: '0 2px 8px rgba(255, 255, 255, 0.3)'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = '0 0 30px rgba(255,255,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2)'
+                e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)'
+                e.currentTarget.style.boxShadow = '0 0 50px rgba(255, 255, 255, 0.7), 0 8px 25px rgba(255, 255, 255, 0.5), inset 0 1px 0 rgba(255,255,255,0.3)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '0 0 20px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
+                e.currentTarget.style.transform = 'translateY(0) scale(1)'
+                e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 255, 255, 0.4), 0 4px 15px rgba(255, 255, 255, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
               }}
             >
-              <span>Vcreate</span>
+              {/* Shine effect */}
+              <div style={{
+                position: 'absolute',
+                top: '-50%',
+                left: '-50%',
+                width: '200%',
+                height: '200%',
+                background: 'linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)',
+                animation: 'vcreateShine 3s infinite',
+                pointerEvents: 'none'
+              }} />
+              <style>{`
+                @keyframes vcreateShine {
+                  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+                  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+                }
+              `}</style>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'relative', zIndex: 1 }}>
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+              <span style={{ position: 'relative', zIndex: 1 }}>Vcreate</span>
             </button>
 
             {/* Center: Tab Navigation */}

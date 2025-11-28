@@ -2,10 +2,74 @@
 // Auto-apply settings based on profile type
 
 export const profileTemplates = {
-  professional: {
-    name: 'Professional',
-    icon: 'bi-briefcase-fill',
-    description: 'Perfect for job applications and professional networking',
+  personal: {
+    name: 'Personal',
+    icon: 'bi-person-circle',
+    description: 'Share your story and connect with friends',
+    
+    defaultSettings: {
+      layout: 'default',
+      nameColor: '#e056fd',
+      blockColor: '#ffffff',
+      bgColor: '#1e1138',
+      descColor: '#d4b4ff',
+      bgOverlay: 0.3
+    },
+    
+    placeholders: {
+      displayName: 'Your Name',
+      description: 'Living life with purpose and passion. Sharing experiences and connecting with amazing people!',
+    },
+    
+    recommendedThemes: [
+      { id: 2, name: 'Purple Dream' },
+      { id: 4, name: 'Mint Fresh' },
+      { id: 6, name: 'Rose Gold' }
+    ],
+    
+    hints: {
+      avatar: 'Your favorite personal photo',
+      description: 'Share your interests, hobbies, and what you\'re passionate about',
+      social: 'Add Instagram, Facebook, TikTok, and personal links'
+    }
+  },
+
+  vtree: {
+    name: 'Vtree',
+    icon: 'bi-link-45deg',
+    description: 'Link tree style for all your important links',
+    
+    defaultSettings: {
+      layout: 'linktree',
+      nameColor: '#39ff14',
+      blockColor: '#ffffff',
+      bgColor: '#000000',
+      descColor: '#b4f8c8',
+      bgOverlay: 0.2
+    },
+    
+    placeholders: {
+      displayName: 'Your Name',
+      description: 'All my links in one place 🔗',
+    },
+    
+    recommendedThemes: [
+      { id: 7, name: 'Neon City' },
+      { id: 4, name: 'Mint Fresh' },
+      { id: 5, name: 'Emerald Dream' }
+    ],
+    
+    hints: {
+      avatar: 'Profile photo or logo',
+      description: 'Brief intro or tagline',
+      social: 'Add all your social media and important links'
+    }
+  },
+
+  resume: {
+    name: 'Resume',
+    icon: 'bi-file-earmark-person',
+    description: 'Professional resume for job applications',
     
     defaultSettings: {
       layout: 'linkedin',
@@ -19,6 +83,10 @@ export const profileTemplates = {
     placeholders: {
       displayName: 'Your Professional Name',
       description: 'Experienced professional with expertise in multiple domains. Passionate about innovation and delivering exceptional results.',
+      jobTitle: 'Software Engineer',
+      location: 'Bangkok, Thailand',
+      skills: ['JavaScript', 'React', 'Node.js'],
+      experienceYears: 3
     },
     
     recommendedThemes: [
@@ -64,140 +132,12 @@ export const profileTemplates = {
       description: 'Describe your services, specialties, and what makes you unique',
       social: 'Add portfolio, Instagram, Behance, and contact methods'
     }
-  },
-
-  personal: {
-    name: 'Personal',
-    icon: 'bi-person-circle',
-    description: 'Share your story and connect with friends',
-    
-    defaultSettings: {
-      layout: 'default',
-      nameColor: '#e056fd',
-      blockColor: '#ffffff',
-      bgColor: '#1e1138',
-      descColor: '#d4b4ff',
-      bgOverlay: 0.3
-    },
-    
-    placeholders: {
-      displayName: 'Your Name',
-      description: 'Living life with purpose and passion. Sharing experiences and connecting with amazing people!',
-    },
-    
-    recommendedThemes: [
-      { id: 2, name: 'Purple Dream' },
-      { id: 4, name: 'Mint Fresh' },
-      { id: 6, name: 'Rose Gold' }
-    ],
-    
-    hints: {
-      avatar: 'Your favorite personal photo',
-      description: 'Share your interests, hobbies, and what you\'re passionate about',
-      social: 'Add Instagram, Facebook, TikTok, and personal links'
-    }
-  },
-
-  creative: {
-    name: 'Creative',
-    icon: 'bi-palette-fill',
-    description: 'Display your creative work and artistic vision',
-    
-    defaultSettings: {
-      layout: 'custom',
-      nameColor: '#00ff87',
-      blockColor: '#ffffff',
-      bgColor: '#0a3d2e',
-      descColor: '#c7f0bd',
-      bgOverlay: 0.35
-    },
-    
-    placeholders: {
-      displayName: 'Artist Name',
-      description: 'Creative visionary bringing imagination to life through art and innovation. Let\'s explore creativity together!',
-    },
-    
-    recommendedThemes: [
-      { id: 3, name: 'Sunset Vibes' },
-      { id: 7, name: 'Neon City' },
-      { id: 5, name: 'Emerald Dream' }
-    ],
-    
-    hints: {
-      avatar: 'Artistic photo or your creative work',
-      description: 'Showcase your artistic style, creative process, and vision',
-      social: 'Add Instagram, Behance, ArtStation, and portfolio'
-    }
-  },
-
-  business: {
-    name: 'Business',
-    icon: 'bi-building',
-    description: 'Promote your business and services',
-    
-    defaultSettings: {
-      layout: 'linkedin',
-      nameColor: '#d4af37',
-      blockColor: '#ffffff',
-      bgColor: '#0f0f0f',
-      descColor: '#b8956a',
-      bgOverlay: 0.4
-    },
-    
-    placeholders: {
-      displayName: 'Business Name',
-      description: 'Business leader driving growth and innovation. Building sustainable solutions and fostering strategic partnerships.',
-    },
-    
-    recommendedThemes: [
-      { id: 1, name: 'Ocean Blue' },
-      { id: 15, name: 'Dark Premium' },
-      { id: 16, name: 'Gold Luxury' }
-    ],
-    
-    hints: {
-      avatar: 'Company logo or professional business photo',
-      description: 'Describe your business, services, and value proposition',
-      social: 'Add LinkedIn, company website, and business contacts'
-    }
-  },
-
-  vtree: {
-    name: 'Vtree',
-    icon: 'bi-link-45deg',
-    description: 'Link tree style for all your important links',
-    
-    defaultSettings: {
-      layout: 'linktree',
-      nameColor: '#39ff14',
-      blockColor: '#ffffff',
-      bgColor: '#000000',
-      descColor: '#b4f8c8',
-      bgOverlay: 0.2
-    },
-    
-    placeholders: {
-      displayName: 'Your Name',
-      description: 'All my links in one place 🔗',
-    },
-    
-    recommendedThemes: [
-      { id: 7, name: 'Neon City' },
-      { id: 4, name: 'Mint Fresh' },
-      { id: 5, name: 'Emerald Dream' }
-    ],
-    
-    hints: {
-      avatar: 'Profile photo or logo',
-      description: 'Brief intro or tagline',
-      social: 'Add all your social media and important links'
-    }
   }
 }
 
 // Helper function to get template by type
 export const getTemplateByType = (type) => {
-  return profileTemplates[type] || profileTemplates.professional
+  return profileTemplates[type] || profileTemplates.personal
 }
 
 // Helper function to apply template to profile data

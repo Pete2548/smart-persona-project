@@ -1,0 +1,296 @@
+/* LinkedIn-style My Profile Page */
+
+.linkedin-profile {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Profile Header Card */
+.profile-header-card {
+  overflow: hidden;
+  border-radius: 12px !important;
+}
+
+.cover-photo {
+  position: relative;
+  width: 100%;
+}
+
+.profile-header-body {
+  padding: 0 24px 24px 24px !important;
+  margin-top: -80px;
+  position: relative;
+}
+
+.profile-photo-container {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+
+.profile-photo {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 4px solid white;
+  object-fit: cover;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.profile-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #000000;
+  margin-top: 12px;
+}
+
+.profile-headline {
+  font-size: 16px;
+  color: #000000;
+  font-weight: 400;
+}
+
+.profile-meta {
+  font-size: 14px;
+  color: #666666;
+}
+
+.profile-meta span {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Analytics Bar */
+.analytics-bar {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.analytics-item {
+  padding: 0 12px;
+}
+
+.analytics-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0a66c2;
+}
+
+.analytics-label {
+  font-size: 12px;
+  color: #666666;
+  margin-top: 4px;
+}
+
+/* Section Cards */
+.section-card {
+  border-radius: 12px !important;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000000;
+}
+
+/* About Section */
+.about-text {
+  color: #000000;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.about-text.collapsed {
+  max-height: 100px;
+  overflow: hidden;
+  position: relative;
+}
+
+.about-text.collapsed::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, transparent, white);
+}
+
+.about-text.expanded {
+  max-height: none;
+}
+
+/* Experience Section */
+.experience-list,
+.education-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.experience-item,
+.education-item {
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.experience-item:last-child,
+.education-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.experience-icon,
+.education-icon {
+  width: 48px;
+  height: 48px;
+  background: #f3f6f8;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #666666;
+  flex-shrink: 0;
+}
+
+.experience-position,
+.education-school {
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.experience-company,
+.education-degree {
+  font-size: 14px;
+  color: #000000;
+}
+
+.experience-meta,
+.education-meta {
+  font-size: 14px;
+  color: #666666;
+}
+
+.experience-description,
+.education-coursework {
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.experience-bullets {
+  margin: 0;
+  padding-left: 20px;
+  color: #000000;
+}
+
+.experience-bullets li {
+  margin-bottom: 4px;
+}
+
+/* Skills Section */
+.skills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skill-badge {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #d0d0d0;
+  border-radius: 20px;
+  cursor: default;
+  transition: all 0.2s;
+}
+
+.skill-badge:hover {
+  background-color: #e8f4f8 !important;
+  border-color: #0a66c2;
+  color: #0a66c2 !important;
+}
+
+/* Empty States */
+.empty-state {
+  padding: 40px 20px;
+}
+
+.empty-state i {
+  opacity: 0.3;
+}
+
+.empty-state p {
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-header-body {
+    padding: 0 16px 16px 16px !important;
+    margin-top: -60px;
+  }
+
+  .profile-photo-container {
+    width: 120px;
+    height: 120px;
+  }
+
+  .profile-photo {
+    width: 120px;
+    height: 120px;
+  }
+
+  .profile-name {
+    font-size: 20px;
+  }
+
+  .profile-headline {
+    font-size: 14px;
+  }
+
+  .analytics-bar {
+    padding: 12px;
+  }
+
+  .analytics-value {
+    font-size: 16px;
+  }
+
+  .analytics-label {
+    font-size: 11px;
+  }
+
+  .experience-icon,
+  .education-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+}
+
+/* Button Overrides */
+.section-card .btn-outline-primary {
+  border-color: #0a66c2;
+  color: #0a66c2;
+}
+
+.section-card .btn-outline-primary:hover {
+  background-color: #0a66c2;
+  color: white;
+}
+
+.section-card .btn-primary {
+  background-color: #0a66c2;
+  border-color: #0a66c2;
+}
+
+.section-card .btn-primary:hover {
+  background-color: #084d91;
+  border-color: #084d91;
+}

@@ -1,11 +1,14 @@
 import React, { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Dropdown } from 'react-bootstrap'
+import { useTranslation } from 'react-i18next'
 import { getCurrentUser } from '../services/auth'
 import { getActiveProfile } from '../services/profileManager'
 import LoginModal from './LoginModal'
 import '../pages/dashboard.css'
 
 function Sidebar() {
+  const { t } = useTranslation();
   const navigate = useNavigate()
   const [showLoginModal, setShowLoginModal] = useState(false)
 
@@ -65,9 +68,14 @@ function Sidebar() {
       <div className="sidebar-top p-3">
         <div className="logo fw-bold fs-4">VERE</div>
       </div>
-
       <nav className="sidebar-nav flex-grow-1">
         <ul className="list-unstyled m-0 p-2">
+          <li className="nav-item mb-3">
+            <NavLink to="/my-profile" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
+              <i className="bi bi-person-circle fs-4 me-2"></i>
+              <span className="nav-label">{t('professional_profile')}</span>
+            </NavLink>
+          </li>
           <li className="nav-item mb-3">
             <a 
               href="/dashboard" 
@@ -75,50 +83,59 @@ function Sidebar() {
               className="d-flex align-items-center text-decoration-none text-dark nav-link"
             >
               <i className="bi bi-speedometer2 fs-4 me-2"></i>
-              <span className="nav-label">dashboard</span>
+              <span className="nav-label">{t('dashboard')}</span>
             </a>
           </li>
           <li className="nav-item mb-3">
+            <NavLink to="/explore" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
+              <i className="bi bi-search fs-4 me-2"></i>
+              <span className="nav-label">{t('explore_people')}</span>
+            </NavLink>
+          </li>
+          <li className="nav-item mb-3">
+            <NavLink to="/saved-profiles" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
+              <i className="bi bi-heart fs-4 me-2"></i>
+              <span className="nav-label">{t('saved_profiles')}</span>
+            </NavLink>
+          </li>
+          
+          <li><hr className="my-3" /></li>
+          
+          <li className="nav-item mb-3">
             <NavLink to="/my-profiles" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
               <i className="bi bi-collection fs-4 me-2"></i>
-              <span className="nav-label">my profiles</span>
+              <span className="nav-label">{t('my_links')}</span>
             </NavLink>
           </li>
           <li className="nav-item mb-3">
             <NavLink to="/customize" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
               <i className="bi bi-pencil-square fs-4 me-2"></i>
-              <span className="nav-label">customize</span>
+              <span className="nav-label">{t('customize')}</span>
             </NavLink>
           </li>
           <li className="nav-item mb-3">
             <NavLink to="/themes" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
               <i className="bi bi-palette fs-4 me-2"></i>
-              <span className="nav-label">themes</span>
+              <span className="nav-label">{t('themes')}</span>
             </NavLink>
           </li>
           <li className="nav-item mb-3">
             <NavLink to="/links" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
               <i className="bi bi-link-45deg fs-4 me-2"></i>
-              <span className="nav-label">links</span>
-            </NavLink>
-          </li>
-          <li className="nav-item mb-3">
-            <NavLink to="/ai-create" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
-              <i className="bi bi-robot fs-4 me-2"></i>
-              <span className="nav-label">ai create</span>
+              <span className="nav-label">{t('links')}</span>
             </NavLink>
           </li>
         </ul>
       </nav>
 
-      <div className="sidebar-footer p-3">
+      <div className="sidebar-footer p-3">\
         <div className="mb-3">
           <button 
             onClick={() => handleProtectedClick(() => window.open(viewPath, '_blank'))}
             className="btn view-profile-btn w-100 d-flex align-items-center justify-content-center"
           >
             <i className="bi bi-eye me-2"></i>
-            <span>View Profile</span>
+            <span>{t('view_profile')}</span>
           </button>
         </div>
 
@@ -126,7 +143,7 @@ function Sidebar() {
           onClick={() => handleProtectedClick(() => alert('Share feature'))}
           className="btn btn-dark w-100 share-btn mb-3"
         >
-          Share Your Profile
+          {t('share_your_profile')}
         </button>
 
         <div className="profile d-flex align-items-center">
@@ -148,7 +165,32 @@ function Sidebar() {
           <div className="flex-grow-1">
             <div className="profile-name">{profile?.displayName || profile?.username || 'Guest'}</div>
           </div>
-          <i className="bi bi-three-dots"></i>
+          <Dropdown align="end">
+            <Dropdown.Toggle 
+              variant="link" 
+              bsPrefix="p-0"
+              className="text-dark text-decoration-none border-0 bg-transparent"
+              style={{ boxShadow: 'none' }}
+            >
+              <i className="bi bi-three-dots fs-5"></i>
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu>
+              <Dropdown.Item onClick={() => navigate('/settings')}>
+                <i className="bi bi-gear me-2"></i>
+                {t('settings')}
+              </Dropdown.Item>
+              <Dropdown.Divider />
+              <Dropdown.Item onClick={() => {
+                localStorage.removeItem('currentUser');
+                navigate('/');
+                window.location.reload();
+              }} className="text-danger">
+                <i className="bi bi-box-arrow-right me-2"></i>
+                {t('logout')}
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
         </div>
       </div>
 
