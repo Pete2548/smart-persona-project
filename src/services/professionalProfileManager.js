@@ -62,6 +62,18 @@ export const createProfessionalProfile = (username) => {
       skills: [],
       experience: [],
       education: [],
+      tagline: '',
+      followers: 0,
+      vheartLikes: 0,
+      following: 0,
+      contact: {
+        email: '',
+        phone: '',
+        address: '',
+        links: []
+      },
+      featuredItems: [],
+      recentActivity: [],
       isPublic: true
     }
   };
@@ -259,6 +271,14 @@ export const deleteEducation = (profileId, educationId) => {
   return updateProfessionalProfile(profileId, { education: educationList });
 };
 
+// Remove featured item
+export const removeFeaturedItem = (profileId, itemId) => {
+  const profile = getProfessionalProfileById(profileId);
+  if (!profile) return null;
+
+  const filtered = (profile.data.featuredItems || []).filter(item => item.id !== itemId);
+  return updateProfessionalProfile(profileId, { featuredItems: filtered });
+};
 // Add skill to profile
 export const addSkill = (profileId, skill) => {
   const profile = getProfessionalProfileById(profileId);
@@ -281,6 +301,63 @@ export const removeSkill = (profileId, skill) => {
   return updateProfessionalProfile(profileId, { skills });
 };
 
+// Add featured/spotlight item
+export const addFeaturedItem = (profileId, item) => {
+  const profile = getProfessionalProfileById(profileId);
+  if (!profile) return null;
+
+  const featuredItems = profile.data.featuredItems || [];
+  const newItem = {
+    id: Date.now().toString(),
+    type: item.type || 'Project',
+    title: item.title || 'Untitled',
+    description: item.description || '',
+    url: item.url || '',
+    cover: item.cover || '',
+    createdAt: new Date().toISOString()
+  };
+
+  featuredItems.unshift(newItem);
+  return updateProfessionalProfile(profileId, { featuredItems });
+};
+
+// Add timeline activity entry
+export const addActivityEntry = (profileId, entry) => {
+  const profile = getProfessionalProfileById(profileId);
+  if (!profile) return null;
+
+  const timeline = profile.data.recentActivity || [];
+  const newEntry = {
+    id: Date.now().toString(),
+    type: entry.type || 'Update',
+    title: entry.title || entry.summary || 'New update',
+    description: entry.description || '',
+    timestamp: entry.timestamp || new Date().toLocaleString(),
+    icon: entry.icon || 'bi-activity'
+  };
+
+  timeline.unshift(newEntry);
+  return updateProfessionalProfile(profileId, { recentActivity: timeline });
+};
+
+// Remove activity entry
+export const removeActivityEntry = (profileId, entryId) => {
+  const profile = getProfessionalProfileById(profileId);
+  if (!profile) return null;
+
+  const timeline = (profile.data.recentActivity || []).filter(item => item.id !== entryId);
+  return updateProfessionalProfile(profileId, { recentActivity: timeline });
+};
+
+export const adjustVheartLikes = (profileId, delta = 1) => {
+  const profile = getProfessionalProfileById(profileId);
+  if (!profile) return null;
+
+  const current = profile.data.vheartLikes ?? profile.data.followers ?? 0;
+  const nextValue = Math.max(0, current + delta);
+
+  return updateProfessionalProfile(profileId, { vheartLikes: nextValue, followers: nextValue });
+};
 // Set active professional profile
 export const setActiveProfessionalProfile = (profileId) => {
   localStorage.setItem(ACTIVE_PROFILE_KEY, profileId);

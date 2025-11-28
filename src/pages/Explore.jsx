@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Container, Row, Col, Card, Button, Form, Badge, Pagination } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../services/auth';
-import { getPublicProfessionalProfiles, searchProfessionalProfiles, getAllSkills, getAllLocations } from '../services/professionalProfileManager';
-import { isProfileSaved, toggleSaveProfile } from '../services/savedProfiles';
+import { getPublicProfessionalProfiles, searchProfessionalProfiles, getAllSkills, getAllLocations, adjustVheartLikes } from '../services/professionalProfileManager';
+import { isProfileSaved, saveProfile, unsaveProfile } from '../services/savedProfiles';
+import Sidebar from '../components/Sidebar';
 import LoginModal from '../components/LoginModal';
 
 function Explore() {
@@ -112,8 +113,14 @@ function Explore() {
       setShowLoginModal(true);
       return;
     }
-    
-    toggleSaveProfile(profileId);
+    const alreadySaved = isProfileSaved(profileId);
+    if (alreadySaved) {
+      unsaveProfile(profileId);
+      adjustVheartLikes(profileId, -1);
+    } else {
+      saveProfile(profileId);
+      adjustVheartLikes(profileId, 1);
+    }
     // Force re-render by toggling state
     setFilteredProfiles(prev => [...prev]);
   };
@@ -136,12 +143,15 @@ function Explore() {
   };
 
   return (
-    <>
-      <Container className="py-5">
-        <div className="text-center mb-4">
-          <h2 className="fw-bold">{t('explore_people')}</h2>
-          <p className="text-muted">{t('discover_talented')}</p>
-        </div>
+    <div className="dashboard-shell p-4">
+      <div className="dashboard-card d-flex">
+        <Sidebar />
+        
+        <main className="dashboard-main p-4">
+          <div className="text-center mb-4">
+            <h2 className="fw-bold">{t('explore_people')}</h2>
+            <p className="text-muted">{t('discover_talented')}</p>
+          </div>
 
         {/* Search and Filters */}
         <Card className="mb-4 border-0 shadow-sm">
@@ -460,14 +470,15 @@ function Explore() {
             </Button>
           </div>
         )}
-      </Container>
-
-      <LoginModal 
-        show={showLoginModal} 
-        onHide={() => setShowLoginModal(false)}
-        onSwitchToSignup={handleSwitchToSignup}
-      />
-    </>
+        
+        <LoginModal 
+          show={showLoginModal} 
+          onHide={() => setShowLoginModal(false)}
+          onSwitchToSignup={handleSwitchToSignup}
+        />
+        </main>
+      </div>
+    </div>
   );
 }
 

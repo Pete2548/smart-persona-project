@@ -3,32 +3,49 @@ import { useNavigate } from 'react-router-dom'
 import { getActiveProfile } from '../services/profileManager'
 import { getProfile } from '../services/auth'
 
-function ProfileCard({ name: _name, title: _title, bio: _bio }) {
+function ProfileCard({ profileData, username: usernameProp, name: nameProp, title: titleProp, bio: bioProp }) {
   const navigate = useNavigate()
-  const [profile, setProfile] = useState(null)
-  const [authUser, setAuthUser] = useState(null)
+  const [profile, setProfile] = useState(profileData || null)
+  const [authUser, setAuthUser] = useState(usernameProp ? { username: usernameProp } : null)
 
   useEffect(() => {
+    if (profileData) {
+      setProfile(profileData)
+      return
+    }
+
     try {
       const activeProfile = getActiveProfile()
       if (activeProfile && activeProfile.data) {
         setProfile(activeProfile.data)
       }
-      
+    } catch (e) {
+      setProfile(null)
+    }
+  }, [profileData])
+
+  useEffect(() => {
+    if (usernameProp) {
+      setAuthUser({ username: usernameProp })
+      return
+    }
+
+    try {
       const user = getProfile()
       if (user) {
         setAuthUser(user)
       }
     } catch (e) {
-      setProfile(null)
       setAuthUser(null)
     }
-  }, [])
+  }, [usernameProp])
 
-  const displayName = profile ? (profile.displayName || profile.firstName || _name || 'User') : (_name || 'User')
-  const username = authUser ? (authUser.username || 'username') : 'username'
-  const avatar = profile ? profile.avatar : null
+  const displayName = (profile?.displayName || profile?.firstName || nameProp || 'User')
+  const username = usernameProp || authUser?.username || 'username'
+  const avatar = profile?.avatar || null
   const firstLetter = displayName.charAt(0).toUpperCase()
+  const jobTitle = profile?.jobTitle || titleProp || ''
+  const bio = profile?.description || bioProp || ''
 
   const handleClick = () => {
     if (username && username !== 'username') {
@@ -62,6 +79,8 @@ function ProfileCard({ name: _name, title: _title, bio: _bio }) {
       <div className="profile-meta">
         <div className="profile-name fw-bold">{displayName}</div>
         <div className="profile-title text-muted">@{username}</div>
+        {jobTitle && <div className="text-muted small">{jobTitle}</div>}
+        {bio && <div className="text-muted small">{bio}</div>}
       </div>
     </div>
   )

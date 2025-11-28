@@ -1,0 +1,49 @@
+:root {
+	--color-bg: #f8fafc;
+	--color-surface: #ffffff;
+	--color-text: #0f172a;
+	--color-muted: rgba(15, 23, 42, 0.65);
+	--color-border: rgba(15, 23, 42, 0.08);
+	--color-accent: #2563eb;
+	--color-accent-contrast: #ffffff;
+	--color-accent-soft: #dbeafe;
+}
+
+body {
+	background-color: var(--color-bg);
+	color: var(--color-text);
+	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	min-height: 100vh;
+	transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+a {
+	color: var(--color-accent);
+}
+
+.card,
+.modal-content,
+.dropdown-menu {
+	background-color: var(--color-surface);
+	color: var(--color-text);
+	border: 1px solid var(--color-border);
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+	background-color: var(--color-accent);
+	color: var(--color-accent-contrast);
+}
+
+.navbar.bg-light {
+	background-color: var(--color-surface) !important;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.theme-toggle {
+	color: var(--color-text) !important;
+}
+
+.theme-toggle .bi-heart-fill {
+	color: var(--color-accent);
+}

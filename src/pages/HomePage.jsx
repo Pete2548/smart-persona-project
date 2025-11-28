@@ -17,7 +17,7 @@ function HomePage() {
   const handleCreatePersona = () => {
     const user = getCurrentUser();
     if (user) {
-      navigate('/dashboard');
+      navigate('/my-profile');
     } else {
       setShowLoginModal(true);
     }
@@ -26,7 +26,7 @@ function HomePage() {
   const handleExploreDashboard = () => {
     const user = getCurrentUser();
     if (user) {
-      navigate('/dashboard');
+      navigate('/my-profile');
     } else {
       setShowLoginModal(true);
     }

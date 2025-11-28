@@ -6,8 +6,8 @@ import ProfileCard from '../components/ProfileCard'
 import StatsCard from '../components/StatsCard'
 import LoginModal from '../components/LoginModal'
 import { getCurrentUser } from '../services/auth'
-import { getActiveProfile, getAllProfiles } from '../services/profileManager'
 import { getProfileAnalytics } from '../services/profileAnalytics'
+import { getCurrentUserProfessionalProfile, createProfessionalProfile, updateProfessionalProfile } from '../services/professionalProfileManager'
 import './dashboard.css'
 
 function Dashboard() {
@@ -26,88 +26,108 @@ function Dashboard() {
     hasUsername: false
   })
 
+  const calculateProfileStats = (data = {}) => {
+    let completeness = 0
+    if (data.username) completeness += 20
+    if (data.displayName || data.firstName) completeness += 15
+    if (data.description) completeness += 20
+    if (data.avatar) completeness += 15
+    if (data.bgColor || data.bgImage) completeness += 10
+    if (data.socialLinks) {
+      const linkedSocials = Object.values(data.socialLinks).filter(link => link && link.trim() !== '')
+      completeness += Math.min(linkedSocials.length * 4, 20)
+    }
+
+    const socialLinks = data.socialLinks || {}
+    const totalSocialLinks = Object.values(socialLinks).filter(link => link && link.trim() !== '').length
+
+    let themeName = 'Custom'
+    if (data.bgImage) themeName = 'Custom Background'
+    if (data.layout) {
+      const layoutNames = {
+        'default': 'Default Card',
+        'linktree': 'Linktree Style',
+        'linkedin': 'LinkedIn Pro',
+        'guns': 'Neon Style',
+        'minimal': 'Minimal Clean'
+      }
+      themeName = layoutNames[data.layout] || 'Custom'
+    }
+
+    return {
+      completeness: Math.min(completeness, 100),
+      totalSocialLinks,
+      themeName,
+      hasAvatar: !!data.avatar,
+      hasDescription: !!data.description,
+      hasUsername: !!data.username
+    }
+  }
+
+  const hydrateRecentActivity = (profileRecord) => {
+    const storedActivity = profileRecord?.data?.recentActivity
+    if (storedActivity && storedActivity.length > 0) {
+      setRecentActivity(storedActivity)
+      localStorage.setItem('recent_activity', JSON.stringify(storedActivity))
+      return
+    }
+
+    try {
+      const legacyActivity = localStorage.getItem('recent_activity')
+      if (legacyActivity) {
+        const parsed = JSON.parse(legacyActivity)
+        setRecentActivity(parsed)
+        if (profileRecord?.id) {
+          updateProfessionalProfile(profileRecord.id, { recentActivity: parsed })
+        }
+        return
+      }
+    } catch (err) {
+      console.warn('Failed to parse legacy activity log', err)
+    }
+
+    const fallbackActivity = [
+      { id: 'welcome', action: 'Welcome to VERE!', time: 'Today', icon: 'bi-star' },
+      { id: 'profile-created', action: 'Profile created', time: 'Just now', icon: 'bi-person-plus' }
+    ]
+
+    setRecentActivity(fallbackActivity)
+    localStorage.setItem('recent_activity', JSON.stringify(fallbackActivity))
+
+    if (profileRecord?.id) {
+      updateProfessionalProfile(profileRecord.id, { recentActivity: fallbackActivity })
+    }
+  }
+
   // Check if user is admin
   const user = getCurrentUser()
   const userIsAdmin = user?.role === 'admin'
 
   useEffect(() => {
-    // Check if user is logged in
     const user = getCurrentUser()
     if (!user) {
       setShowLoginModal(true)
       return
     }
 
-    // Load active profile and calculate stats
     try {
-      const activeProfile = getActiveProfile()
-      if (activeProfile && activeProfile.data) {
-        const data = activeProfile.data
-        setProfile(data)
-        
-        // Get analytics data
-        const analyticsData = getProfileAnalytics(activeProfile.id)
-        setAnalytics(analyticsData)
-        
-        // Calculate profile completeness
-        let completeness = 0
-        if (data.username) completeness += 20
-        if (data.displayName || data.firstName) completeness += 15
-        if (data.description) completeness += 20
-        if (data.avatar) completeness += 15
-        if (data.bgColor || data.bgImage) completeness += 10
-        if (data.socialLinks) {
-          const linkedSocials = Object.values(data.socialLinks).filter(link => link && link.trim() !== '')
-          completeness += Math.min(linkedSocials.length * 4, 20)
-        }
-        
-        // Get social links count
-        const socialLinks = data.socialLinks || {}
-        const totalSocialLinks = Object.values(socialLinks).filter(link => link && link.trim() !== '').length
-        
-        // Get theme name
-        let themeName = 'Custom'
-        if (data.bgImage) themeName = 'Custom Background'
-        if (data.layout) {
-          const layoutNames = {
-            'default': 'Default Card',
-            'linktree': 'Linktree Style',
-            'linkedin': 'LinkedIn Pro',
-            'guns': 'Neon Style',
-            'minimal': 'Minimal Clean'
-          }
-          themeName = layoutNames[data.layout] || 'Custom'
-        }
-        
-        setProfileStats({
-          completeness: Math.min(completeness, 100),
-          totalSocialLinks,
-          themeName,
-          hasAvatar: !!data.avatar,
-          hasDescription: !!data.description,
-          hasUsername: !!data.username
-        })
+      let professionalProfile = getCurrentUserProfessionalProfile()
+      if (!professionalProfile) {
+        professionalProfile = createProfessionalProfile(user.username)
       }
-    } catch (err) {
-      console.warn('Failed to load profile', err)
-    }
 
-    // Load recent activity
-    try {
-      const activity = localStorage.getItem('recent_activity')
-      if (activity) {
-        setRecentActivity(JSON.parse(activity))
-      } else {
-        // Sample activity data
-        const sampleActivity = [
-          { id: 1, action: 'Profile created', time: 'Just now', icon: 'bi-person-plus' },
-          { id: 2, action: 'Welcome to VERE!', time: 'Today', icon: 'bi-star' }
-        ]
-        setRecentActivity(sampleActivity)
-        localStorage.setItem('recent_activity', JSON.stringify(sampleActivity))
+      if (professionalProfile) {
+        const data = professionalProfile.data || {}
+        setProfile(data)
+        setProfileStats(calculateProfileStats(data))
+
+        const analyticsData = getProfileAnalytics(professionalProfile.id)
+        setAnalytics(analyticsData)
+
+        hydrateRecentActivity(professionalProfile)
       }
     } catch (err) {
-      console.warn('Failed to load activity', err)
+      console.warn('Failed to load professional profile', err)
     }
   }, [])
 
@@ -118,7 +138,10 @@ function Dashboard() {
 
         <main className="dashboard-main p-4">
           <div className="d-flex justify-content-between align-items-start mb-4">
-            <ProfileCard />
+            <ProfileCard 
+              profileData={profile}
+              username={profile?.username || user?.username}
+            />
             {userIsAdmin && (
               <button className="btn btn-primary" onClick={() => navigate('/admin')}>
                 <i className="bi bi-speedometer2 me-2"></i>Go to Admin Dashboard
@@ -128,7 +151,7 @@ function Dashboard() {
 
           <div className="row g-3">
             <div className="col-12 col-lg-8">
-              <StatsCard />
+              <StatsCard analytics={analytics} />
               
               {/* Profile Overview */}
               <div className="mt-3 p-3 card-like">

@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { login, getCurrentUser, logout } from '../services/auth'
 import LoginModal from './LoginModal'
+import { useTheme } from '../contexts/ThemeContext'
 
 function VereHeader() {
   const { t, i18n } = useTranslation();
@@ -12,6 +13,7 @@ function VereHeader() {
   const [password, setPassword] = useState('')
   const [current, setCurrent] = useState(getCurrentUser())
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const { theme, availableThemes, setTheme } = useTheme()
   const navigate = useNavigate()
 
   const changeLanguage = (lng) => {
@@ -42,8 +44,8 @@ function VereHeader() {
       alert(res.message || 'Login failed')
       return
     }
-    // navigate to dashboard
-    navigate('/dashboard')
+    // navigate to my profile
+    navigate('/my-profile')
     // update state
     setCurrent({ username: res.user.username, email: res.user.email })
   }
@@ -60,14 +62,20 @@ function VereHeader() {
     if (!user) {
       setShowLoginModal(true)
     } else {
-      navigate('/dashboard')
+      navigate('/my-profile')
     }
   }
+
+  const themeIcon = theme === 'dark'
+    ? 'bi-moon-stars'
+    : theme === 'vheart'
+    ? 'bi-heart-fill'
+    : 'bi-brightness-high'
 
   return (
     <>
     {/* Layout 3 ส่วน (flex: 1) ยังคงอยู่เหมือนเดิม เพื่อ "ล็อค" โลโก้ไว้ */}
-    <Navbar bg="light" expand={false} className="shadow">
+    <Navbar bg="light" expand={false} className="shadow sticky-top">
       <Container fluid className="d-flex justify-content-between align-items-center">
 
         {/* left menu */}
@@ -84,6 +92,29 @@ function VereHeader() {
         </div>
         {/* right */}
         <div style={{ flex: '1 1 0' }} className="d-flex justify-content-end align-items-center gap-2">
+          {/* Theme Switcher */}
+          <Dropdown align="end">
+            <Dropdown.Toggle 
+              variant="link"
+              className="text-decoration-none p-0 border-0 theme-toggle"
+              aria-label="Switch theme"
+              style={{ boxShadow: 'none' }}
+            >
+              <i className={`bi ${themeIcon} fs-5`}></i>
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              {availableThemes.map((option) => (
+                <Dropdown.Item
+                  key={option.id}
+                  active={option.id === theme}
+                  onClick={() => setTheme(option.id)}
+                >
+                  <i className={`bi ${option.icon} me-2`}></i>
+                  {option.label}
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
           {/* Language Switcher */}
           <Dropdown align="end">
             <Dropdown.Toggle 

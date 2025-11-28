@@ -15,6 +15,56 @@
   margin-bottom: 32px;
 }
 
+.theme-workbench {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.theme-workbench input {
+  flex: 1;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+
+.workbench-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #6c5ce7 0%, #a363d9 100%);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.workbench-btn.secondary {
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+}
+
+.workbench-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.workbench-btn:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.workbench-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
 .themes-title {
   font-size: 28px;
   font-weight: 700;
@@ -317,6 +367,81 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+}
+
+.theme-meta {
+  margin-bottom: 8px;
+}
+
+.theme-source-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(108,92,231,0.1);
+  color: #5f4dd1;
+}
+
+.theme-source-pill.source-community {
+  background: rgba(16,185,129,0.12);
+  color: #059669;
+}
+
+.theme-source-pill.source-saved {
+  background: rgba(79,70,229,0.12);
+  color: #4f46e5;
+}
+
+.theme-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-save-theme {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-save-theme:hover {
+  background: rgba(108,92,231,0.08);
+  border-color: rgba(108,92,231,0.3);
+}
+
+.btn-delete-theme {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 8px;
+  background: rgba(239,68,68,0.08);
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-delete-theme:hover {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.4);
 }
 
 .theme-author {

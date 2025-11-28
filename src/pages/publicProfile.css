@@ -1,0 +1,443 @@
+/* Public professional profile styling scoped to public-profile-page */
+.public-profile-page {
+  --vheart-primary: #f43f5e;
+  --vheart-primary-dark: #be123c;
+  --vheart-primary-soft: #ffe4e6;
+  background-color: #f8fafc;
+}
+
+.public-profile-page .linkedin-profile {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.public-profile-page .profile-header-card {
+  overflow: hidden;
+  border-radius: 12px !important;
+}
+
+.public-profile-page .cover-photo {
+  position: relative;
+  width: 100%;
+}
+
+.public-profile-page .profile-header-body {
+  padding: 0 24px 24px 24px !important;
+  margin-top: -80px;
+  position: relative;
+}
+
+.public-profile-page .profile-photo-container {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+
+.public-profile-page .profile-photo {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 4px solid white;
+  object-fit: cover;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.public-profile-page .profile-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #000000;
+  margin-top: 12px;
+}
+
+.public-profile-page .profile-headline {
+  font-size: 16px;
+  color: #000000;
+  font-weight: 400;
+}
+
+.public-profile-page .profile-tagline {
+  font-size: 14px;
+  color: #475569;
+}
+
+.public-profile-page .profile-meta {
+  font-size: 14px;
+  color: #666666;
+}
+
+.public-profile-page .profile-meta span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.public-profile-page .profile-visibility-panel {
+  padding: 12px 0;
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+.public-profile-page .profile-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.public-profile-page .profile-action-bar .btn {
+  min-width: 160px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.public-profile-page .profile-action-bar .btn-outline-primary,
+.public-profile-page .profile-action-bar .btn-outline-secondary {
+  border-color: var(--vheart-primary);
+  color: var(--vheart-primary);
+}
+
+.public-profile-page .profile-action-bar .btn-outline-primary:hover,
+.public-profile-page .profile-action-bar .btn-outline-secondary:hover {
+  background-color: var(--vheart-primary);
+  border-color: var(--vheart-primary);
+  color: #ffffff;
+}
+
+.public-profile-page .profile-vheart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.public-profile-page .vheart-icon {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.public-profile-page .vheart-heart {
+  font-size: 88px;
+  color: var(--vheart-primary);
+  filter: drop-shadow(0 8px 20px rgba(244, 63, 94, 0.4));
+}
+
+.public-profile-page .vheart-count {
+  position: absolute;
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 2px 6px rgba(15, 23, 42, 0.35);
+}
+
+.public-profile-page .vheart-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vheart-primary);
+}
+
+.public-profile-page .profile-contact-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  text-align: center;
+}
+
+.public-profile-page .profile-contact-grid .contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.public-profile-page .profile-contact-grid .contact-value {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.public-profile-page .profile-app-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.public-profile-page .app-link-pill {
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.public-profile-page .app-link-pill .bi {
+  font-size: 20px;
+}
+
+.public-profile-page .app-link-pill:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
+}
+
+.public-profile-page .analytics-bar {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.public-profile-page .analytics-item {
+  padding: 0 12px;
+}
+
+.public-profile-page .analytics-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--vheart-primary);
+}
+
+.public-profile-page .analytics-label {
+  font-size: 12px;
+  color: #666666;
+  margin-top: 4px;
+}
+
+.public-profile-page .section-card {
+  border-radius: 12px !important;
+}
+
+.public-profile-page .section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000000;
+}
+
+.public-profile-page .highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.public-profile-page .highlight-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+}
+
+.public-profile-page .highlight-cover {
+  height: 120px;
+  background-size: cover;
+  background-position: center;
+}
+
+.public-profile-page .highlight-meta {
+  padding: 16px;
+  flex: 1;
+}
+
+.public-profile-page .highlight-title,
+.public-profile-page .activity-title,
+.public-profile-page .experience-position,
+.public-profile-page .education-school {
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.public-profile-page .activity-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.public-profile-page .activity-item {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.public-profile-page .activity-item:last-child {
+  border-bottom: none;
+}
+
+.public-profile-page .activity-badge {
+  min-width: 110px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--vheart-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.public-profile-page .activity-content {
+  flex: 1;
+  position: relative;
+  padding-right: 40px;
+}
+
+.public-profile-page .activity-content p,
+.public-profile-page .highlight-meta p,
+.public-profile-page .profile-contact-grid .contact-value,
+.public-profile-page .experience-description,
+.public-profile-page .education-coursework,
+.public-profile-page .about-text {
+  color: #000000;
+}
+
+.public-profile-page .about-text {
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.public-profile-page .experience-list,
+.public-profile-page .education-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.public-profile-page .experience-item,
+.public-profile-page .education-item {
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.public-profile-page .experience-item:last-child,
+.public-profile-page .education-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.public-profile-page .experience-icon,
+.public-profile-page .education-icon {
+  width: 48px;
+  height: 48px;
+  background: #f3f6f8;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #666666;
+  flex-shrink: 0;
+}
+
+.public-profile-page .experience-company,
+.public-profile-page .education-degree {
+  font-size: 14px;
+  color: #000000;
+}
+
+.public-profile-page .experience-meta,
+.public-profile-page .education-meta {
+  font-size: 14px;
+  color: #666666;
+}
+
+.public-profile-page .experience-bullets {
+  margin: 0;
+  padding-left: 20px;
+  color: #000000;
+}
+
+.public-profile-page .skills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.public-profile-page .skill-badge {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #d0d0d0;
+  border-radius: 20px;
+  cursor: default;
+  transition: all 0.2s;
+}
+
+.public-profile-page .skill-badge:hover {
+  background-color: var(--vheart-primary-soft);
+  border-color: var(--vheart-primary);
+  color: var(--vheart-primary);
+}
+
+.public-profile-page .empty-state {
+  padding: 40px 20px;
+}
+
+.public-profile-page .empty-state i {
+  opacity: 0.3;
+}
+
+.public-profile-page .empty-state p {
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .public-profile-page .profile-header-body {
+    padding: 0 16px 16px 16px !important;
+    margin-top: -60px;
+  }
+
+  .public-profile-page .profile-photo-container {
+    width: 120px;
+    height: 120px;
+  }
+
+  .public-profile-page .profile-photo {
+    width: 120px;
+    height: 120px;
+  }
+
+  .public-profile-page .profile-name {
+    font-size: 20px;
+  }
+
+  .public-profile-page .profile-headline {
+    font-size: 14px;
+  }
+
+  .public-profile-page .highlights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-profile-page .analytics-bar {
+    padding: 12px;
+  }
+
+  .public-profile-page .analytics-value {
+    font-size: 16px;
+  }
+
+  .public-profile-page .analytics-label {
+    font-size: 11px;
+  }
+
+  .public-profile-page .experience-icon,
+  .public-profile-page .education-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+}
