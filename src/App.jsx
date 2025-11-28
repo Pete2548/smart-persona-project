@@ -8,6 +8,11 @@ import AdminDashboard from './admin/AdminDashboard'
 import AdminLogin from './admin/AdminLogin'
 import AdminSetup from './admin/AdminSetup'
 import Tables from './admin/Tables'
+import UserManagement from './admin/UserManagement'
+import ThemeManagement from './admin/ThemeManagement'
+import ProfileModeration from './admin/ProfileModeration'
+import ReportManagement from './admin/ReportManagement'
+import BackupManagement from './admin/BackupManagement'
 import HomePage from './pages/HomePage'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
@@ -26,7 +31,7 @@ function App() {
 
   return (
     <>
-      
+
       {!isProfileView && <VereHeader />}
 
       <Routes>
@@ -47,6 +52,11 @@ function App() {
         <Route path="/create-account" element={<Signup />} />
         {/* Admin routes (protected) */}
         <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+        <Route path="/admin/users" element={<RequireAdmin><UserManagement /></RequireAdmin>} />
+        <Route path="/admin/themes" element={<RequireAdmin><ThemeManagement /></RequireAdmin>} />
+        <Route path="/admin/profiles" element={<RequireAdmin><ProfileModeration /></RequireAdmin>} />
+        <Route path="/admin/reports" element={<RequireAdmin><ReportManagement /></RequireAdmin>} />
+        <Route path="/admin/backup" element={<RequireAdmin><BackupManagement /></RequireAdmin>} />
         <Route path="/admin/tables" element={<RequireAdmin><Tables /></RequireAdmin>} />
         {/* Admin auth / setup */}
         <Route path="/admin/login" element={<AdminLogin />} />
