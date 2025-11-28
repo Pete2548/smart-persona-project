@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import LoginModal from '../components/LoginModal'
@@ -8,8 +9,9 @@ import './dashboard.css'
 import './themes.css'
 
 const Themes = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate()
-  const [selectedTab, setSelectedTab] = useState('themes') // 'themes' or 'layouts'
+  const [selectedTab, setSelectedTab] = useState('personal') // 'personal', 'vtree', or 'resume'
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [toast, setToast] = useState({ show: false, message: '', theme: '' })
@@ -30,6 +32,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 15200,
       trending: true,
+      category: 'personal',
       tags: ['dark', 'neon', 'free'],
       config: {
         bgColor: '#0a0a0a',
@@ -48,6 +51,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 28400,
       trending: true,
+      category: 'personal',
       tags: ['aesthetic', 'free'],
       config: {
         bgColor: '#f5f5f5',
@@ -66,6 +70,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 32100,
       trending: true,
+      category: 'personal',
       tags: ['aesthetic', 'free'],
       config: {
         bgColor: '#ffffff',
@@ -84,6 +89,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 18700,
       trending: false,
+      category: 'personal',
       tags: ['dark', 'neon', 'free'],
       config: {
         bgColor: '#0d0221',
@@ -102,6 +108,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 21300,
       trending: false,
+      category: 'personal',
       tags: ['aesthetic', 'free'],
       config: {
         bgColor: '#ffffff',
@@ -120,6 +127,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 25600,
       trending: true,
+      category: 'personal',
       tags: ['dark', 'free'],
       config: {
         bgColor: '#121212',
@@ -138,6 +146,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 19800,
       trending: false,
+      category: 'personal',
       tags: ['aesthetic', 'free'],
       config: {
         bgColor: '#ff9a56',
@@ -156,6 +165,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 16400,
       trending: false,
+      category: 'personal',
       tags: ['aesthetic', 'free'],
       config: {
         bgColor: '#0984e3',
@@ -173,6 +183,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 8900,
       trending: true,
+      category: 'personal',
       tags: ['dark', 'neon', 'free'],
       config: {
         bgColor: '#000000',
@@ -190,6 +201,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 12300,
       trending: true,
+      category: 'personal',
       tags: ['dark', 'neon', 'aesthetic'],
       config: {
         bgColor: '#1a1a2e',
@@ -207,6 +219,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 15700,
       trending: true,
+      category: 'personal',
       tags: ['aesthetic', 'neon', 'free'],
       config: {
         bgColor: '#2d1b69',
@@ -224,6 +237,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 11200,
       trending: false,
+      category: 'personal',
       tags: ['neon', 'aesthetic', 'free'],
       config: {
         bgColor: '#0a0e27',
@@ -241,6 +255,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 9500,
       trending: false,
+      category: 'personal',
       tags: ['dark', 'neon', 'free'],
       config: {
         bgColor: '#000000',
@@ -258,6 +273,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 13800,
       trending: true,
+      category: 'personal',
       tags: ['neon', 'aesthetic', 'free'],
       config: {
         bgColor: '#1a0933',
@@ -276,6 +292,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 24500,
       trending: true,
+      category: 'personal',
       tags: ['dark', 'aesthetic', 'free'],
       config: {
         bgColor: '#0a0a0a',
@@ -294,6 +311,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 19800,
       trending: true,
+      category: 'personal',
       tags: ['dark', 'aesthetic', 'free'],
       config: {
         bgColor: '#0a0a0a',
@@ -312,6 +330,7 @@ const Themes = () => {
       author: 'VERE',
       uses: 21300,
       trending: true,
+      category: 'personal',
       tags: ['dark', 'aesthetic', 'free'],
       config: {
         bgColor: '#000000',
@@ -322,71 +341,6 @@ const Themes = () => {
       }
     }
   ]
-
-  // Layout templates for different profile styles
-  const layouts = [
-    {
-      id: 1,
-      name: 'Default Card',
-      layout: 'default',
-      animated: true,
-      gradient: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-      animation: 'gradient-shift',
-      description: 'Classic card-based layout with centered content',
-      uses: 42000,
-      trending: true,
-      tags: ['classic', 'free']
-    },
-    {
-      id: 2,
-      name: 'Linktree Style',
-      layout: 'linktree',
-      animated: true,
-      gradient: 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
-      animation: 'gradient-shift',
-      description: 'Minimalist centered links like Linktree',
-      uses: 35200,
-      trending: true,
-      tags: ['minimal', 'free']
-    },
-    {
-      id: 3,
-      name: 'LinkedIn Professional',
-      layout: 'linkedin',
-      animated: true,
-      gradient: 'linear-gradient(135deg, #0077b5 0%, #00a0dc 100%)',
-      animation: 'gradient-shift',
-      description: 'Professional header with content sections',
-      uses: 28400,
-      trending: true,
-      tags: ['professional', 'free']
-    },
-    {
-      id: 4,
-      name: 'Guns.lol Neon',
-      layout: 'guns',
-      animated: true,
-      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      animation: 'neon-pulse',
-      description: 'Dark theme with neon effects and animations',
-      uses: 19800,
-      trending: false,
-      tags: ['neon', 'free']
-    },
-    {
-      id: 5,
-      name: 'Minimal Clean',
-      layout: 'minimal',
-      animated: true,
-      gradient: 'linear-gradient(135deg, #ffffff 0%, #e3e3e3 100%)',
-      animation: 'gradient-shift',
-      description: 'Ultra-minimal text-focused layout',
-      uses: 16700,
-      trending: false,
-      tags: ['minimal', 'free']
-    }
-  ]
-
   const applyTheme = (theme) => {
     const user = getCurrentUser()
     if (!user) {
@@ -428,51 +382,20 @@ const Themes = () => {
     }
   }
 
-  const applyLayout = (layoutTemplate) => {
-    const user = getCurrentUser()
-    if (!user) {
-      setShowLoginModal(true)
-      return
-    }
-    
-    try {
-      const activeProfile = getActiveProfile()
-      if (!activeProfile) {
-        setToast({ show: true, message: 'No active profile found', theme: 'error' })
-        setTimeout(() => setToast({ show: false, message: '', theme: '' }), 3000)
-        return
-      }
-
-      updateProfile(activeProfile.id, {
-        layout: layoutTemplate.layout
-      })
-      
-      setToast({ show: true, message: `${layoutTemplate.name} layout applied!`, theme: 'success' })
-      setTimeout(() => {
-        navigate(`/profile/${activeProfile.data.username}`)
-      }, 1500)
-    } catch (err) {
-      console.error('Failed to apply layout', err)
-      setToast({ show: true, message: 'Failed to apply layout', theme: 'error' })
-      setTimeout(() => setToast({ show: false, message: '', theme: '' }), 3000)
-    }
-  }
-
+  // Filter themes by category (selectedTab) first, then by selectedFilter
+  const categoryThemes = themes.filter(t => t.category === selectedTab)
+  
   const filteredThemes = selectedFilter === 'all' 
-    ? themes 
+    ? categoryThemes 
     : selectedFilter === 'gif'
-    ? themes.filter(t => t.gifUrl)
+    ? categoryThemes.filter(t => t.gifUrl)
     : selectedFilter === 'gradient'
-    ? themes.filter(t => t.animated && !t.gifUrl)
+    ? categoryThemes.filter(t => t.animated && !t.gifUrl)
     : selectedFilter === 'fonts'
-    ? themes.filter(t => t.config.fontFamily && !t.config.fontFamily.includes('Inter'))
+    ? categoryThemes.filter(t => t.config.fontFamily && !t.config.fontFamily.includes('Inter'))
     : selectedFilter === 'trending'
-    ? themes.filter(t => t.trending)
-    : themes.filter(t => t.tags.includes(selectedFilter))
-
-  const filteredLayouts = selectedFilter === 'all'
-    ? layouts
-    : layouts.filter(l => l.tags.includes(selectedFilter))
+    ? categoryThemes.filter(t => t.trending)
+    : categoryThemes.filter(t => t.tags.includes(selectedFilter))
 
   return (
     <div className="dashboard-shell p-4">
@@ -511,15 +434,19 @@ const Themes = () => {
             <div className="themes-header">
               <div>
                 <h2 className="themes-title">
-                  {selectedTab === 'themes' 
-                    ? 'Discover the perfect Theme for your Profile'
-                    : 'Choose your Profile Layout Style'
+                  {selectedTab === 'personal' 
+                    ? t('personal_profile_themes') || 'Personal Profile Themes'
+                    : selectedTab === 'vtree'
+                    ? t('vtree_link_themes') || 'Vtree Link Themes'
+                    : t('resume_builder_themes') || 'Resume Builder Themes'
                   }
                 </h2>
                 <p className="themes-subtitle">
-                  {selectedTab === 'themes'
-                    ? 'Browse community-created themes, or design your own in Customize'
-                    : 'Select a layout template that matches your style and purpose'
+                  {selectedTab === 'personal'
+                    ? t('discover_personal_themes') || 'Discover themes for your personal profile page'
+                    : selectedTab === 'vtree'
+                    ? t('discover_vtree_themes') || 'Beautiful themes for your Vtree link collection'
+                    : t('discover_resume_themes') || 'Professional themes for your resume'
                   }
                 </p>
               </div>
@@ -528,18 +455,25 @@ const Themes = () => {
             {/* Tab Navigation */}
             <div className="themes-tabs mb-4">
               <button
-                className={`tab-btn ${selectedTab === 'themes' ? 'active' : ''}`}
-                onClick={() => setSelectedTab('themes')}
+                className={`tab-btn ${selectedTab === 'personal' ? 'active' : ''}`}
+                onClick={() => setSelectedTab('personal')}
               >
-                <i className="bi bi-palette-fill me-2"></i>
-                Color Themes
+                <i className="bi bi-person-fill me-2"></i>
+                {t('personal')}
               </button>
               <button
-                className={`tab-btn ${selectedTab === 'layouts' ? 'active' : ''}`}
-                onClick={() => setSelectedTab('layouts')}
+                className={`tab-btn ${selectedTab === 'vtree' ? 'active' : ''}`}
+                onClick={() => setSelectedTab('vtree')}
               >
-                <i className="bi bi-grid-3x3-gap-fill me-2"></i>
-                Layout Templates
+                <i className="bi bi-tree-fill me-2"></i>
+                {t('vtree')}
+              </button>
+              <button
+                className={`tab-btn ${selectedTab === 'resume' ? 'active' : ''}`}
+                onClick={() => setSelectedTab('resume')}
+              >
+                <i className="bi bi-file-earmark-text-fill me-2"></i>
+                {t('resume')}
               </button>
             </div>
 
@@ -548,75 +482,43 @@ const Themes = () => {
                 className={`filter-btn ${selectedFilter === 'all' ? 'active' : ''}`}
                 onClick={() => setSelectedFilter('all')}
               >
-                All {selectedTab === 'themes' ? 'Themes' : 'Layouts'}
+                {t('all_themes') || 'All Themes'}
               </button>
-              {selectedTab === 'themes' ? (
-                <>
-                  <button 
-                    className={`filter-btn ${selectedFilter === 'gif' ? 'active' : ''}`}
-                    onClick={() => setSelectedFilter('gif')}
-                  >
-                    <i className="bi bi-film me-1"></i>
-                    GIF Backgrounds
-                  </button>
-                  <button 
-                    className={`filter-btn ${selectedFilter === 'gradient' ? 'active' : ''}`}
-                    onClick={() => setSelectedFilter('gradient')}
-                  >
-                    <i className="bi bi-palette me-1"></i>
-                    Animated Gradients
-                  </button>
-                  <button 
-                    className={`filter-btn ${selectedFilter === 'fonts' ? 'active' : ''}`}
-                    onClick={() => setSelectedFilter('fonts')}
-                  >
-                    <i className="bi bi-fonts me-1"></i>
-                    Custom Fonts
-                  </button>
-                  <button 
-                    className={`filter-btn ${selectedFilter === 'trending' ? 'active' : ''}`}
-                    onClick={() => setSelectedFilter('trending')}
-                  >
-                    <i className="bi bi-star-fill me-1"></i>
-                    Trending
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button 
-                    className={`filter-btn ${selectedFilter === 'minimal' ? 'active' : ''}`}
-                    onClick={() => setSelectedFilter('minimal')}
-                  >
-                    Minimal
-                  </button>
-                  <button 
-                    className={`filter-btn ${selectedFilter === 'professional' ? 'active' : ''}`}
-                    onClick={() => setSelectedFilter('professional')}
-                  >
-                    Professional
-                  </button>
-                  <button 
-                    className={`filter-btn ${selectedFilter === 'neon' ? 'active' : ''}`}
-                    onClick={() => setSelectedFilter('neon')}
-                  >
-                    Neon
-                  </button>
-                  <button 
-                    className={`filter-btn ${selectedFilter === 'free' ? 'active' : ''}`}
-                    onClick={() => setSelectedFilter('free')}
-                  >
-                    Free
-                  </button>
-                </>
-              )}
+              <button 
+                className={`filter-btn ${selectedFilter === 'gif' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter('gif')}
+              >
+                <i className="bi bi-film me-1"></i>
+                {t('gif_backgrounds') || 'GIF Backgrounds'}
+              </button>
+              <button 
+                className={`filter-btn ${selectedFilter === 'gradient' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter('gradient')}
+              >
+                <i className="bi bi-palette me-1"></i>
+                {t('animated_gradients') || 'Animated Gradients'}
+              </button>
+              <button 
+                className={`filter-btn ${selectedFilter === 'fonts' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter('fonts')}
+              >
+                <i className="bi bi-fonts me-1"></i>
+                {t('custom_fonts') || 'Custom Fonts'}
+              </button>
+              <button 
+                className={`filter-btn ${selectedFilter === 'trending' ? 'active' : ''}`}
+                onClick={() => setSelectedFilter('trending')}
+              >
+                <i className="bi bi-star-fill me-1"></i>
+                {t('trending') || 'Trending'}
+              </button>
             </div>
 
             {/* Themes Grid */}
-            {selectedTab === 'themes' && (
-              <div className="themes-grid">
+            <div className="themes-grid">
                 {filteredThemes.length === 0 ? (
                   <div className="no-themes">
-                    <p>No themes available yet. Check back soon!</p>
+                    <p>{t('no_themes_available') || 'No themes available yet. Check back soon!'}</p>
                   </div>
                 ) : (
                   filteredThemes.map(theme => (
@@ -687,69 +589,13 @@ const Themes = () => {
                           className="btn-use-theme"
                           onClick={() => applyTheme(theme)}
                         >
-                          Use Theme
+                          {t('apply')}
                         </button>
                       </div>
                     </div>
                   ))
                 )}
               </div>
-            )}
-
-            {/* Layouts Grid */}
-            {selectedTab === 'layouts' && (
-              <div className="themes-grid">
-                {filteredLayouts.length === 0 ? (
-                  <div className="no-themes">
-                    <p>No layouts available yet. Check back soon!</p>
-                  </div>
-                ) : (
-                  filteredLayouts.map(layout => (
-                    <div key={layout.id} className="theme-card">
-                      <div 
-                        className={`theme-preview ${layout.animated ? 'animated' : ''}`}
-                        style={layout.animated ? {
-                          background: layout.gradient,
-                          backgroundSize: '200% 200%'
-                        } : {}}
-                        data-animation={layout.animation}
-                      >
-                        {!layout.animated && <img src={layout.preview} alt={layout.name} />}
-                        {layout.trending && (
-                          <div className="theme-badge">
-                            <i className="bi bi-star-fill"></i> Trending
-                          </div>
-                        )}
-                      </div>
-                      <div className="theme-info">
-                        <div className="theme-header">
-                          <div className="theme-author">
-                            <i className="bi bi-layout-text-sidebar"></i>
-                            <span>Layout</span>
-                          </div>
-                          <div className="theme-stats">
-                            <span>{(layout.uses / 1000).toFixed(1)}k uses</span>
-                          </div>
-                        </div>
-                        <h3 className="theme-name">{layout.name}</h3>
-                        <p className="layout-description">{layout.description}</p>
-                        <div className="theme-tags">
-                          {layout.tags.map(tag => (
-                            <span key={tag} className="theme-tag">{tag}</span>
-                          ))}
-                        </div>
-                        <button 
-                          className="btn-use-theme"
-                          onClick={() => applyLayout(layout)}
-                        >
-                          Use Layout
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
           </div>
         </main>
       </div>

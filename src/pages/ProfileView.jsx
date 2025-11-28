@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom'
 import { getAllProfiles } from '../services/profileManager'
 import { getCurrentUser } from '../services/auth'
+import { recordProfileView } from '../services/profileAnalytics'
 import SectionRenderer from '../components/SectionRenderer'
 import './profileview.css'
 import ig from "../img/ig.png"
@@ -35,6 +37,7 @@ const getAudioFromDB = async () => {
 }
 
 const ProfileView = () => {
+  const { t } = useTranslation();
   const { username, profileType } = useParams()
   const [profile, setProfile] = useState(null)
   const [audioFile, setAudioFile] = useState(null)
@@ -117,6 +120,24 @@ const ProfileView = () => {
     })
   }, [username, profileType])
 
+  // Record profile view
+  useEffect(() => {
+    if (profile && profile.username) {
+      const currentUser = getCurrentUser()
+      const viewerUsername = currentUser?.username || 'anonymous'
+      
+      // Find the profile ID to record view
+      const allProfiles = getAllProfiles()
+      const targetProfile = allProfiles.find(p => 
+        p.data?.username === profile.username
+      )
+      
+      if (targetProfile) {
+        recordProfileView(targetProfile.id, viewerUsername)
+      }
+    }
+  }, [profile])
+
   // Handle audio playback with start/end time
   useEffect(() => {
     if (audioRef.current && audioFile && profile) {
@@ -186,7 +207,7 @@ const ProfileView = () => {
   if (!profile) {
     return (
       <div className="profile-view-wrapper">
-        <div className="profile-empty-card">Profile not found</div>
+        <div className="profile-empty-card">{t('profile_not_found') || 'Profile not found'}</div>
       </div>
     )
   }
@@ -234,7 +255,7 @@ const ProfileView = () => {
             fontSize: '28px',
             fontWeight: '600'
           }}>
-            This Profile is Private
+            {t('profile_private') || 'This Profile is Private'}
           </h2>
           
           <p style={{ 
@@ -243,7 +264,7 @@ const ProfileView = () => {
             fontSize: '16px',
             lineHeight: '1.6'
           }}>
-            The owner of this profile has set it to private. Only they can view this content.
+            {t('profile_private_desc') || 'The owner of this profile has set it to private. Only they can view this content.'}
           </p>
           
           <div style={{
@@ -254,7 +275,7 @@ const ProfileView = () => {
           }}>
             <i className="bi bi-info-circle me-2" style={{ color: '#ff6b6b' }}></i>
             <span style={{ color: '#e0e0e0', fontSize: '14px' }}>
-              If you own this profile, please log in to view it.
+              {t('profile_private_login') || 'If you own this profile, please log in to view it.'}
             </span>
           </div>
         </div>
