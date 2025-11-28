@@ -157,6 +157,60 @@ const BASE_THEME_LIBRARY = [
     }
   },
   {
+    id: 'creative-neon-grid',
+    profileType: 'creative',
+    name: 'Neon Grid',
+    author: 'VERE',
+    source: 'builtin',
+    tags: ['creative', 'neon', 'dark'],
+    preview: { type: 'gradient', value: 'linear-gradient(135deg, #f97316 0%, #c026d3 55%, #5b21b6 100%)' },
+    stats: { uses: 5800, trending: true },
+    tokens: {
+      bgColor: '#050014',
+      blockColor: '#12021c',
+      nameColor: '#ffd369',
+      descColor: '#e0e7ff',
+      bgOverlay: 0.45,
+      fontFamily: '"Space Grotesk", sans-serif'
+    }
+  },
+  {
+    id: 'creative-holo-fade',
+    profileType: 'creative',
+    name: 'Holographic Fade',
+    author: 'VERE',
+    source: 'builtin',
+    tags: ['creative', 'glass', 'gradient'],
+    preview: { type: 'gradient', value: 'linear-gradient(135deg, #94bbe9 0%, #eeaeca 100%)' },
+    stats: { uses: 4300, trending: false },
+    tokens: {
+      bgColor: '#0f1024',
+      blockColor: 'rgba(255,255,255,0.08)',
+      nameColor: '#f8f6ff',
+      descColor: '#cad7ff',
+      bgOverlay: 0.32,
+      fontFamily: '"Sora", sans-serif'
+    }
+  },
+  {
+    id: 'creative-editorial-luxe',
+    profileType: 'creative',
+    name: 'Muse Lab',
+    author: 'VERE',
+    source: 'builtin',
+    tags: ['creative', 'editorial', 'warm'],
+    preview: { type: 'gradient', value: 'linear-gradient(135deg, #0f172a 0%, #4338ca 55%, #f97316 100%)' },
+    stats: { uses: 3900, trending: true },
+    tokens: {
+      bgColor: '#1a120f',
+      blockColor: '#12090a',
+      nameColor: '#f7e0c3',
+      descColor: '#fcd8c6',
+      bgOverlay: 0.34,
+      fontFamily: '"Playfair Display", serif'
+    }
+  },
+  {
     id: 'vtree-neon-links',
     profileType: 'vtree',
     name: 'Neon Links',

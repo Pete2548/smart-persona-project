@@ -115,6 +115,7 @@ function MyProfile() {
   const [aiForm, setAiForm] = useState({ role: '', tone: 'professional', focus: 'job_search' });
   const [aiDraft, setAiDraft] = useState(null);
   const [aiStatus, setAiStatus] = useState({ loading: false, error: '' });
+  const [smartToolsOpen, setSmartToolsOpen] = useState(false);
 
   const setProfileFromRecord = (record) => {
     if (!record) return;
@@ -667,8 +668,7 @@ function MyProfile() {
                   background: profile.bgColor || profile.bgImage 
                     ? `url(${profile.bgImage}) center/cover` 
                     : 'linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)',
-                  backgroundColor: profile.bgColor || '#f43f5e',
-                  cursor: 'pointer'
+                  backgroundColor: profile.bgColor || '#f43f5e'
                 }}
                 onClick={handleCoverClick}
               >
@@ -679,19 +679,20 @@ function MyProfile() {
                   style={{ display: 'none' }}
                   onChange={(e) => handleFileChange(e, 'cover')}
                 />
-                <Button 
-                  variant="light" 
-                  size="sm"
-                  className="position-absolute"
-                  style={{ 
-                    top: '10px', 
-                    right: '10px',
-                    borderRadius: '8px'
-                  }}
-                >
-                  <i className="bi bi-camera me-1"></i>
-                  เพิ่มรูปภาพหน้าปก
-                </Button>
+                <div className="cover-actions">
+                  <Button 
+                    variant="light" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleCoverClick()
+                    }}
+                    style={{ borderRadius: '8px' }}
+                  >
+                    <i className="bi bi-camera me-1"></i>
+                    เพิ่มรูปภาพหน้าปก
+                  </Button>
+                </div>
               </div>
 
               <Card.Body className="profile-header-body">
@@ -762,45 +763,6 @@ function MyProfile() {
                       )}
                     </div>
 
-                    {/* Visibility Control */}
-                    <div className="profile-visibility-panel mt-3">
-                      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                        <div>
-                          <small className="text-muted text-uppercase fw-semibold">{t('profile_visibility', { defaultValue: 'Profile visibility' })}</small>
-                          <div className="d-flex align-items-center gap-2 mt-1">
-                            <Badge bg={(profile?.isPublic === false) ? 'secondary' : 'success'}>{(profile?.isPublic === false) ? t('private', { defaultValue: 'Private' }) : t('public', { defaultValue: 'Public' })}</Badge>
-                            <small className="text-muted">
-                              {(profile?.isPublic === false)
-                                ? t('profile_private_note', { defaultValue: 'Only you can view this profile.' })
-                                : t('profile_public_note', { defaultValue: 'Anyone with the link can view.' })}
-                            </small>
-                          </div>
-                        </div>
-                        <div className="visibility-icon-toggle" role="group" aria-label={t('profile_visibility', { defaultValue: 'Profile visibility' })}>
-                          <button
-                            type="button"
-                            className={`visibility-toggle-btn ${profile?.isPublic === false ? '' : 'active'}`}
-                            title={t('make_public', { defaultValue: 'Make profile public' })}
-                            aria-pressed={profile?.isPublic !== false}
-                            disabled={isUpdatingVisibility || profile?.isPublic !== false}
-                            onClick={() => handleVisibilityChange(true)}
-                          >
-                            <i className="bi bi-globe"></i>
-                          </button>
-                          <button
-                            type="button"
-                            className={`visibility-toggle-btn ${profile?.isPublic === false ? 'active' : ''}`}
-                            title={t('make_private', { defaultValue: 'Hide profile (private)' })}
-                            aria-pressed={profile?.isPublic === false}
-                            disabled={isUpdatingVisibility || profile?.isPublic === false}
-                            onClick={() => handleVisibilityChange(false)}
-                          >
-                            <i className="bi bi-lock-fill"></i>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Action Buttons */}
                     <div className="profile-action-bar mt-3">
                       <Button 
@@ -839,37 +801,107 @@ function MyProfile() {
                       </Button>
                     </div>
 
-                    <div className="profile-smart-tools mt-3">
-                      <div className="smart-tools-header">
+                    <div className="profile-visibility-inline mt-3">
+                      <div className="visibility-inline-controls" role="group" aria-label={t('profile_visibility', { defaultValue: 'Profile visibility' })}>
+                        <div className="visibility-floating-controls compact">
+                          <button
+                            type="button"
+                            className={`visibility-toggle-btn ${profile?.isPublic === false ? '' : 'active'}`}
+                            title={t('make_public', { defaultValue: 'Make profile public' })}
+                            aria-pressed={profile?.isPublic !== false}
+                            disabled={isUpdatingVisibility || profile?.isPublic !== false}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleVisibilityChange(true)
+                            }}
+                          >
+                            <i className="bi bi-globe"></i>
+                            <span>{t('public', { defaultValue: 'Public' })}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`visibility-toggle-btn ${profile?.isPublic === false ? 'active' : ''}`}
+                            title={t('make_private', { defaultValue: 'Hide profile (private)' })}
+                            aria-pressed={profile?.isPublic === false}
+                            disabled={isUpdatingVisibility || profile?.isPublic === false}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleVisibilityChange(false)
+                            }}
+                          >
+                            <i className="bi bi-lock-fill"></i>
+                            <span>{t('private', { defaultValue: 'Private' })}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={`profile-smart-tools mt-3 ${smartToolsOpen ? 'expanded' : ''}`}>
+                      <button
+                        type="button"
+                        className="smart-tools-toggle"
+                        aria-expanded={smartToolsOpen}
+                        onClick={() => setSmartToolsOpen(prev => !prev)}
+                      >
                         <div>
                           <small className="text-muted text-uppercase fw-semibold">Smart assistants</small>
                           <h6 className="mb-0">Automate profile updates & exports</h6>
                         </div>
-                        <Badge bg="light" text="dark">Beta</Badge>
+                        <div className="smart-tools-toggle-meta">
+                          <Badge bg="light" text="dark">Beta</Badge>
+                          <span className="smart-tools-toggle-icon">
+                            <i className={`bi ${smartToolsOpen ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+                          </span>
+                        </div>
+                      </button>
+                      <div className={`smart-tools-panel ${smartToolsOpen ? 'open' : ''}`}>
+                        <div className="smart-tools-split">
+                          <div className="smart-tool-card">
+                            <div className="smart-tool-card__body">
+                              <div>
+                                <h6 className="smart-tool-card__title mb-1">Import from social</h6>
+                                <p className="smart-tool-card__text mb-2">
+                                  Pull the latest roles, links, and bio from LinkedIn, Twitter, or Medium in one click.
+                                </p>
+                                <small className="text-muted">Best for quick refreshes before sharing your profile.</small>
+                              </div>
+                              <span className="smart-tool-chip">Sync</span>
+                            </div>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => setShowSocialImport(true)}
+                            >
+                              <i className="bi bi-cloud-arrow-down me-1"></i>
+                              Start import
+                            </Button>
+                          </div>
+                          <div className="smart-tool-card accent">
+                            <div className="smart-tool-card__body">
+                              <div>
+                                <h6 className="smart-tool-card__title mb-1">AI Draft Builder</h6>
+                                <p className="smart-tool-card__text mb-2">
+                                  Let our AI summarize your wins, write highlights, and suggest sections instantly.
+                                </p>
+                                <small className="text-muted">Great for brand-new profiles or major rewrites.</small>
+                              </div>
+                              <span className="smart-tool-chip">AI</span>
+                            </div>
+                            <Button
+                              variant="outline-light"
+                              size="sm"
+                              className="text-dark"
+                              onClick={() => setShowAIBuild(true)}
+                            >
+                              <i className="bi bi-stars me-1"></i>
+                              Launch builder
+                            </Button>
+                          </div>
+                        </div>
+                        <small className="smart-tools-caption">
+                          Use these assistants to sync profile data instantly.
+                        </small>
                       </div>
-                      <div className="smart-tools-grid">
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          className="smart-tool-btn"
-                          onClick={() => setShowSocialImport(true)}
-                        >
-                          <i className="bi bi-cloud-arrow-down me-1"></i>
-                          Import from social
-                        </Button>
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          className="smart-tool-btn"
-                          onClick={() => setShowAIBuild(true)}
-                        >
-                          <i className="bi bi-stars me-1"></i>
-                          AI Draft Builder
-                        </Button>
-                      </div>
-                      <small className="smart-tools-caption">
-                        Use these assistants to sync profile data instantly.
-                      </small>
                     </div>
 
                     <div className="profile-vheart mt-3">

@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Dropdown } from 'react-bootstrap'
 import { useTranslation } from 'react-i18next'
 import { getCurrentUser } from '../services/auth'
-import { getActiveProfile } from '../services/profileManager'
+import { getActiveProfile, updateProfile } from '../services/profileManager'
+import { getCurrentUserProfessionalProfile } from '../services/professionalProfileManager'
 import LoginModal from './LoginModal'
 import '../pages/dashboard.css'
 
@@ -11,6 +12,11 @@ function Sidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate()
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [activeProfileRecord, setActiveProfileRecord] = useState(null)
+  const [legacyProfile, setLegacyProfile] = useState(null)
+  const [viewPath, setViewPath] = useState('/customize')
+  const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false)
+  const [professionalProfileData, setProfessionalProfileData] = useState(null)
 
   const handleProtectedAction = (e, path) => {
     e.preventDefault()
@@ -36,31 +42,92 @@ function Sidebar() {
     navigate('/signup')
   }
 
-  // Read active profile from multi-profile system
-  let profile = null
-  let viewPath = '/customize'
-  
-  try {
-    const activeProfile = getActiveProfile()
-    if (activeProfile && activeProfile.data) {
-      profile = activeProfile.data
-      if (profile.username) {
-        viewPath = `/u/${profile.username}`
-        if (activeProfile.type) {
-          viewPath = `/u/${profile.username}/${activeProfile.type}`
+  useEffect(() => {
+    loadSidebarProfile()
+    loadProfessionalProfile()
+  }, [])
+
+  const loadSidebarProfile = () => {
+    try {
+      const activeProfile = getActiveProfile()
+      if (activeProfile?.data) {
+        setActiveProfileRecord(activeProfile)
+        setLegacyProfile(null)
+        if (activeProfile.data.username) {
+          let nextViewPath = `/u/${activeProfile.data.username}`
+          if (activeProfile.type) {
+            nextViewPath = `/u/${activeProfile.data.username}/${activeProfile.type}`
+          }
+          setViewPath(nextViewPath)
+        } else {
+          setViewPath('/customize')
         }
+        return
       }
-    } else {
-      // Fallback to old single profile system
+
       const raw = localStorage.getItem('user_profile')
-      profile = raw ? JSON.parse(raw) : null
-      if (profile && profile.username) {
-        viewPath = `/u/${profile.username}`
+      const fallback = raw ? JSON.parse(raw) : null
+      setLegacyProfile(fallback)
+      setActiveProfileRecord(null)
+      if (fallback?.username) {
+        setViewPath(`/u/${fallback.username}`)
+      } else {
+        setViewPath('/customize')
       }
+    } catch (err) {
+      console.warn('Failed to read profile', err)
+      setActiveProfileRecord(null)
+      setLegacyProfile(null)
+      setViewPath('/customize')
     }
-  } catch (err) {
-    console.warn('Failed to read profile', err)
-    profile = null
+  }
+
+  const loadProfessionalProfile = () => {
+    try {
+      const professionalProfile = getCurrentUserProfessionalProfile()
+      if (professionalProfile?.data) {
+        setProfessionalProfileData(professionalProfile.data)
+        if (professionalProfile.data.username) {
+          setViewPath(`/pro/${professionalProfile.data.username}`)
+        }
+      } else {
+        setProfessionalProfileData(null)
+      }
+    } catch (err) {
+      console.warn('Failed to load professional profile', err)
+      setProfessionalProfileData(null)
+    }
+  }
+
+  const profile = activeProfileRecord?.data || legacyProfile || null
+  const displayProfile = professionalProfileData || profile
+
+  const handleVisibilityChange = (makePublic) => {
+    if (!profile || isUpdatingVisibility) return
+    const nextValue = !!makePublic
+    const currentValue = profile.isPublic !== false
+    if (currentValue === nextValue) return
+
+    if (!nextValue) {
+      const confirmed = window.confirm(t('confirm_private_profile', { defaultValue: 'Hide this profile from public view?' }))
+      if (!confirmed) return
+    }
+
+    setIsUpdatingVisibility(true)
+    try {
+      if (activeProfileRecord?.id) {
+        const updated = updateProfile(activeProfileRecord.id, { isPublic: nextValue })
+        setActiveProfileRecord(updated)
+      } else if (legacyProfile) {
+        const updatedLegacy = { ...legacyProfile, isPublic: nextValue }
+        localStorage.setItem('user_profile', JSON.stringify(updatedLegacy))
+        setLegacyProfile(updatedLegacy)
+      }
+    } catch (err) {
+      console.error('Failed to update visibility', err)
+    } finally {
+      setIsUpdatingVisibility(false)
+    }
   }
 
   return (
@@ -110,7 +177,15 @@ function Sidebar() {
           <li className="nav-item mb-3">
             <NavLink to="/themes" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
               <i className="bi bi-palette fs-4 me-2"></i>
-              <span className="nav-label">{t('themes')}</span>
+              <div className="d-flex align-items-center justify-content-between flex-grow-1">
+                <span className="nav-label">{t('themes')}</span>
+                <span 
+                  className="badge bg-warning text-dark"
+                  style={{ fontSize: '0.65rem', letterSpacing: '0.08em' }}
+                >
+                  Creative
+                </span>
+              </div>
             </NavLink>
           </li>
           <li className="nav-item mb-3">
@@ -128,7 +203,7 @@ function Sidebar() {
         </ul>
       </nav>
 
-      <div className="sidebar-footer p-3">\
+      <div className="sidebar-footer p-3">
         <div className="mb-3">
           <button 
             onClick={() => handleProtectedClick(() => window.open(viewPath, '_blank'))}
@@ -139,17 +214,10 @@ function Sidebar() {
           </button>
         </div>
 
-        <button 
-          onClick={() => handleProtectedClick(() => alert('Share feature'))}
-          className="btn btn-dark w-100 share-btn mb-3"
-        >
-          {t('share_your_profile')}
-        </button>
-
         <div className="profile d-flex align-items-center">
-          {profile && profile.avatar ? (
+          {displayProfile && displayProfile.avatar ? (
             <img 
-              src={profile.avatar} 
+              src={displayProfile.avatar} 
               alt="profile" 
               style={{
                 width: 40,
@@ -163,7 +231,7 @@ function Sidebar() {
             <i className="bi bi-person-circle fs-4 me-2"></i>
           )}
           <div className="flex-grow-1">
-            <div className="profile-name">{profile?.displayName || profile?.username || 'Guest'}</div>
+            <div className="profile-name">{displayProfile?.displayName || displayProfile?.username || 'Guest'}</div>
           </div>
           <Dropdown align="end">
             <Dropdown.Toggle 

@@ -17,6 +17,7 @@ function MyProfiles() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newProfileType, setNewProfileType] = useState('personal')
   const [newProfileName, setNewProfileName] = useState('')
+  const selectedProfileType = profileTypes.find(t => t.value === newProfileType)
 
   useEffect(() => {
     // Migrate old data if needed
@@ -276,30 +277,30 @@ function MyProfiles() {
                     onChange={(e) => setNewProfileType(e.target.value)}
                   >
                     {profileTypes.map(type => (
-                      <option key={type.key} value={type.key}>{type.name}</option>
+                      <option key={type.value} value={type.value}>{type.name}</option>
                     ))}
                   </select>
                   
                   {/* Show description for selected type */}
-                  {profileTypes.find(t => t.key === newProfileType) && (
+                  {selectedProfileType && (
                     <div 
                       className="mt-3 p-3 rounded" 
                       style={{ 
                         backgroundColor: '#f8f9fa',
-                        border: '2px solid #6c5ce7'
+                        border: `2px solid ${selectedProfileType.color || '#6c5ce7'}`
                       }}
                     >
                       <div className="d-flex align-items-center mb-2">
                         <i 
-                          className={`${profileTypes.find(t => t.key === newProfileType).icon} me-2`}
-                          style={{ fontSize: '24px', color: '#6c5ce7' }}
+                          className={`${selectedProfileType.icon} me-2`}
+                          style={{ fontSize: '24px', color: selectedProfileType.color || '#6c5ce7' }}
                         ></i>
-                        <strong style={{ color: '#6c5ce7' }}>
-                          {profileTypes.find(t => t.key === newProfileType).name}
+                        <strong style={{ color: selectedProfileType.color || '#6c5ce7' }}>
+                          {selectedProfileType.name}
                         </strong>
                       </div>
                       <p className="mb-2 small text-muted">
-                        {profileTypes.find(t => t.key === newProfileType).description}
+                        {selectedProfileType.description}
                       </p>
                       
                       {/* Template Preview */}
@@ -311,7 +312,7 @@ function MyProfiles() {
                         <div className="d-flex flex-wrap gap-1 mb-1">
                           <span className="badge bg-primary">
                             <i className="bi bi-layout-text-sidebar me-1"></i>
-                            {profileTypes.find(t => t.key === newProfileType).defaultSettings.layout} layout
+                            {selectedProfileType.defaultSettings.layout} layout
                           </span>
                           <span className="badge bg-secondary">
                             <i className="bi bi-palette me-1"></i>
