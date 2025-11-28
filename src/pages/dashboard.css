@@ -27,6 +27,8 @@
   justify-content: flex-start;
   min-height: calc(100vh - 80px); /* span full viewport height (minus header) */
   position: relative;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .dashboard-sidebar .logo {
@@ -63,9 +65,23 @@
   padding-bottom: 12px;
 }
 
+@media (min-width: 769px) {
+  .sidebar-footer {
+    position: sticky;
+    bottom: 16px;
+    background: #f7f6f8;
+    z-index: 2;
+    box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
 .profile-name {
   font-size: 0.95rem;
 }
+
 
 .dashboard-main {
   flex: 1 1 auto;

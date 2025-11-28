@@ -6,6 +6,7 @@ export const profileTemplates = {
     name: 'Personal',
     icon: 'bi-person-circle',
     description: 'Share your story and connect with friends',
+    color: '#9b5de5',
     
     defaultSettings: {
       layout: 'default',
@@ -34,10 +35,44 @@ export const profileTemplates = {
     }
   },
 
+  creative: {
+    name: 'Creative',
+    icon: 'bi-brush',
+    description: 'Bold portfolio space for designers, artists, and creators',
+    color: '#f97316',
+
+    defaultSettings: {
+      layout: 'creative',
+      nameColor: '#ffd369',
+      blockColor: '#12021c',
+      bgColor: '#050014',
+      descColor: '#e0e7ff',
+      bgOverlay: 0.45
+    },
+
+    placeholders: {
+      displayName: 'Studio Name / Alias',
+      description: 'Visual storyteller crafting immersive experiences through color, motion, and bold typography.'
+    },
+
+    recommendedThemes: [
+      { id: 'creative-neon-portfolio', name: 'Neon Portfolio' },
+      { id: 'creative-holographic-dream', name: 'Holographic Dream' },
+      { id: 'creative-muse-lab', name: 'Muse Lab' }
+    ],
+
+    hints: {
+      avatar: 'Use a hero shot, self portrait, or stylized logo',
+      description: 'Lead with your creative point-of-view, signature medium, and current collaborations',
+      social: 'Link Behance, Dribbble, Instagram, Gumroad, or booking form'
+    }
+  },
+
   vtree: {
     name: 'Vtree',
     icon: 'bi-link-45deg',
     description: 'Link tree style for all your important links',
+    color: '#4ade80',
     
     defaultSettings: {
       layout: 'linktree',
@@ -70,6 +105,7 @@ export const profileTemplates = {
     name: 'Resume',
     icon: 'bi-file-earmark-person',
     description: 'Professional resume for job applications',
+    color: '#2563eb',
     
     defaultSettings: {
       layout: 'linkedin',
@@ -106,6 +142,7 @@ export const profileTemplates = {
     name: 'Freelance',
     icon: 'bi-person-workspace',
     description: 'Showcase your services and attract clients',
+    color: '#ff6b6b',
     
     defaultSettings: {
       layout: 'linktree',
@@ -154,9 +191,10 @@ export const applyTemplate = (type, existingData = {}) => {
 }
 
 // Get all available profile types
-export const getProfileTypes = () => {
-  return Object.keys(profileTemplates).map(key => ({
+export const getProfileTypes = () =>
+  Object.entries(profileTemplates).map(([key, template]) => ({
     key,
-    ...profileTemplates[key]
+    value: key,
+    type: key,
+    ...template
   }))
-}

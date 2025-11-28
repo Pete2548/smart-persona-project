@@ -39,6 +39,94 @@ const THEME_SOURCE_LABELS = {
 
 const formatThemeSource = (source) => THEME_SOURCE_LABELS[source] || THEME_SOURCE_LABELS.custom
 
+const CREATIVE_PRESETS = [
+    {
+        id: 'creative-neon-portfolio',
+        title: 'Neon Portfolio',
+        description: 'High-energy palette for motion, 3D, and immersive installations.',
+        gradient: 'linear-gradient(135deg, #f97316 0%, #c026d3 55%, #5b21b6 100%)',
+        badges: ['Glow', 'Motion'],
+        tokens: {
+            bgColor: '#050014',
+            blockColor: '#12021c',
+            nameColor: '#ffd369',
+            descColor: '#e0e7ff',
+            bgOverlay: 0.48
+        }
+    },
+    {
+        id: 'creative-holographic-dream',
+        title: 'Holographic Dream',
+        description: 'Soft glassmorphism inspired by holographic foil and Y2K gradients.',
+        gradient: 'linear-gradient(135deg, #94bbe9 0%, #eeaeca 100%)',
+        badges: ['Glass', 'Soft light'],
+        tokens: {
+            bgColor: '#0f1024',
+            blockColor: 'rgba(255,255,255,0.08)',
+            nameColor: '#f8f6ff',
+            descColor: '#cad7ff',
+            bgOverlay: 0.35
+        }
+    },
+    {
+        id: 'creative-muse-lab',
+        title: 'Muse Lab',
+        description: 'Editorial contrast built for studios, art directors, and creative leads.',
+        gradient: 'linear-gradient(135deg, #0f172a 0%, #4338ca 55%, #f97316 100%)',
+        badges: ['Editorial', 'Bold serif'],
+        tokens: {
+            bgColor: '#1a120f',
+            blockColor: '#12090a',
+            nameColor: '#f7e0c3',
+            descColor: '#fcd8c6',
+            bgOverlay: 0.32
+        }
+    }
+]
+
+const CREATIVE_SECTION_KITS = [
+    {
+        id: 'hero-projects',
+        title: 'Hero Projects Stack',
+        icon: 'bi bi-lightning-charge-fill',
+        description: 'Spotlight three flagship drops with medium + metric highlights.',
+        section: {
+            type: 'bullets',
+            title: 'Hero Projects',
+            items: [
+                'Immersive launch · XR showcase · 1M+ live viewers',
+                'Art direction · Global brand film · Cannes shortlist',
+                'Experiential retail · Pop-up concept · 32% lift in dwell time'
+            ]
+        }
+    },
+    {
+        id: 'services-grid',
+        title: 'Services & Mediums',
+        icon: 'bi bi-grid-3x3-gap-fill',
+        description: 'Tell clients what you ship and how to collaborate.',
+        section: {
+            type: 'text',
+            title: 'Creative Services',
+            content: 'Art direction · Visual identity · Motion systems\nRetainers available · Booking Q1 2026 · Remote friendly'
+        }
+    },
+    {
+        id: 'studio-contact',
+        title: 'Studio Hotline',
+        icon: 'bi bi-headset',
+        description: 'Drop a quick booking block with direct contact details.',
+        section: {
+            type: 'contact',
+            title: 'Studio Contact',
+            address: 'Bangkok · Remote',
+            phone: '+66 80 000 0000',
+            email: 'hello@yourstudio.com',
+            website: 'https://yourstudio.com'
+        }
+    }
+]
+
 // IndexedDB helper functions
 const openDB = () => {
     return new Promise((resolve, reject) => {
@@ -93,7 +181,7 @@ const Customize = () => {
     const [showLoginModal, setShowLoginModal] = useState(false)
     const [profiles, setProfiles] = useState([])
     const [currentProfileId, setCurrentProfileId] = useState(null)
-    const [profileType, setProfileType] = useState('professional')
+    const [profileType, setProfileType] = useState('personal')
     const [username, setUsername] = useState('')
     const [displayName, setDisplayName] = useState('')
     const [description, setDescription] = useState('')
@@ -143,6 +231,7 @@ const Customize = () => {
     })
     const [themeMeta, setThemeMeta] = useState(null)
     const [themeTokens, setThemeTokens] = useState({})
+    const isCreativeProfile = profileType === 'creative'
 
     const themeSourceLabel = themeMeta ? formatThemeSource(themeMeta.source) : ''
 
@@ -380,6 +469,8 @@ const Customize = () => {
                 audioStartTime: audioStartTime || 0,
                 audioEndTime: audioEndTime || 0,
                 sections: profileSections,
+                themeMeta: themeMeta || null,
+                themeTokens
             }
             
             updateProfile(currentProfileId, updates)
@@ -408,6 +499,138 @@ const Customize = () => {
         borderRadius: 10,
         padding: 20
     } : { background: bgColor || '#0b0b0b', borderRadius:10, padding:20 }
+
+    const applyCreativePreset = (preset) => {
+        if (!preset) return
+        setLayout('creative')
+        setThemeMeta({
+            id: preset.id,
+            name: preset.title,
+            source: 'creative-studio',
+            profileType: 'creative',
+            badges: preset.badges
+        })
+        setThemeTokens(preset.tokens)
+        if (preset.tokens.nameColor) setNameColor(preset.tokens.nameColor)
+        if (preset.tokens.descColor) setDescColor(preset.tokens.descColor)
+        if (preset.tokens.blockColor) setBlockColor(preset.tokens.blockColor)
+        if (preset.tokens.bgColor) setBgColor(preset.tokens.bgColor)
+        if (preset.tokens.bgOverlay !== undefined) setBgOverlay(preset.tokens.bgOverlay)
+    }
+
+    const handleCreativeSectionInsert = (kit) => {
+        if (!kit) return
+        setProfileSections(prev => {
+            if (prev.some(section => section.templateId === kit.id)) {
+                return prev
+            }
+            const payload = JSON.parse(JSON.stringify(kit.section))
+            return [
+                ...prev,
+                {
+                    id: `section_${Date.now()}_${kit.id}`,
+                    templateId: kit.id,
+                    order: prev.length,
+                    ...payload
+                }
+            ]
+        })
+    }
+
+    const renderCreativeStudio = () => (
+        <div className="creative-studio mb-4">
+            <div className="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <div className="text-uppercase creative-eyebrow">Creative Studio</div>
+                    <h3 className="mb-1">Canvas presets for designers & artists</h3>
+                    <p className="mb-0">Apply neon palettes, drop-in section kits, or let AI name your studio.</p>
+                </div>
+                <span className="badge bg-dark text-white">Creative Beta</span>
+            </div>
+
+            <div className="row g-3 mt-2">
+                {CREATIVE_PRESETS.map((preset) => (
+                    <div key={preset.id} className="col-md-4">
+                        <div className="creative-preset-card" style={{ background: preset.gradient }}>
+                            <div>
+                                <div className="d-flex align-items-center justify-content-between">
+                                    <h5 className="mb-1 text-white">{preset.title}</h5>
+                                    <i className="bi bi-brush text-white-50"></i>
+                                </div>
+                                <p className="small mb-2" style={{ color: 'rgba(255,255,255,0.85)' }}>{preset.description}</p>
+                                <div className="d-flex flex-wrap gap-2">
+                                    {preset.badges.map((badge) => (
+                                        <span key={badge} className="badge creative-badge">{badge}</span>
+                                    ))}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                className="btn btn-light btn-sm w-100 mt-3"
+                                onClick={() => applyCreativePreset(preset)}
+                            >
+                                <i className="bi bi-stars me-1"></i>
+                                Use Palette
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="row g-3 mt-1">
+                <div className="col-lg-7">
+                    <div className="creative-kit-card h-100">
+                        <div className="d-flex align-items-center justify-content-between mb-3">
+                            <div>
+                                <h5 className="mb-0">Section kits</h5>
+                                <small>Create folio-ready blocks with one click</small>
+                            </div>
+                        </div>
+                        <div className="creative-kit-list">
+                            {CREATIVE_SECTION_KITS.map((kit) => {
+                                const alreadyAdded = profileSections.some(section => section.templateId === kit.id)
+                                return (
+                                    <div key={kit.id} className="creative-kit-row">
+                                        <div>
+                                            <div className="d-flex align-items-center gap-2">
+                                                <i className={`${kit.icon} text-muted`}></i>
+                                                <strong>{kit.title}</strong>
+                                            </div>
+                                            <p className="small text-muted mb-0">{kit.description}</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-dark"
+                                            disabled={alreadyAdded}
+                                            onClick={() => handleCreativeSectionInsert(kit)}
+                                        >
+                                            {alreadyAdded ? 'Added' : 'Add Section'}
+                                        </button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </div>
+                <div className="col-lg-5">
+                    <div className="creative-ai-stack h-100">
+                        <AIContentGenerator
+                            profileType="creative"
+                            fieldName="description"
+                            onGenerated={(content) => setDescription(content)}
+                        />
+                        <div className="mt-3">
+                            <AIContentGenerator
+                                profileType="creative"
+                                fieldName="displayName"
+                                onGenerated={(content) => setDisplayName(content)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
 
     // Handle Visual Editor Save
     const handleVisualEditorSave = async (vereData) => {
@@ -576,6 +799,8 @@ const Customize = () => {
                             )}
                         </div>
 
+                        {isCreativeProfile && renderCreativeStudio()}
+
                         {themeMeta && (
                             <div
                                 className="mb-4"
@@ -698,7 +923,7 @@ const Customize = () => {
                                     {showAIThemeRecommender && (
                                         <div className="mb-3">
                                             <AIThemeRecommender
-                                                profileType={profiles.find(p => p.id === currentProfileId)?.type || 'professional'}
+                                                profileType={profileType || 'personal'}
                                                 onThemeApplied={(colors) => {
                                                     setNameColor(colors.nameColor)
                                                     setBgColor(colors.bgColor)

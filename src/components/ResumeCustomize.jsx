@@ -33,6 +33,7 @@ function ResumeCustomize({ profile, onUpdate }) {
   const [sectionOrder, setSectionOrder] = useState([
     'header',
     'summary',
+    'highlights',
     'experience',
     'education',
     'skills',
@@ -77,6 +78,9 @@ function ResumeCustomize({ profile, onUpdate }) {
     
     // Interests (NEW)
     interests: profile?.interests || [],
+
+    // Highlights / Strength cards
+    highlights: profile?.highlights || [],
     
     // Template & Styling
     template: profile?.template || 'modern',
@@ -281,6 +285,7 @@ function ResumeCustomize({ profile, onUpdate }) {
     { id: 'template', label: '📐 Template & Layout', icon: 'bi-layout-text-window', category: 'design' },
     { id: 'header', label: '👤 Header & Contact', icon: 'bi-person-badge', category: 'content' },
     { id: 'summary', label: '📝 Summary', icon: 'bi-card-text', category: 'content' },
+    { id: 'highlights', label: '⭐ Highlights', icon: 'bi-star', category: 'content' },
     { id: 'experience', label: '💼 Work Experience', icon: 'bi-briefcase', category: 'content' },
     { id: 'education', label: '🎓 Education', icon: 'bi-mortarboard', category: 'content' },
     { id: 'skills', label: '⚡ Skills', icon: 'bi-lightning', category: 'content' },
@@ -288,6 +293,32 @@ function ResumeCustomize({ profile, onUpdate }) {
     { id: 'languages', label: '🌐 Languages', icon: 'bi-translate', category: 'content' },
     { id: 'interests', label: '💡 Interests', icon: 'bi-heart', category: 'content' },
     { id: 'styling', label: '🎨 Colors & Style', icon: 'bi-palette', category: 'design' }
+  ]
+
+  const tabLookup = tabs.reduce((acc, tab) => {
+    acc[tab.id] = tab
+    return acc
+  }, {})
+
+  const tabSections = [
+    {
+      id: 'essentials',
+      label: 'Profile Essentials',
+      hint: 'ชื่อ, ความสามารถ, Highlights',
+      tabIds: ['header', 'summary', 'highlights']
+    },
+    {
+      id: 'content',
+      label: 'Content Blocks',
+      hint: 'ประสบการณ์และข้อมูลสนับสนุน',
+      tabIds: ['experience', 'education', 'projects', 'skills', 'languages', 'interests']
+    },
+    {
+      id: 'style',
+      label: 'Style & Utilities',
+      hint: 'Template, สี, AI tools',
+      tabIds: ['template', 'styling', 'ai-generator']
+    }
   ]
 
   // AI Resume Generator
@@ -355,6 +386,17 @@ function ResumeCustomize({ profile, onUpdate }) {
     const newData = { ...resumeData, [field]: value }
     setResumeData(newData)
     onUpdate?.(newData)
+  }
+
+  // Dedicated helper so highlight edits stay in sync with preview + parent state
+  const updateHighlights = (updater) => {
+    setResumeData(prev => {
+      const currentHighlights = Array.isArray(prev.highlights) ? prev.highlights : []
+      const nextHighlights = typeof updater === 'function' ? updater(currentHighlights) : updater
+      const nextState = { ...prev, highlights: nextHighlights }
+      onUpdateRef.current?.(nextState)
+      return nextState
+    })
   }
 
   // Handle drag end for reordering sections
@@ -532,6 +574,43 @@ function ResumeCustomize({ profile, onUpdate }) {
                 {idx < resumeData.education.length - 1 && <hr className="my-2" style={{ opacity: 0.3 }} />}
               </div>
             ))}
+          </div>
+        )
+
+      case 'highlights':
+        if (resumeData.highlights.length === 0) return null
+        return (
+          <div style={sectionStyles}>
+            <span style={dragHandleStyle}>⋮⋮</span>
+            <h5 className="fw-bold mb-3" style={{ 
+              borderBottom: resumeData.template === 'minimal' ? '1px solid #ddd' : `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333'}`, 
+              paddingBottom: '8px',
+              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333',
+              fontSize: resumeData.template === 'classic' ? '20px' : '18px'
+            }}>
+              {resumeData.showSectionIcons && '⭐ '}Highlights
+            </h5>
+            <div className="row g-3">
+              {resumeData.highlights.map((highlight, idx) => (
+                <div key={highlight.id || idx} className="col-md-6">
+                  <div
+                    className="h-100 p-3"
+                    style={{
+                      borderRadius: '14px',
+                      border: `1px solid ${(resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333')}22`,
+                      backgroundColor: `${(resumeData.rightColumnBg || '#f8f9fa')}40`
+                    }}
+                  >
+                    <h6 className="fw-semibold mb-2" style={{ color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333' }}>
+                      {highlight.title || 'Highlight title'}
+                    </h6>
+                    <p className="text-muted small mb-0" style={{ lineHeight: '1.5' }}>
+                      {highlight.description || 'Add a short description to spotlight this win.'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )
 
@@ -814,6 +893,40 @@ function ResumeCustomize({ profile, onUpdate }) {
     }
 
     switch (sectionId) {
+      case 'highlights':
+        if (resumeData.highlights.length === 0) return null
+        return (
+          <div style={sectionStyles}>
+            <span style={dragHandleStyle}>⋮⋮</span>
+            <div
+              style={{
+                backgroundColor: '#fff',
+                borderRadius: '18px',
+                padding: '18px',
+                border: `1px solid ${(resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52')}22`,
+                boxShadow: '0 8px 20px rgba(0,0,0,0.05)'
+              }}
+            >
+              <h5 className="fw-bold mb-2" style={{ color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52' }}>
+                {resumeData.showSectionIcons && '⭐ '}Key Highlights
+              </h5>
+              {resumeData.highlights.map((highlight, index) => (
+                <div key={highlight.id || index} className="mb-2">
+                  <p className="mb-1 fw-semibold" style={{ fontSize: '14px' }}>
+                    {highlight.title || 'Highlight title'}
+                  </p>
+                  <p className="mb-0 text-muted" style={{ fontSize: '13px', lineHeight: '1.5' }}>
+                    {highlight.description || 'Add a concise description here.'}
+                  </p>
+                  {index < resumeData.highlights.length - 1 && (
+                    <hr className="my-3" style={{ opacity: 0.2 }} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+
       case 'experience':
         if (resumeData.experiences.length === 0) return null
         return (
@@ -920,6 +1033,16 @@ function ResumeCustomize({ profile, onUpdate }) {
       default:
         return null
     }
+  }
+
+  const tabBadgeCounts = {
+    highlights: resumeData.highlights?.length || 0,
+    experience: resumeData.experiences?.length || 0,
+    education: resumeData.education?.length || 0,
+    projects: resumeData.projects?.length || 0,
+    skills: resumeData.skills?.length || 0,
+    languages: resumeData.languages?.length || 0,
+    interests: resumeData.interests?.length || 0
   }
 
   return (
@@ -1502,28 +1625,71 @@ function ResumeCustomize({ profile, onUpdate }) {
 
               {/* Tabs */}
               <div className="card-body p-0">
-                <div className="nav nav-pills flex-column" style={{ padding: '12px' }}>
-                  {tabs.map(tab => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`nav-link text-start d-flex align-items-center gap-2 mb-1 ${
-                        activeTab === tab.id ? 'active' : ''
-                      }`}
+                <div className="d-flex flex-column gap-3" style={{ padding: '16px' }}>
+                  {tabSections.map((section) => (
+                    <div
+                      key={section.id}
                       style={{
-                        borderRadius: '10px',
-                        padding: '12px 16px',
-                        fontWeight: activeTab === tab.id ? '600' : '500',
-                        fontSize: '14px',
-                        backgroundColor: activeTab === tab.id ? '#000' : 'transparent',
-                        color: activeTab === tab.id ? '#fff' : '#666',
-                        border: 'none',
-                        transition: 'all 0.2s'
+                        backgroundColor: '#f8f9fb',
+                        borderRadius: '14px',
+                        padding: '14px',
+                        border: '1px solid #edf0f5'
                       }}
                     >
-                      <i className={`bi ${tab.icon}`}></i>
-                      {tab.label}
-                    </button>
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                          <div className="fw-semibold" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            {section.label}
+                          </div>
+                          <small className="text-muted">{section.hint}</small>
+                        </div>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ced4da' }}></div>
+                      </div>
+                      <div className="d-flex flex-column gap-2">
+                        {section.tabIds.map((tabId) => {
+                          const tab = tabLookup[tabId]
+                          if (!tab) return null
+                          const isActive = activeTab === tab.id
+                          const badgeValue = tabBadgeCounts[tab.id]
+                          return (
+                            <button
+                              key={tab.id}
+                              onClick={() => setActiveTab(tab.id)}
+                              className="d-flex align-items-center justify-content-between"
+                              style={{
+                                border: 'none',
+                                borderRadius: '10px',
+                                padding: '10px 12px',
+                                backgroundColor: isActive ? '#111' : 'white',
+                                color: isActive ? '#fff' : '#333',
+                                fontSize: '13px',
+                                fontWeight: isActive ? 600 : 500,
+                                boxShadow: isActive ? '0 10px 25px rgba(0,0,0,0.12)' : '0 2px 6px rgba(15,23,42,0.05)',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <span className="d-flex align-items-center gap-2">
+                                <i className={`bi ${tab.icon}`}></i>
+                                {tab.label}
+                              </span>
+                              {typeof badgeValue === 'number' && badgeValue > 0 && (
+                                <span
+                                  className="badge rounded-pill"
+                                  style={{
+                                    backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : '#f1f3f5',
+                                    color: isActive ? '#fff' : '#333',
+                                    fontWeight: 600,
+                                    fontSize: '12px'
+                                  }}
+                                >
+                                  {badgeValue}
+                                </span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   ))}
                 </div>
 
@@ -2162,6 +2328,110 @@ function ResumeCustomize({ profile, onUpdate }) {
                     </div>
                   )}
 
+                  {activeTab === 'highlights' && (
+                    <div>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="me-3">
+                          <h6 className="fw-bold mb-1">⭐ Key Highlights</h6>
+                          <p className="text-muted small mb-0">
+                            ใช้การ์ดสั้นๆ เพื่อโชว์ผลลัพธ์, impact หรือ strength ที่อยากเน้น
+                          </p>
+                        </div>
+                        <button
+                          className="btn btn-sm btn-dark"
+                          style={{ borderRadius: '8px' }}
+                          onClick={() => {
+                            const newCard = {
+                              id: Date.now(),
+                              title: '',
+                              description: ''
+                            }
+                            updateHighlights((current) => [...current, newCard])
+                          }}
+                        >
+                          <i className="bi bi-plus-circle me-1"></i>
+                          Add Card
+                        </button>
+                      </div>
+
+                      {resumeData.highlights.length === 0 ? (
+                        <div className="alert alert-secondary text-center" style={{ borderRadius: '12px' }}>
+                          <i className="bi bi-stars me-2"></i>
+                          ยังไม่มี highlight — เริ่มจากการเพิ่มการ์ดแรกเลย
+                        </div>
+                      ) : (
+                        resumeData.highlights.map((highlight, index) => (
+                          <div key={highlight.id || index} className="card mb-3" style={{ borderRadius: '12px' }}>
+                            <div className="card-body">
+                              <div className="d-flex justify-content-between align-items-start mb-2">
+                                <strong className="small">Card #{index + 1}</strong>
+                                <div className="d-flex gap-2">
+                                  <button
+                                    className="btn btn-sm btn-outline-secondary"
+                                    style={{ borderRadius: '6px', padding: '2px 8px' }}
+                                    onClick={() => {
+                                      updateHighlights((current) => {
+                                        const draft = [...current]
+                                        const duplicate = { ...draft[index], id: Date.now() }
+                                        draft.splice(index + 1, 0, duplicate)
+                                        return draft
+                                      })
+                                    }}
+                                  >
+                                    <i className="bi bi-files"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-outline-danger"
+                                    style={{ borderRadius: '6px', padding: '2px 8px' }}
+                                    onClick={() => {
+                                      updateHighlights((current) => current.filter((_, i) => i !== index))
+                                    }}
+                                  >
+                                    <i className="bi bi-trash"></i>
+                                  </button>
+                                </div>
+                              </div>
+                              <input
+                                type="text"
+                                className="form-control form-control-sm mb-2"
+                                placeholder="เช่น Increased conversion rate by 45%"
+                                value={highlight.title || ''}
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                  updateHighlights((current) =>
+                                    current.map((card, cardIndex) =>
+                                      cardIndex === index ? { ...card, title: value } : card
+                                    )
+                                  )
+                                }}
+                                style={{ borderRadius: '6px', fontSize: '13px' }}
+                              />
+                              <textarea
+                                className="form-control form-control-sm"
+                                rows="3"
+                                placeholder="รายละเอียดสั้นๆ พร้อม metrics หรือบริบท"
+                                value={highlight.description || ''}
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                  updateHighlights((current) =>
+                                    current.map((card, cardIndex) =>
+                                      cardIndex === index ? { ...card, description: value } : card
+                                    )
+                                  )
+                                }}
+                                style={{ borderRadius: '6px', fontSize: '13px' }}
+                              ></textarea>
+                              <div className="d-flex justify-content-between align-items-center mt-2">
+                                <small className="text-muted">{(highlight.description || '').length} chars</small>
+                                <small className="text-muted">แนะนำ 1-2 sentence</small>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+
                   {activeTab === 'languages' && (
                     <div>
                       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -2587,7 +2857,7 @@ function ResumeCustomize({ profile, onUpdate }) {
                           <Droppable droppableId="right-column-sections">
                             {(provided) => (
                               <div ref={provided.innerRef} {...provided.droppableProps}>
-                                {['experience', 'education', 'projects'].map((sectionId, index) => {
+                                {['highlights', 'experience', 'education', 'projects'].map((sectionId, index) => {
                                   const sectionContent = renderSectionTwoColumnRight(sectionId)
                                   if (!sectionContent) return null
                                   

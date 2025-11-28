@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import LoginModal from '../components/LoginModal'
 import { getCurrentUser } from '../services/auth'
@@ -20,6 +20,33 @@ const THEME_SOURCE_LABELS = {
   builtin: 'Official',
   community: 'Community',
   saved: 'My Theme'
+}
+
+const THEME_TAB_COPY = {
+  personal: {
+    titleKey: 'personal_profile_themes',
+    title: 'Personal Profile Themes',
+    subtitleKey: 'discover_personal_themes',
+    subtitle: 'Discover themes for your personal profile page'
+  },
+  creative: {
+    titleKey: 'creative_profile_themes',
+    title: 'Creative Studio Themes',
+    subtitleKey: 'discover_creative_themes',
+    subtitle: 'Bold looks for designers, artists, and studios'
+  },
+  vtree: {
+    titleKey: 'vtree_link_themes',
+    title: 'Vtree Link Themes',
+    subtitleKey: 'discover_vtree_themes',
+    subtitle: 'Beautiful themes for your Vtree link collection'
+  },
+  resume: {
+    titleKey: 'resume_builder_themes',
+    title: 'Resume Builder Themes',
+    subtitleKey: 'discover_resume_themes',
+    subtitle: 'Professional themes for your resume'
+  }
 }
 
 const formatUseCount = (count) => {
@@ -82,6 +109,7 @@ const normalizeThemeShape = (theme) => {
 const Themes = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const [selectedTab, setSelectedTab] = useState('personal')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -91,10 +119,30 @@ const Themes = () => {
   const [themeNameInput, setThemeNameInput] = useState('')
   const [isSnapshotting, setIsSnapshotting] = useState(false)
   const [currentUser, setCurrentUser] = useState(null)
+  const activeTabCopy = THEME_TAB_COPY[selectedTab] || THEME_TAB_COPY.personal
 
   useEffect(() => {
     setCurrentUser(getCurrentUser())
   }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const tabFromQuery = params.get('tab')
+    if (!tabFromQuery || !THEME_TAB_COPY[tabFromQuery]) {
+      return
+    }
+    setSelectedTab(prev => (prev === tabFromQuery ? prev : tabFromQuery))
+  }, [location.search])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const current = params.get('tab') || 'personal'
+    if (current === selectedTab) {
+      return
+    }
+    params.set('tab', selectedTab)
+    navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true })
+  }, [selectedTab, location.pathname, location.search, navigate])
 
   const hideToast = () => setToast({ show: false, message: '', theme: '' })
 
@@ -290,18 +338,10 @@ const Themes = () => {
             <div className="themes-header">
               <div>
                 <h2 className="themes-title">
-                  {selectedTab === 'personal'
-                    ? t('personal_profile_themes') || 'Personal Profile Themes'
-                    : selectedTab === 'vtree'
-                    ? t('vtree_link_themes') || 'Vtree Link Themes'
-                    : t('resume_builder_themes') || 'Resume Builder Themes'}
+                  {t(activeTabCopy.titleKey) || activeTabCopy.title}
                 </h2>
                 <p className="themes-subtitle">
-                  {selectedTab === 'personal'
-                    ? t('discover_personal_themes') || 'Discover themes for your personal profile page'
-                    : selectedTab === 'vtree'
-                    ? t('discover_vtree_themes') || 'Beautiful themes for your Vtree link collection'
-                    : t('discover_resume_themes') || 'Professional themes for your resume'}
+                  {t(activeTabCopy.subtitleKey) || activeTabCopy.subtitle}
                 </p>
               </div>
 
@@ -343,6 +383,13 @@ const Themes = () => {
               >
                 <i className="bi bi-person-fill me-2"></i>
                 {t('personal')}
+              </button>
+              <button
+                className={`tab-btn ${selectedTab === 'creative' ? 'active' : ''}`}
+                onClick={() => setSelectedTab('creative')}
+              >
+                <i className="bi bi-brush-fill me-2"></i>
+                {t('creative') || 'Creative'}
               </button>
               <button
                 className={`tab-btn ${selectedTab === 'vtree' ? 'active' : ''}`}
