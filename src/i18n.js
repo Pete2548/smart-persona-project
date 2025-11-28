@@ -144,14 +144,12 @@ const resources = {
       "active": "Active",
       "set_active": "Set Active",
       "edit": "Edit",
-      "delete": "Delete",
       "confirm_delete": "Are you sure you want to delete this profile?",
       
       // Common
       "save": "Save",
       "cancel": "Cancel",
       "add": "Add",
-      "delete": "Delete",
       "close": "Close",
       "loading": "Loading...",
       "error": "Error",
@@ -308,14 +306,12 @@ const resources = {
       "active": "ใช้งาน",
       "set_active": "ตั้งเป็นหลัก",
       "edit": "แก้ไข",
-      "delete": "ลบ",
       "confirm_delete": "คุณแน่ใจหรือไม่ว่าต้องการลบโปรไฟล์นี้?",
       
       // Common
       "save": "บันทึก",
       "cancel": "ยกเลิก",
       "add": "เพิ่ม",
-      "delete": "ลบ",
       "close": "ปิด",
       "loading": "กำลังโหลด...",
       "error": "ข้อผิดพลาด",
