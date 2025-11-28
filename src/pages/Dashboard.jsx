@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import ProfileCard from '../components/ProfileCard'
 import StatsCard from '../components/StatsCard'
+import LoginModal from '../components/LoginModal'
+import { getCurrentUser } from '../services/auth'
 import { getActiveProfile, getAllProfiles } from '../services/profileManager'
 import { isAdmin } from '../services/auth'
 import './dashboard.css'
 
 function Dashboard() {
   const navigate = useNavigate()
+  const [showLoginModal, setShowLoginModal] = useState(false)
   const [recentActivity, setRecentActivity] = useState([])
   const [profile, setProfile] = useState(null)
   const [userIsAdmin, setUserIsAdmin] = useState(false)
@@ -22,9 +25,13 @@ function Dashboard() {
   })
 
   useEffect(() => {
-    // Check if user is admin
-    setUserIsAdmin(isAdmin())
-    
+    // Check if user is logged in
+    const user = getCurrentUser()
+    if (!user) {
+      setShowLoginModal(true)
+      return
+    }
+
     // Load active profile and calculate stats
     try {
       const activeProfile = getActiveProfile()
@@ -219,6 +226,17 @@ function Dashboard() {
           </div>
         </main>
       </div>
+      
+      {/* Login Modal */}
+      {showLoginModal && (
+        <LoginModal 
+          onClose={() => setShowLoginModal(false)}
+          onSwitchToSignup={() => {
+            setShowLoginModal(false)
+            navigate('/signup')
+          }}
+        />
+      )}
     </div>
   )
 }

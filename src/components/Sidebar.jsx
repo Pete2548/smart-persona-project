@@ -69,10 +69,14 @@ function Sidebar() {
       <nav className="sidebar-nav flex-grow-1">
         <ul className="list-unstyled m-0 p-2">
           <li className="nav-item mb-3">
-            <NavLink to="/dashboard" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
+            <a 
+              href="/dashboard" 
+              onClick={(e) => handleProtectedAction(e, '/dashboard')}
+              className="d-flex align-items-center text-decoration-none text-dark nav-link"
+            >
               <i className="bi bi-speedometer2 fs-4 me-2"></i>
               <span className="nav-label">dashboard</span>
-            </NavLink>
+            </a>
           </li>
           <li className="nav-item mb-3">
             <NavLink to="/my-profiles" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
