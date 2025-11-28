@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar'
 import LoginModal from '../components/LoginModal'
@@ -7,6 +8,7 @@ import AIContentGenerator from '../components/AIContentGenerator'
 import AIThemeRecommender from '../components/AIThemeRecommender'
 import SectionManager from '../components/SectionManager'
 import VtreeCustomize from '../components/VtreeCustomize'
+import ResumeCustomize from '../components/ResumeCustomize'
 import { getCurrentUser } from '../services/auth'
 import { getAllProfiles, getActiveProfile, getActiveProfileId, setActiveProfile, updateProfile, migrateOldProfile, getProfiles } from '../services/profileManager'
 import './customize.css';
@@ -61,6 +63,7 @@ const deleteAudioFromDB = async () => {
 }
 
 const Customize = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate()
     const [showLoginModal, setShowLoginModal] = useState(false)
     const [profiles, setProfiles] = useState([])
@@ -473,6 +476,35 @@ const Customize = () => {
         )
     }
 
+    // If Resume profile type, show ResumeCustomize interface
+    if (profileType === 'resume') {
+        return (
+            <div className="dashboard-shell p-4">
+                <div className="dashboard-card d-flex">
+                    <Sidebar />
+                    <main className="dashboard-main p-0" style={{ flex: 1 }}>
+                        <ResumeCustomize 
+                            profile={{
+                                fullName: displayName,
+                                ...layoutSettings
+                            }}
+                            onUpdate={(updates) => {
+                                if (updates.fullName !== undefined) setDisplayName(updates.fullName)
+                                // Add more update handlers as needed
+                                const newLayoutSettings = { ...layoutSettings, ...updates }
+                                setLayoutSettings(newLayoutSettings)
+                            }}
+                        />
+                    </main>
+                </div>
+                
+                {showLoginModal && (
+                    <LoginModal onClose={() => setShowLoginModal(false)} onSwitchToSignup={handleSwitchToSignup} />
+                )}
+            </div>
+        )
+    }
+
     return (
         <div className="dashboard-shell p-4">
             <div className="dashboard-card d-flex">
@@ -481,12 +513,12 @@ const Customize = () => {
                 <main className="dashboard-main p-4">
                     <div className="customize-container">
                         <div className="d-flex justify-content-between align-items-center mb-3">
-                            <h2 className="customize-title mb-0">Customization</h2>
+                            <h2 className="customize-title mb-0">{t('customize') || 'Customization'}</h2>
                             
                             {/* Profile Selector */}
                             {profiles.length > 0 && (
                                 <div className="d-flex align-items-center gap-2">
-                                    <label className="mb-0 small text-muted">Editing:</label>
+                                    <label className="mb-0 small text-muted">{t('editing') || 'Editing:'}</label>
                                     <select 
                                         className="form-select" 
                                         style={{ width: 'auto', minWidth: '200px' }}
@@ -506,7 +538,7 @@ const Customize = () => {
                         <div className="customize-card mb-4">
                             <div className="customize-row">
                                 <div className="form-group">
-                                    <label className="form-label">Username (cannot be changed)</label>
+                                    <label className="form-label">{t('username_cannot_change') || 'Username (cannot be changed)'}</label>
                                     <input 
                                         value={username} 
                                         className="form-control neutral-input" 
@@ -518,17 +550,17 @@ const Customize = () => {
                                             color: '#666'
                                         }}
                                     />
-                                    <small className="text-muted">This is your login username and cannot be changed</small>
+                                    <small className="text-muted">{t('username_note') || 'This is your login username and cannot be changed'}</small>
                                 </div>
 
                                 <div className="form-group">
-                                    <label className="form-label">Display Name</label>
+                                    <label className="form-label">{t('display_name')}</label>
                                     <input value={displayName} onChange={e => setDisplayName(e.target.value)} className="form-control neutral-input" placeholder="Your display name" />
-                                    <small className="text-muted">This name will be shown on your profile</small>
+                                    <small className="text-muted">{t('display_name_note') || 'This name will be shown on your profile'}</small>
                                 </div>
 
                                 <div className="form-group w-100">
-                                    <label className="form-label">Description</label>
+                                    <label className="form-label">{t('description')}</label>
                                     <input value={description} onChange={e => setDescription(e.target.value)} className="form-control neutral-input" placeholder="this is my Description" />
                                 </div>
                             </div>
@@ -550,7 +582,7 @@ const Customize = () => {
                                 <div className="form-group w-100">
                                     <label className="form-label d-flex align-items-center gap-2">
                                         <i className={`bi ${isPublic ? 'bi-globe' : 'bi-lock-fill'}`}></i>
-                                        Profile Visibility
+                                        {t('profile_visibility') || 'Profile Visibility'}
                                     </label>
                                     <div className="btn-group w-100" role="group">
                                         <button 
@@ -560,7 +592,7 @@ const Customize = () => {
                                             style={{ flex: 1 }}
                                         >
                                             <i className="bi bi-globe me-2"></i>
-                                            Public
+                                            {t('public') || 'Public'}
                                         </button>
                                         <button 
                                             type="button" 
@@ -569,13 +601,13 @@ const Customize = () => {
                                             style={{ flex: 1 }}
                                         >
                                             <i className="bi bi-lock-fill me-2"></i>
-                                            Private
+                                            {t('private') || 'Private'}
                                         </button>
                                     </div>
                                     <small className="text-muted mt-1 d-block">
                                         {isPublic 
-                                            ? '✓ Anyone can view your profile' 
-                                            : '🔒 Only you can view this profile (visitors will see a private message)'}
+                                            ? t('profile_public_note') || '✓ Anyone can view your profile' 
+                                            : t('profile_private_note') || '🔒 Only you can view this profile (visitors will see a private message)'}
                                     </small>
                                 </div>
                             </div>
@@ -586,7 +618,7 @@ const Customize = () => {
                                     <div className="d-flex justify-content-between align-items-center mb-2">
                                         <label className="form-label mb-0">
                                             <i className="bi bi-palette me-2"></i>
-                                            Color Customization
+                                            {t('color_customization') || 'Color Customization'}
                                         </label>
                                         <button 
                                             type="button"
@@ -594,7 +626,7 @@ const Customize = () => {
                                             onClick={() => setShowAIThemeRecommender(!showAIThemeRecommender)}
                                         >
                                             <i className="bi bi-stars me-1"></i>
-                                            {showAIThemeRecommender ? 'Hide AI Recommender' : 'Get AI Theme Suggestions'}
+                                            {showAIThemeRecommender ? t('hide_ai_recommender') || 'Hide AI Recommender' : t('get_ai_theme_suggestions') || 'Get AI Theme Suggestions'}
                                         </button>
                                     </div>
                                     
@@ -616,7 +648,7 @@ const Customize = () => {
 
                             <div className="customize-row mt-3">
                                 <div className="form-group">
-                                    <label className="form-label">Name color</label>
+                                    <label className="form-label">{t('name_color') || 'Name color'}</label>
                                     <div className="d-flex align-items-center gap-2">
                                         <input type="color" value={nameColor} onChange={e => setNameColor(e.target.value)} className="form-control form-control-color" style={{width:56, height:36, padding:4}} />
                                         <input type="text" value={nameColor} onChange={e => setNameColor(e.target.value)} className="form-control neutral-input" style={{maxWidth:140}} />
@@ -624,21 +656,21 @@ const Customize = () => {
                                 </div>
 
                                 <div className="form-group">
-                                    <label className="form-label">Block background</label>
+                                    <label className="form-label">{t('block_background') || 'Block background'}</label>
                                     <div className="d-flex align-items-center gap-2">
                                         <input type="color" value={blockColor} onChange={e => setBlockColor(e.target.value)} className="form-control form-control-color" style={{width:56, height:36, padding:4}} />
                                         <input type="text" value={blockColor} onChange={e => setBlockColor(e.target.value)} className="form-control neutral-input" style={{maxWidth:140}} />
                                     </div>
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Description color</label>
+                                    <label className="form-label">{t('description_color') || 'Description color'}</label>
                                     <div className="d-flex align-items-center gap-2">
                                         <input type="color" value={descColor} onChange={e => setDescColor(e.target.value)} className="form-control form-control-color" style={{width:56, height:36, padding:4}} />
                                         <input type="text" value={descColor} onChange={e => setDescColor(e.target.value)} className="form-control neutral-input" style={{maxWidth:140}} />
                                     </div>
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Page background</label>
+                                    <label className="form-label">{t('page_background') || 'Page background'}</label>
                                     <div className="d-flex align-items-center gap-2">
                                         <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} className="form-control form-control-color" style={{width:56, height:36, padding:4}} />
                                         <input type="text" value={bgColor} onChange={e => setBgColor(e.target.value)} className="form-control neutral-input" style={{maxWidth:140}} />
@@ -652,13 +684,13 @@ const Customize = () => {
                                     <div className="d-flex align-items-center justify-content-between mb-3">
                                         <h5 className="mb-0">
                                             <i className="bi bi-tools me-2"></i>
-                                            Advanced Layout Editor
+                                            {t('advanced_layout_editor') || 'Advanced Layout Editor'}
                                         </h5>
                                         <button 
                                             className="btn btn-sm btn-outline-secondary"
                                             onClick={() => setAdvancedMode(!advancedMode)}
                                         >
-                                            {advancedMode ? 'Hide Details' : 'Show Details'}
+                                            {advancedMode ? t('hide_details') || 'Hide Details' : t('show_details') || 'Show Details'}
                                         </button>
                                     </div>
 
@@ -666,11 +698,11 @@ const Customize = () => {
                                     <div className="mb-3 p-3 bg-white rounded">
                                         <h6 className="mb-3">
                                             <i className="bi bi-person-circle me-2"></i>
-                                            Avatar Settings
+                                            {t('avatar_settings') || 'Avatar Settings'}
                                         </h6>
                                         <div className="row g-3">
                                             <div className="col-md-6">
-                                                <label className="form-label small">Alignment</label>
+                                                <label className="form-label small">{t('alignment') || 'Alignment'}</label>
                                                 <select 
                                                     className="form-select form-select-sm"
                                                     value={layoutSettings.avatarAlignment}
@@ -682,7 +714,7 @@ const Customize = () => {
                                                 </select>
                                             </div>
                                             <div className="col-md-6">
-                                                <label className="form-label small">Size: {layoutSettings.avatarSize}px</label>
+                                                <label className="form-label small">{t('size') || 'Size'}: {layoutSettings.avatarSize}px</label>
                                                 <input 
                                                     type="range" 
                                                     className="form-range"
@@ -700,7 +732,7 @@ const Customize = () => {
                                                         checked={layoutSettings.avatarVisible}
                                                         onChange={(e) => setLayoutSettings({...layoutSettings, avatarVisible: e.target.checked})}
                                                     />
-                                                    <label className="form-check-label small">Show Avatar</label>
+                                                    <label className="form-check-label small">{t('show_avatar') || 'Show Avatar'}</label>
                                                 </div>
                                             </div>
                                         </div>
@@ -710,11 +742,11 @@ const Customize = () => {
                                     <div className="mb-3 p-3 bg-white rounded">
                                         <h6 className="mb-3">
                                             <i className="bi bi-type me-2"></i>
-                                            Name Settings
+                                            {t('name_settings') || 'Name Settings'}
                                         </h6>
                                         <div className="row g-3">
                                             <div className="col-md-6">
-                                                <label className="form-label small">Alignment</label>
+                                                <label className="form-label small">{t('alignment') || 'Alignment'}</label>
                                                 <select 
                                                     className="form-select form-select-sm"
                                                     value={layoutSettings.nameAlignment}
@@ -726,7 +758,7 @@ const Customize = () => {
                                                 </select>
                                             </div>
                                             <div className="col-md-6">
-                                                <label className="form-label small">Font Size: {layoutSettings.nameFontSize}px</label>
+                                                <label className="form-label small">{t('font_size') || 'Font Size'}: {layoutSettings.nameFontSize}px</label>
                                                 <input 
                                                     type="range" 
                                                     className="form-range"
@@ -744,7 +776,7 @@ const Customize = () => {
                                                         checked={layoutSettings.nameVisible}
                                                         onChange={(e) => setLayoutSettings({...layoutSettings, nameVisible: e.target.checked})}
                                                     />
-                                                    <label className="form-check-label small">Show Name</label>
+                                                    <label className="form-check-label small">{t('show_name') || 'Show Name'}</label>
                                                 </div>
                                             </div>
                                         </div>
@@ -754,11 +786,11 @@ const Customize = () => {
                                     <div className="mb-3 p-3 bg-white rounded">
                                         <h6 className="mb-3">
                                             <i className="bi bi-text-paragraph me-2"></i>
-                                            Description Settings
+                                            {t('description_settings') || 'Description Settings'}
                                         </h6>
                                         <div className="row g-3">
                                             <div className="col-md-6">
-                                                <label className="form-label small">Alignment</label>
+                                                <label className="form-label small">{t('alignment') || 'Alignment'}</label>
                                                 <select 
                                                     className="form-select form-select-sm"
                                                     value={layoutSettings.descAlignment}
@@ -770,7 +802,7 @@ const Customize = () => {
                                                 </select>
                                             </div>
                                             <div className="col-md-6">
-                                                <label className="form-label small">Font Size: {layoutSettings.descFontSize}px</label>
+                                                <label className="form-label small">{t('font_size') || 'Font Size'}: {layoutSettings.descFontSize}px</label>
                                                 <input 
                                                     type="range" 
                                                     className="form-range"
@@ -788,7 +820,7 @@ const Customize = () => {
                                                         checked={layoutSettings.descVisible}
                                                         onChange={(e) => setLayoutSettings({...layoutSettings, descVisible: e.target.checked})}
                                                     />
-                                                    <label className="form-check-label small">Show Description</label>
+                                                    <label className="form-check-label small">{t('show_description') || 'Show Description'}</label>
                                                 </div>
                                             </div>
                                         </div>
@@ -798,11 +830,11 @@ const Customize = () => {
                                     <div className="mb-3 p-3 bg-white rounded">
                                         <h6 className="mb-3">
                                             <i className="bi bi-arrows-expand me-2"></i>
-                                            Spacing & Layout
+                                            {t('spacing_layout') || 'Spacing & Layout'}
                                         </h6>
                                         <div className="row g-3">
                                             <div className="col-md-4">
-                                                <label className="form-label small">Vertical Position</label>
+                                                <label className="form-label small">{t('vertical_position') || 'Vertical Position'}</label>
                                                 <select 
                                                     className="form-select form-select-sm"
                                                     value={layoutSettings.contentVerticalAlign}
@@ -814,7 +846,7 @@ const Customize = () => {
                                                 </select>
                                             </div>
                                             <div className="col-md-4">
-                                                <label className="form-label small">Content Padding: {layoutSettings.contentPadding}px</label>
+                                                <label className="form-label small">{t('content_padding') || 'Content Padding'}: {layoutSettings.contentPadding}px</label>
                                                 <input 
                                                     type="range" 
                                                     className="form-range"
@@ -825,7 +857,7 @@ const Customize = () => {
                                                 />
                                             </div>
                                             <div className="col-md-4">
-                                                <label className="form-label small">Element Spacing: {layoutSettings.elementSpacing}px</label>
+                                                <label className="form-label small">{t('element_spacing') || 'Element Spacing'}: {layoutSettings.elementSpacing}px</label>
                                                 <input 
                                                     type="range" 
                                                     className="form-range"
@@ -840,7 +872,7 @@ const Customize = () => {
 
                                     <div className="alert alert-info small mb-0">
                                         <i className="bi bi-info-circle me-2"></i>
-                                        Changes will be applied when you save the profile and view it.
+                                        {t('changes_applied_note') || 'Changes will be applied when you save the profile and view it.'}
                                     </div>
                                 </div>
                             )}
@@ -959,10 +991,10 @@ const Customize = () => {
                         </div>
 
                             <div className="customize-card mt-4">
-                            <h4 className="mb-3">Preview</h4>
+                            <h4 className="mb-3">{t('preview') || 'Preview'}</h4>
                             <div className="d-flex align-items-center" style={{gap:12, marginBottom:8}}>
                                 <div style={{display:'flex', alignItems:'center', gap:12}}>
-                                    <label className="form-label mb-0 ">Background overlay</label>
+                                    <label className="form-label mb-0 ">{t('background_overlay') || 'Background overlay'}</label>
                                     <input type="range" min={0} max={100} value={Math.round(bgOverlay*100)} onChange={e => setBgOverlay(Number(e.target.value)/100)} />
                                     <div style={{minWidth:42, textAlign:'center'}}>{Math.round(bgOverlay*100)}%</div>
                                 </div>

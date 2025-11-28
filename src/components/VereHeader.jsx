@@ -2,15 +2,22 @@
 import React, { useEffect, useState } from 'react'
 import { Navbar, Container, Nav, Dropdown, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { login, getCurrentUser, logout } from '../services/auth'
 import LoginModal from './LoginModal'
 
 function VereHeader() {
+  const { t, i18n } = useTranslation();
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [current, setCurrent] = useState(getCurrentUser())
   const [showLoginModal, setShowLoginModal] = useState(false)
   const navigate = useNavigate()
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+    localStorage.setItem('language', lng);
+  };
 
   useEffect(() => {
     setCurrent(getCurrentUser())
@@ -75,28 +82,47 @@ function VereHeader() {
             </Dropdown.Menu>
           </Dropdown>
         </div>
-
-        {/* center */}
-        <div style={{ flex: '1 1 0' }} className="text-center">
-          <Navbar.Brand href="/" className="fw-bold fs-4 m-0">VERE</Navbar.Brand>
-        </div>
-
         {/* right */}
-        <div style={{ flex: '1 1 0' }} className="d-flex justify-content-end">
+        <div style={{ flex: '1 1 0' }} className="d-flex justify-content-end align-items-center gap-2">
+          {/* Language Switcher */}
+          <Dropdown align="end">
+            <Dropdown.Toggle 
+              variant="link" 
+              className="text-decoration-none text-dark p-0 border-0"
+              style={{ boxShadow: 'none' }}
+            >
+              <i className="bi bi-translate fs-5"></i>
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              <Dropdown.Item 
+                onClick={() => changeLanguage('en')}
+                active={i18n.language === 'en'}
+              >
+                🇺🇸 English
+              </Dropdown.Item>
+              <Dropdown.Item 
+                onClick={() => changeLanguage('th')}
+                active={i18n.language === 'th'}
+              >
+                🇹🇭 ไทย
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+
+          {/* Profile Menu */}
           <Dropdown align="end">
             <Dropdown.Toggle as={Nav.Link} className="p-0" id="profile-menu-toggle">
               <i className="bi bi-person fs-4"></i>
             </Dropdown.Toggle>
-
             <Dropdown.Menu>
               {!current && (
                 <>
                   <Dropdown.Item as={Link} to="/create-account" className='text-center '>
-                    <Button className='btn-secondary fw-bold'>Create Account</Button>
+                    <Button className='btn-secondary fw-bold'>{t('get_started')}</Button>
                   </Dropdown.Item>
                   <Dropdown.Divider />
                   <div className="p-3" style={{ minWidth: '250px' }}>
-                    <p className="fw-bold text-center mb-2">Login</p>
+                    <p className="fw-bold text-center mb-2">{t('login')}</p>
                     <Form onSubmit={handleSubmit}>
                       <Form.Group className="mb-2">
                         <Form.Control value={identifier} onChange={e=>setIdentifier(e.target.value)} type="text" placeholder="Username or email" size="sm" />
@@ -104,7 +130,7 @@ function VereHeader() {
                       <Form.Group className="mb-3">
                         <Form.Control value={password} onChange={e=>setPassword(e.target.value)} type="password" placeholder="Password" size="sm" />
                       </Form.Group>
-                      <Button variant="secondary" type="submit" className="w-100 btn-sm">Login</Button>
+                      <Button variant="secondary" type="submit" className="w-100 btn-sm">{t('login')}</Button>
                     </Form>
                   </div>
                 </>
@@ -114,7 +140,7 @@ function VereHeader() {
                 <div className="p-2" style={{ minWidth: '200px' }}>
                   <div className="mb-2 text-center">Signed in as <strong>{current.username}</strong></div>
                   <div className="d-grid">
-                    <Button variant="secondary" size="sm" onClick={handleLogout}>Logout</Button>
+                    <Button variant="secondary" size="sm" onClick={handleLogout}>{t('logout')}</Button>
                   </div>
                 </div>
               )}

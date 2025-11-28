@@ -64,7 +64,14 @@ export function createProfile({ type, name }) {
       audioStartTime: 0,
       audioEndTime: 0,
       isPublic: true,
-      socialLinks: {}
+      socialLinks: {},
+      // New fields for LinkedIn-style profiles
+      jobTitle: '',
+      location: '',
+      experienceYears: 0,
+      skills: [], // Array of skill strings
+      experience: [], // Array of {position, company, location, startDate, endDate, description, bullets[]}
+      education: [] // Array of {degree, school, location, startDate, endDate, coursework}
     }
   }
   
@@ -171,4 +178,76 @@ export function initializeProfiles(username) {
     // Update with username
     updateProfile(defaultProfile.id, { username })
   }
+}
+
+// Get all public profiles (for Explore page)
+export function getPublicProfiles() {
+  const profiles = getAllProfiles()
+  return profiles.filter(p => p.data?.isPublic === true)
+}
+
+// Search profiles by query
+export function searchProfiles(query, filters = {}) {
+  let profiles = getPublicProfiles()
+  
+  // Text search (name, job title, skills, location)
+  if (query && query.trim()) {
+    const q = query.toLowerCase()
+    profiles = profiles.filter(p => {
+      const data = p.data || {}
+      return (
+        data.displayName?.toLowerCase().includes(q) ||
+        data.username?.toLowerCase().includes(q) ||
+        data.jobTitle?.toLowerCase().includes(q) ||
+        data.location?.toLowerCase().includes(q) ||
+        data.description?.toLowerCase().includes(q) ||
+        data.skills?.some(skill => skill.toLowerCase().includes(q))
+      )
+    })
+  }
+  
+  // Filter by skills
+  if (filters.skills && filters.skills.length > 0) {
+    profiles = profiles.filter(p => {
+      const profileSkills = (p.data?.skills || []).map(s => s.toLowerCase())
+      return filters.skills.some(skill => 
+        profileSkills.includes(skill.toLowerCase())
+      )
+    })
+  }
+  
+  // Filter by job title/role
+  if (filters.jobTitle) {
+    const role = filters.jobTitle.toLowerCase()
+    profiles = profiles.filter(p => 
+      p.data?.jobTitle?.toLowerCase().includes(role)
+    )
+  }
+  
+  // Filter by location
+  if (filters.location) {
+    const loc = filters.location.toLowerCase()
+    profiles = profiles.filter(p => 
+      p.data?.location?.toLowerCase().includes(loc)
+    )
+  }
+  
+  // Filter by experience level
+  if (filters.experienceLevel) {
+    profiles = profiles.filter(p => {
+      const years = p.data?.experienceYears || 0
+      switch(filters.experienceLevel) {
+        case 'entry':
+          return years >= 0 && years <= 2
+        case 'mid':
+          return years >= 3 && years <= 5
+        case 'senior':
+          return years >= 6
+        default:
+          return true
+      }
+    })
+  }
+  
+  return profiles
 }
