@@ -9,9 +9,6 @@ import ProfileView from './pages/ProfileView'
 import Themes from './pages/Themes'
 import Explore from './pages/Explore'
 import MyProfiles from './pages/MyProfiles'
-import MyProfile from './pages/MyProfile'
-import EditProfessionalProfile from './pages/EditProfessionalProfile'
-import SavedProfiles from './pages/SavedProfiles'
 import './App.css'
 
 function App() {
@@ -38,6 +35,12 @@ function App() {
         <Route path="/u/:username/:profileType" element={<ProfileView />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/create-account" element={<Signup />} />
+        {/* Admin routes (protected) */}
+        <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+        <Route path="/admin/tables" element={<RequireAdmin><Tables /></RequireAdmin>} />
+        {/* Admin auth / setup */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/setup" element={<AdminSetup />} />
       </Routes>
     </>
   )
