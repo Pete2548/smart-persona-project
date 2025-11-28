@@ -6,6 +6,7 @@ import StatsCard from '../components/StatsCard'
 import LoginModal from '../components/LoginModal'
 import { getCurrentUser } from '../services/auth'
 import { getActiveProfile, getAllProfiles } from '../services/profileManager'
+import { isAdmin } from '../services/auth'
 import './dashboard.css'
 
 function Dashboard() {
@@ -13,6 +14,7 @@ function Dashboard() {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [recentActivity, setRecentActivity] = useState([])
   const [profile, setProfile] = useState(null)
+  const [userIsAdmin, setUserIsAdmin] = useState(false)
   const [profileStats, setProfileStats] = useState({
     completeness: 0,
     totalSocialLinks: 0,
@@ -105,8 +107,13 @@ function Dashboard() {
         <Sidebar />
 
         <main className="dashboard-main p-4">
-          <div className="d-flex justify-content-start align-items-start mb-4">
+          <div className="d-flex justify-content-between align-items-start mb-4">
             <ProfileCard />
+            {userIsAdmin && (
+              <button className="btn btn-primary" onClick={() => navigate('/admin')}>
+                <i className="bi bi-speedometer2 me-2"></i>Go to Admin Dashboard
+              </button>
+            )}
           </div>
 
           <div className="row g-3">
