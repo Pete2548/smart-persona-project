@@ -6,6 +6,8 @@ import { getProfessionalProfileByUsername } from '../services/professionalProfil
 import { getCurrentUser } from '../services/auth'
 import { recordProfileView } from '../services/profileAnalytics'
 import SectionRenderer from '../components/SectionRenderer'
+import { createReport } from '../services/reportService'
+import { Modal, Button, Form } from 'react-bootstrap'
 import './profileview.css'
 import ig from "../img/ig.png"
 import facebook from "../img/facebook.png"
@@ -47,6 +49,12 @@ const ProfileView = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [actualProfileType, setActualProfileType] = useState(null)
 
+  // Report Modal State
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportReason, setReportReason] = useState('Inappropriate Content')
+  const [reportDetails, setReportDetails] = useState('')
+  const [reportSubmitted, setReportSubmitted] = useState(false)
+
   useEffect(() => {
     // load saved profile
     const loadProfile = async () => {
@@ -55,24 +63,20 @@ const ProfileView = () => {
         const allProfiles = getAllProfiles()
         if (allProfiles && allProfiles.length > 0) {
           let targetProfile = null
-          
+
           // If profileType is specified, find matching profile
           if (profileType) {
-            targetProfile = allProfiles.find(p => 
+            targetProfile = allProfiles.find(p =>
               p.data.username === username && p.type === profileType
             )
           } else {
             // Otherwise, find first profile matching username
-            targetProfile = allProfiles.find(p => 
+            targetProfile = allProfiles.find(p =>
               p.data.username === username
             )
           }
-          
+
           if (targetProfile) {
-            // Merge all fields from both targetProfile and targetProfile.data for viewer
-            const mergedProfile = { ...targetProfile, ...targetProfile.data }
-            setProfile(mergedProfile)
-            setActualProfileType(targetProfile.type)
             // Load audio from IndexedDB if exists
             if (mergedProfile.hasAudio) {
               try {
@@ -88,14 +92,14 @@ const ProfileView = () => {
             return
           }
         }
-        
+
         // Fallback: try old single profile system
         const raw = localStorage.getItem('user_profile')
         if (raw) {
           const p = JSON.parse(raw)
           if (!username || p.username === username) {
             setProfile(p)
-            
+
             // Load audio from IndexedDB if exists
             if (p.hasAudio) {
               try {
@@ -117,7 +121,7 @@ const ProfileView = () => {
       setProfile(null)
       setAudioFile(null)
     }
-    
+
     loadProfile().finally(() => {
       // Minimum loading time for smooth animation
       setTimeout(() => setIsLoading(false), 1000)
@@ -129,13 +133,13 @@ const ProfileView = () => {
     if (profile && profile.username) {
       const currentUser = getCurrentUser()
       const viewerUsername = currentUser?.username || 'anonymous'
-      
+
       // Find the profile ID to record view
       const allProfiles = getAllProfiles()
-      const targetProfile = allProfiles.find(p => 
+      const targetProfile = allProfiles.find(p =>
         p.data?.username === profile.username
       )
-      
+
       if (targetProfile) {
         recordProfileView(targetProfile.id, viewerUsername)
       }
@@ -157,9 +161,9 @@ const ProfileView = () => {
       const audio = audioRef.current
       const startTime = profile.audioStartTime || 0
       const endTime = profile.audioEndTime || 0
-      
+
       console.log('Audio setup:', { audioFile: !!audioFile, startTime, endTime, isMuted })
-      
+
       const handleLoadedMetadata = () => {
         console.log('Audio loaded, duration:', audio.duration)
         audio.volume = isMuted ? 0 : 1
@@ -169,30 +173,30 @@ const ProfileView = () => {
           .then(() => console.log('Audio playing successfully'))
           .catch(err => console.log('Autoplay prevented:', err))
       }
-      
+
       const handleVolumeChange = () => {
         console.log('Volume changed to:', audio.volume)
       }
-      
+
       const handleTimeUpdate = () => {
         if (endTime > 0 && audio.currentTime >= endTime) {
           audio.currentTime = startTime
         }
       }
-      
+
       const handleEnded = () => {
         audio.currentTime = startTime
         audio.play().catch(err => console.log('Loop play prevented:', err))
       }
-      
+
       audio.addEventListener('loadedmetadata', handleLoadedMetadata)
       audio.addEventListener('volumechange', handleVolumeChange)
       audio.addEventListener('timeupdate', handleTimeUpdate)
       audio.addEventListener('ended', handleEnded)
-      
+
       // Try to load
       audio.load()
-      
+
       return () => {
         audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
         audio.removeEventListener('volumechange', handleVolumeChange)
@@ -217,6 +221,24 @@ const ProfileView = () => {
     }
   }
 
+  const handleReportSubmit = () => {
+    if (!profile) return
+    createReport({
+      targetUser: profile.username,
+      reporter: getCurrentUser()?.username || 'Anonymous',
+      reason: reportReason,
+      details: reportDetails,
+      profileType: 'personal'
+    })
+    setReportSubmitted(true)
+    setTimeout(() => {
+      setShowReportModal(false)
+      setReportSubmitted(false)
+      setReportDetails('')
+      setReportReason('Inappropriate Content')
+    }, 2000)
+  }
+
   if (!profile) {
     return (
       <div className="profile-view-wrapper">
@@ -229,10 +251,10 @@ const ProfileView = () => {
   const currentUser = getCurrentUser()
   const isOwner = currentUser && currentUser.username === profile.username
   const isPrivate = profile.isPublic === false
-  
+
   if (isPrivate && !isOwner) {
     return (
-      <div className="profile-view-wrapper" style={{ 
+      <div className="profile-view-wrapper" style={{
         backgroundColor: '#050505',
         minHeight: '100vh',
         display: 'flex',
@@ -261,25 +283,25 @@ const ProfileView = () => {
           }}>
             <i className="bi bi-lock-fill" style={{ fontSize: '40px', color: 'white' }}></i>
           </div>
-          
-          <h2 style={{ 
-            color: '#ffffff', 
+
+          <h2 style={{
+            color: '#ffffff',
             marginBottom: '16px',
             fontSize: '28px',
             fontWeight: '600'
           }}>
             {t('profile_private') || 'This Profile is Private'}
           </h2>
-          
-          <p style={{ 
-            color: '#a0a0a0', 
+
+          <p style={{
+            color: '#a0a0a0',
             marginBottom: '24px',
             fontSize: '16px',
             lineHeight: '1.6'
           }}>
             {t('profile_private_desc') || 'The owner of this profile has set it to private. Only they can view this content.'}
           </p>
-          
+
           <div style={{
             padding: '16px',
             background: 'rgba(255,107,107,0.1)',
@@ -303,8 +325,8 @@ const ProfileView = () => {
   // helper to create rgba shadow from hex
   const hexToRgba = (hex, alpha) => {
     if (!hex) return `rgba(30,111,184,${alpha})`
-    const h = hex.replace('#','')
-    const normalized = h.length === 3 ? h.split('').map(c=>c+c).join('') : h
+    const h = hex.replace('#', '')
+    const normalized = h.length === 3 ? h.split('').map(c => c + c).join('') : h
     const bigint = parseInt(normalized, 16)
     const r = (bigint >> 16) & 255
     const g = (bigint >> 8) & 255
@@ -332,18 +354,18 @@ const ProfileView = () => {
   // compute relative luminance of a hex color (0..1)
   const hexLuminance = (hex) => {
     if (!hex) return 0
-    const h = hex.replace('#','')
-    const normalized = h.length === 3 ? h.split('').map(c=>c+c).join('') : h
+    const h = hex.replace('#', '')
+    const normalized = h.length === 3 ? h.split('').map(c => c + c).join('') : h
     const bigint = parseInt(normalized, 16)
     const r = (bigint >> 16) & 255
     const g = (bigint >> 8) & 255
     const b = bigint & 255
     // sRGB luminance
-    const srgb = [r,g,b].map(v => {
-      const s = v/255
-      return s <= 0.03928 ? s/12.92 : Math.pow((s+0.055)/1.055, 2.4)
+    const srgb = [r, g, b].map(v => {
+      const s = v / 255
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
     })
-    return 0.2126*srgb[0] + 0.7152*srgb[1] + 0.0722*srgb[2]
+    return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2]
   }
 
   const usernameStyle = {
@@ -375,7 +397,7 @@ const ProfileView = () => {
   // Render social icons (logo only)
   const renderSocialIcons = () => {
     if (activeSocialLinks.length === 0) return null
-    
+
     return (
       <div style={{
         display: 'flex',
@@ -387,7 +409,7 @@ const ProfileView = () => {
         {activeSocialLinks.map(([key, url]) => {
           const social = socialIcons[key]
           if (!social) return null
-          
+
           return (
             <a
               key={key}
@@ -410,8 +432,8 @@ const ProfileView = () => {
                 e.currentTarget.style.opacity = '0.9'
               }}
             >
-              <img 
-                src={social.icon} 
+              <img
+                src={social.icon}
                 alt={social.name}
                 style={{
                   width: '48px',
@@ -467,7 +489,7 @@ const ProfileView = () => {
             zIndex: 1000,
             boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
           }}>
-            <button 
+            <button
               onClick={toggleMute}
               style={{
                 background: 'transparent',
@@ -483,18 +505,18 @@ const ProfileView = () => {
             >
               {isMuted ? (
                 <>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: 8}}>
-                    <path d="M11 5L6 9H2v6h4l5 4V5z"/>
-                    <line x1="23" y1="9" x2="17" y2="15"/>
-                    <line x1="17" y1="9" x2="23" y2="15"/>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8 }}>
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                    <line x1="23" y1="9" x2="17" y2="15" />
+                    <line x1="17" y1="9" x2="23" y2="15" />
                   </svg>
                   Muted
                 </>
               ) : (
                 <>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: 8}}>
-                    <path d="M11 5L6 9H2v6h4l5 4V5z"/>
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8 }}>
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
                   </svg>
                   Playing
                 </>
@@ -518,8 +540,8 @@ const ProfileView = () => {
               }}
             >
               {element.type === 'text' && (
-                <div style={{ 
-                  width: '100%', 
+                <div style={{
+                  width: '100%',
                   height: '100%',
                   overflow: 'hidden',
                   wordWrap: 'break-word'
@@ -528,11 +550,11 @@ const ProfileView = () => {
                 </div>
               )}
               {element.type === 'image' && element.content && (
-                <img 
-                  src={element.content} 
-                  alt="element" 
-                  style={{ 
-                    width: '100%', 
+                <img
+                  src={element.content}
+                  alt="element"
+                  style={{
+                    width: '100%',
                     height: '100%',
                     objectFit: element.style.objectFit || 'cover'
                   }}
@@ -546,7 +568,7 @@ const ProfileView = () => {
         </div>
 
         {audioFile && (
-          <audio ref={audioRef} preload="auto" style={{display: 'none'}}>
+          <audio ref={audioRef} preload="auto" style={{ display: 'none' }}>
             <source src={audioFile} type="audio/mpeg" />
             <source src={audioFile} type="video/mp4" />
           </audio>
@@ -572,7 +594,7 @@ const ProfileView = () => {
         zIndex: 1000,
         boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
       }}>
-        <button 
+        <button
           onClick={toggleMute}
           style={{
             background: 'transparent',
@@ -588,18 +610,18 @@ const ProfileView = () => {
         >
           {isMuted ? (
             <>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: 8}}>
-                <path d="M11 5L6 9H2v6h4l5 4V5z"/>
-                <line x1="23" y1="9" x2="17" y2="15"/>
-                <line x1="17" y1="9" x2="23" y2="15"/>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8 }}>
+                <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
               </svg>
               Muted
             </>
           ) : (
             <>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: 8}}>
-                <path d="M11 5L6 9H2v6h4l5 4V5z"/>
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8 }}>
+                <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
               </svg>
               Playing
             </>
@@ -609,7 +631,7 @@ const ProfileView = () => {
     )
 
     const commonAudioElement = audioFile && (
-      <audio ref={audioRef} preload="auto" style={{display: 'none'}}>
+      <audio ref={audioRef} preload="auto" style={{ display: 'none' }}>
         <source src={audioFile} type="audio/mpeg" />
         <source src={audioFile} type="video/mp4" />
       </audio>
@@ -620,7 +642,7 @@ const ProfileView = () => {
       const cardStyle = {
         background: profile.bgImage ? 'transparent' : (profile.blockColor || undefined),
       }
-      
+
       return (
         <>
           {commonAudioControl}
@@ -633,16 +655,25 @@ const ProfileView = () => {
                 }} />
               )}
               <div className="username-glow" style={usernameStyle}>{profile.username}</div>
-              <div className="profile-description" style={{color: descColor, marginTop: 8, fontSize: 16, textAlign: 'center'}}>{profile.description}</div>
+              <div className="profile-description" style={{ color: descColor, marginTop: 8, fontSize: 16, textAlign: 'center' }}>{profile.description}</div>
               {renderSocialIcons()}
-              
+
               {/* Render profile sections */}
-              <SectionRenderer 
-                sections={profile.sections || []} 
+              <SectionRenderer
+                sections={profile.sections || []}
                 theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
               />
-              
+
               {commonAudioElement}
+            </div>
+            <div className="text-center mt-4 pb-4">
+              <button
+                className="btn btn-link btn-sm text-muted"
+                style={{ textDecoration: 'none', fontSize: '0.8rem' }}
+                onClick={() => setShowReportModal(true)}
+              >
+                <i className="bi bi-flag me-1"></i> Report this profile
+              </button>
             </div>
           </div>
         </>
@@ -661,9 +692,9 @@ const ProfileView = () => {
             textAlign: 'center'
           }}>
             {profile.avatar && (
-              <img 
-                src={profile.avatar} 
-                alt="avatar" 
+              <img
+                src={profile.avatar}
+                alt="avatar"
                 style={{
                   width: 96,
                   height: 96,
@@ -671,7 +702,7 @@ const ProfileView = () => {
                   objectFit: 'cover',
                   marginBottom: 20,
                   border: `3px solid ${profile.nameColor || '#fff'}`
-                }} 
+                }}
               />
             )}
             <h1 style={{
@@ -693,13 +724,13 @@ const ProfileView = () => {
               {profile.description}
             </p>
             {renderSocialIcons()}
-            
+
             {/* Render profile sections */}
-            <SectionRenderer 
-              sections={profile.sections || []} 
+            <SectionRenderer
+              sections={profile.sections || []}
               theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
             />
-            
+
             {/* Placeholder for link buttons */}
             <div style={{
               display: 'flex',
@@ -743,21 +774,21 @@ const ProfileView = () => {
               marginBottom: 20,
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
             }}>
-              <div style={{display: 'flex', gap: 24, alignItems: 'flex-start'}}>
+              <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
                 {profile.avatar && (
-                  <img 
-                    src={profile.avatar} 
-                    alt="avatar" 
+                  <img
+                    src={profile.avatar}
+                    alt="avatar"
                     style={{
                       width: 120,
                       height: 120,
                       borderRadius: '50%',
                       objectFit: 'cover',
                       border: `4px solid ${profile.nameColor || '#0a66c2'}`
-                    }} 
+                    }}
                   />
                 )}
-                <div style={{flex: 1}}>
+                <div style={{ flex: 1 }}>
                   <h1 style={{
                     fontSize: 28,
                     fontWeight: 600,
@@ -778,13 +809,13 @@ const ProfileView = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Render profile sections */}
-            <SectionRenderer 
-              sections={profile.sections || []} 
+            <SectionRenderer
+              sections={profile.sections || []}
               theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
             />
-            
+
             {/* Content Section Placeholder */}
             <div style={{
               background: profile.blockColor || '#fff',
@@ -830,9 +861,9 @@ const ProfileView = () => {
                 position: 'relative',
                 marginBottom: 32
               }}>
-                <img 
-                  src={profile.avatar} 
-                  alt="avatar" 
+                <img
+                  src={profile.avatar}
+                  alt="avatar"
                   style={{
                     width: 140,
                     height: 140,
@@ -840,7 +871,7 @@ const ProfileView = () => {
                     objectFit: 'cover',
                     border: `4px solid ${profile.nameColor || '#00ff88'}`,
                     boxShadow: `0 0 40px ${hexToRgba(profile.nameColor, 0.6)}, 0 0 80px ${hexToRgba(profile.nameColor, 0.3)}`
-                  }} 
+                  }}
                 />
               </div>
             )}
@@ -866,13 +897,13 @@ const ProfileView = () => {
               {profile.description}
             </p>
             {renderSocialIcons()}
-            
+
             {/* Render profile sections */}
-            <SectionRenderer 
-              sections={profile.sections || []} 
+            <SectionRenderer
+              sections={profile.sections || []}
               theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
             />
-            
+
             {commonAudioElement}
           </div>
         </>
@@ -891,16 +922,16 @@ const ProfileView = () => {
             textAlign: 'left'
           }}>
             {profile.avatar && (
-              <img 
-                src={profile.avatar} 
-                alt="avatar" 
+              <img
+                src={profile.avatar}
+                alt="avatar"
                 style={{
                   width: 72,
                   height: 72,
                   borderRadius: '50%',
                   objectFit: 'cover',
                   marginBottom: 24
-                }} 
+                }}
               />
             )}
             <h1 style={{
@@ -923,13 +954,13 @@ const ProfileView = () => {
             <div style={{ marginTop: 24 }}>
               {renderSocialIcons()}
             </div>
-            
+
             {/* Render profile sections */}
-            <SectionRenderer 
-              sections={profile.sections || []} 
+            <SectionRenderer
+              sections={profile.sections || []}
               theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
             />
-            
+
             {commonAudioElement}
           </div>
         </>
@@ -967,8 +998,8 @@ const ProfileView = () => {
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: settings.contentVerticalAlign === 'top' ? 'flex-start' : 
-                           settings.contentVerticalAlign === 'bottom' ? 'flex-end' : 'center',
+            justifyContent: settings.contentVerticalAlign === 'top' ? 'flex-start' :
+              settings.contentVerticalAlign === 'bottom' ? 'flex-end' : 'center',
             minHeight: '100vh',
             padding: `${settings.contentPadding}px 20px`
           }}>
@@ -984,16 +1015,16 @@ const ProfileView = () => {
                   justifyContent: getJustifyContent(settings.avatarAlignment),
                   marginBottom: settings.elementSpacing
                 }}>
-                  <img 
-                    src={profile.avatar} 
-                    alt="avatar" 
+                  <img
+                    src={profile.avatar}
+                    alt="avatar"
                     style={{
                       width: settings.avatarSize,
                       height: settings.avatarSize,
                       borderRadius: '50%',
                       objectFit: 'cover',
                       border: `3px solid ${profile.nameColor || '#fff'}`
-                    }} 
+                    }}
                   />
                 </div>
               )}
@@ -1025,13 +1056,205 @@ const ProfileView = () => {
                   {profile.description}
                 </p>
               )}
-              
+
               {/* Social Icons */}
               {renderSocialIcons()}
-              
+
               {/* Render profile sections */}
-              <SectionRenderer 
-                sections={profile.sections || []} 
+              <SectionRenderer
+                sections={profile.sections || []}
+                theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
+              />
+            </div>
+            {commonAudioElement}
+          </div>
+        </>
+      )
+    }
+
+    // Fallback to default if unknown layout
+    return renderLayout.call({ layoutType: 'default' })
+  }
+
+  // Loading screen
+  if (isLoading) {
+    return (
+      <div className="profile-loading-screen">
+        <div className="loading-logo-container">
+          <svg className="loading-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 1 }} />
+                <stop offset="50%" style={{ stopColor: '#e5e5e5', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#ffffff', stopOpacity: 1 }} />
+              </linearGradient>
+            </defs>
+            <circle className="logo-ring" cx="50" cy="50" r="45" fill="none" stroke="url(#logoGradient)" strokeWidth="3" />
+            <circle className="logo-ring-2" cx="50" cy="50" r="35" fill="none" stroke="url(#logoGradient)" strokeWidth="2" opacity="0.7" />
+            <path d="M 35 38 L 50 62 L 65 38" stroke="url(#logoGradient)" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="50" cy="50" r="3" fill="url(#logoGradient)" opacity="0.8" />
+          </svg>
+          <div className="loading-text">Loading Profile</div>
+        </div>
+      </div>
+    )
+
+
+
+
+    // Minimal Clean Layout
+    if (layoutType === 'minimal') {
+      return (
+        <>
+          {commonAudioControl}
+          <div style={{
+            maxWidth: '720px',
+            margin: '0 auto',
+            padding: '100px 20px',
+            textAlign: 'left'
+          }}>
+            {profile.avatar && (
+              <img
+                src={profile.avatar}
+                alt="avatar"
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  marginBottom: 24
+                }}
+              />
+            )}
+            <h1 style={{
+              fontSize: 32,
+              fontWeight: 300,
+              color: profile.nameColor || '#000',
+              marginBottom: 12,
+              letterSpacing: '-0.5px'
+            }}>
+              {profile.displayName || profile.username}
+            </h1>
+            <p style={{
+              fontSize: 16,
+              color: descColor,
+              lineHeight: 1.7,
+              maxWidth: 560
+            }}>
+              {profile.description}
+            </p>
+            <div style={{ marginTop: 24 }}>
+              {renderSocialIcons()}
+            </div>
+
+            {/* Render profile sections */}
+            <SectionRenderer
+              sections={profile.sections || []}
+              theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
+            />
+
+            {commonAudioElement}
+          </div>
+        </>
+      )
+    }
+
+    // Custom Advanced Layout
+    if (layoutType === 'custom') {
+      const settings = {
+        avatarAlignment: layoutSettings.avatarAlignment || 'center',
+        avatarSize: layoutSettings.avatarSize || 120,
+        avatarVisible: layoutSettings.avatarVisible !== false,
+        nameAlignment: layoutSettings.nameAlignment || 'center',
+        nameFontSize: layoutSettings.nameFontSize || 32,
+        nameVisible: layoutSettings.nameVisible !== false,
+        descAlignment: layoutSettings.descAlignment || 'center',
+        descFontSize: layoutSettings.descFontSize || 16,
+        descVisible: layoutSettings.descVisible !== false,
+        contentVerticalAlign: layoutSettings.contentVerticalAlign || 'center',
+        contentPadding: layoutSettings.contentPadding || 48,
+        elementSpacing: layoutSettings.elementSpacing || 16
+      }
+
+      const getJustifyContent = (align) => {
+        if (align === 'left') return 'flex-start'
+        if (align === 'right') return 'flex-end'
+        return 'center'
+      }
+
+      const getTextAlign = (align) => align
+
+      return (
+        <>
+          {commonAudioControl}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: settings.contentVerticalAlign === 'top' ? 'flex-start' :
+              settings.contentVerticalAlign === 'bottom' ? 'flex-end' : 'center',
+            minHeight: '100vh',
+            padding: `${settings.contentPadding}px 20px`
+          }}>
+            <div style={{
+              maxWidth: '800px',
+              margin: '0 auto',
+              width: '100%'
+            }}>
+              {/* Avatar */}
+              {settings.avatarVisible && profile.avatar && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: getJustifyContent(settings.avatarAlignment),
+                  marginBottom: settings.elementSpacing
+                }}>
+                  <img
+                    src={profile.avatar}
+                    alt="avatar"
+                    style={{
+                      width: settings.avatarSize,
+                      height: settings.avatarSize,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: `3px solid ${profile.nameColor || '#fff'} `
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Name */}
+              {settings.nameVisible && (
+                <h1 style={{
+                  fontSize: settings.nameFontSize,
+                  fontWeight: 600,
+                  color: profile.nameColor || '#fff',
+                  marginBottom: settings.elementSpacing,
+                  textAlign: getTextAlign(settings.nameAlignment),
+                  textShadow: buildTextGlow(profile.nameColor)
+                }}>
+                  {profile.displayName || profile.username}
+                </h1>
+              )}
+
+              {/* Description */}
+              {settings.descVisible && profile.description && (
+                <p style={{
+                  fontSize: settings.descFontSize,
+                  color: descColor,
+                  lineHeight: 1.6,
+                  textAlign: getTextAlign(settings.descAlignment),
+                  margin: 0,
+                  marginBottom: settings.elementSpacing
+                }}>
+                  {profile.description}
+                </p>
+              )}
+
+              {/* Social Icons */}
+              {renderSocialIcons()}
+
+              {/* Render profile sections */}
+              <SectionRenderer
+                sections={profile.sections || []}
                 theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
               />
             </div>
@@ -1081,9 +1304,61 @@ const ProfileView = () => {
   }
 
   return (
-    <div className="profile-view-wrapper" style={wrapperStyle}>
-      {renderLayout()}
-    </div>
+    <>
+      <div className="profile-view-wrapper" style={wrapperStyle}>
+        {renderLayout()}
+      </div>
+
+      <Modal show={showReportModal} onHide={() => setShowReportModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Report Profile</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {reportSubmitted ? (
+            <div className="text-center text-success py-4">
+              <i className="bi bi-check-circle display-4 mb-3"></i>
+              <p>Report submitted successfully. Thank you.</p>
+            </div>
+          ) : (
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Reason</Form.Label>
+                <Form.Select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                >
+                  <option>Inappropriate Content</option>
+                  <option>Harassment</option>
+                  <option>Spam / Fake Profile</option>
+                  <option>Intellectual Property Violation</option>
+                  <option>Other</option>
+                </Form.Select>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Details (Optional)</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  placeholder="Please provide more details..."
+                />
+              </Form.Group>
+            </Form>
+          )}
+        </Modal.Body>
+        {!reportSubmitted && (
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowReportModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleReportSubmit}>
+              Submit Report
+            </Button>
+          </Modal.Footer>
+        )}
+      </Modal>
+    </>
   )
 }
 
