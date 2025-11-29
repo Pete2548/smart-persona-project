@@ -7,6 +7,7 @@ import React, { useState } from 'react'
 export default function VtreeCustomize({ 
   profile,
   onUpdate,
+  onSave,
   profiles = [],
   currentProfileId,
   onProfileSwitch,
@@ -713,7 +714,7 @@ export default function VtreeCustomize({
                     justifyContent: 'center',
                     transition: 'background 0.2s'
                   }}
-                  onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+                  onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.4)'}
                   onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
                 >
                   ×
@@ -990,7 +991,7 @@ export default function VtreeCustomize({
                 left: '-50%',
                 width: '200%',
                 height: '200%',
-                background: 'linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)',
+                background: 'linear-gradient(45deg, transparent, rgba(255,255,255,0.4), transparent)',
                 animation: 'vcreateShine 3s infinite',
                 pointerEvents: 'none'
               }} />
@@ -1036,7 +1037,7 @@ export default function VtreeCustomize({
               ))}
             </div>
             
-            {/* Right: Profile Selector */}
+            {/* Right: Profile Selector + Save */}
             {profiles && profiles.length > 0 && (
               <div className="d-flex align-items-center gap-2 ms-auto" style={{ zIndex: 10 }}>
                 <label className="mb-0 small text-muted">Editing:</label>
@@ -1052,6 +1053,26 @@ export default function VtreeCustomize({
                     </option>
                   ))}
                 </select>
+                <button
+                  className="btn btn-dark btn-sm"
+                  style={{
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%)',
+                    border: '2px solid rgba(255,255,255,0.15)',
+                    boxShadow: '0 0 20px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.1)',
+                    textShadow: '0 0 10px rgba(255,255,255,0.5)',
+                    fontWeight: 600,
+                    marginLeft: '8px',
+                    padding: '6px 18px'
+                  }}
+                  onClick={() => {
+                    if (onSave) onSave();
+                    setShowSuccessNotification(true)
+                    setTimeout(() => setShowSuccessNotification(false), 2000)
+                  }}
+                >
+                  Save
+                </button>
               </div>
             )}
           </div>

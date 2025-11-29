@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { generateCvPdf } from '../utils/exportCv'
 
-function ResumeCustomize({ profile, onUpdate }) {
+function ResumeCustomize({ profile, onUpdate, profiles = [], currentProfileId, onProfileSwitch }) {
   const navigate = useNavigate()
   const themeMeta = profile?.themeMeta
   const themeTokens = profile?.themeTokens || {}
@@ -28,6 +28,9 @@ function ResumeCustomize({ profile, onUpdate }) {
   const [showSuccessNotification, setShowSuccessNotification] = useState(false)
   const [showFontModal, setShowFontModal] = useState(false)
   const [showQuickStylesModal, setShowQuickStylesModal] = useState(false)
+  const [previewBackdrop, setPreviewBackdrop] = useState('gradient')
+  const [compactPreview, setCompactPreview] = useState(false)
+  const [showSampleContent, setShowSampleContent] = useState(true)
 
   // Section Order State for Drag & Drop
   const [sectionOrder, setSectionOrder] = useState([
@@ -86,6 +89,12 @@ function ResumeCustomize({ profile, onUpdate }) {
     template: profile?.template || 'modern',
     colorScheme: profile?.colorScheme || 'brown-beige',
     layout: profile?.layout || 'single-column',
+    columnRatio: profile?.columnRatio || '40-60',
+    heroStyle: profile?.heroStyle || 'gradient',
+    sectionAccent: profile?.sectionAccent || 'cards',
+    dividerStyle: profile?.dividerStyle || 'solid',
+    cornerStyle: profile?.cornerStyle || 'rounded',
+    contentDensity: profile?.contentDensity || 'standard',
     fontSize: profile?.fontSize || 'medium',
     fontFamily: profile?.fontFamily || themeTokens.fontFamily || 'Inter',
     spacing: profile?.spacing || 'normal',
@@ -95,7 +104,8 @@ function ResumeCustomize({ profile, onUpdate }) {
     rightColumnBg: profile?.rightColumnBg || themeTokens.bgColor || '#f5f5f5',
     accentColor: profile?.accentColor || themeTokens.headingColor || themeTokens.nameColor || '#f9a825',
     showSectionIcons: profile?.showSectionIcons !== undefined ? profile.showSectionIcons : true,
-    sectionIconStyle: profile?.sectionIconStyle || 'filled'
+    sectionIconStyle: profile?.sectionIconStyle || 'filled',
+    sectionColors: profile?.sectionColors || {}
   })
 
   useEffect(() => {
@@ -181,16 +191,133 @@ function ResumeCustomize({ profile, onUpdate }) {
 
   // Template options
   const templates = [
-    { id: 'modern', name: 'Modern', icon: '📱', description: 'Clean and contemporary' },
-    { id: 'classic', name: 'Classic', icon: '📋', description: 'Traditional and professional' },
-    { id: 'creative', name: 'Creative', icon: '🎨', description: 'Bold and artistic' },
-    { id: 'minimal', name: 'Minimal', icon: '⚪', description: 'Simple and elegant' }
+    { id: 'modern', name: 'Modern', iconClass: 'bi-phone', description: 'Clean and contemporary' },
+    { id: 'classic', name: 'Classic', iconClass: 'bi-journal-text', description: 'Traditional and professional' },
+    { id: 'creative', name: 'Creative', iconClass: 'bi-brush', description: 'Bold and artistic' },
+    { id: 'minimal', name: 'Minimal', iconClass: 'bi-app', description: 'Simple and elegant' }
   ]
 
   // Layout options
-  const layouts = [
-    { id: 'single-column', name: 'Single Column', icon: '📄', description: 'Traditional one column' },
-    { id: 'two-column', name: 'Two Column', icon: '📋', description: 'Modern split layout' }
+  const layoutVariants = [
+    { id: 'single-column', name: 'Balanced Single', icon: 'bi-layout-text-window', description: 'Stacked sections ideal for ATS' },
+    { id: 'two-column', name: 'Modern Split', icon: 'bi-layout-sidebar-inset-reverse', description: 'Sidebar for quick facts' },
+    { id: 'split-hero', name: 'Split Hero', icon: 'bi-layout-three-columns', description: 'Hero banner + split content' },
+    { id: 'timeline', name: 'Story Timeline', icon: 'bi-diagram-3', description: 'Chronological vertical timeline' },
+    { id: 'gallery', name: 'Showcase Grid', icon: 'bi-grid-3x3-gap', description: 'Card grid for highlights/projects' }
+  ]
+
+  const columnRatioOptions = [
+    { id: '50-50', label: '50 / 50', value: [50, 50] },
+    { id: '45-55', label: '45 / 55', value: [45, 55] },
+    { id: '40-60', label: '40 / 60', value: [40, 60] },
+    { id: '35-65', label: '35 / 65', value: [35, 65] }
+  ]
+
+  const heroStyles = [
+    { id: 'gradient', name: 'Gradient Glow', description: 'Full-width gradient hero with overlay' },
+    { id: 'card', name: 'Floating Card', description: 'Large card with subtle drop shadow' },
+    { id: 'angular', name: 'Diagonal Split', description: 'Angled background blocks and stats' }
+  ]
+
+  const previewBackdropOptions = [
+    { id: 'clean', name: 'Clean', description: 'สีพื้นเรียบ' },
+    { id: 'gradient', name: 'Soft Gradient', description: 'ไล่สีโทนอ่อน' },
+    { id: 'grid', name: 'Paper Texture', description: 'พื้นหลังลายกระดาษ/กริด' }
+  ]
+
+  const contentBlockOptions = [
+    { id: 'summary', label: 'Professional Summary', icon: 'bi-card-text', description: 'ย่อหน้าเล่าเรื่องตัวคุณ' },
+    { id: 'highlights', label: 'Highlights', icon: 'bi-star', description: 'บัตรสะสมความโดดเด่น' },
+    { id: 'experience', label: 'Work Experience', icon: 'bi-briefcase', description: 'ไทม์ไลน์การทำงาน' },
+    { id: 'education', label: 'Education', icon: 'bi-mortarboard', description: 'ประวัติการศึกษา' },
+    { id: 'projects', label: 'Projects', icon: 'bi-folder', description: 'โปรเจกต์ที่ภูมิใจ' },
+    { id: 'skills', label: 'Skills', icon: 'bi-lightning', description: 'ความสามารถหลัก' },
+    { id: 'languages', label: 'Languages', icon: 'bi-translate', description: 'ภาษาที่ใช้ได้' },
+    { id: 'interests', label: 'Interests', icon: 'bi-heart', description: 'ความสนใจพิเศษ' }
+  ]
+
+  const sampleContent = {
+    summary: 'Product designer with 6+ years crafting human-centered experiences, blending research, storytelling, and data-led experiments to ship delightful journeys.',
+    experiences: [
+      {
+        position: 'Senior Product Designer',
+        company: 'Orbit Labs',
+        period: '2022 - ปัจจุบัน',
+        description: 'นำทีมออกแบบฟีเจอร์ collaboration ช่วยเพิ่ม activation rate 18% พร้อมออกแบบดีไซน์ซิสเต็มใหม่.'
+      },
+      {
+        position: 'UX Designer',
+        company: 'Northwind Digital',
+        period: '2019 - 2022',
+        description: 'วิจัยผู้ใช้ >60 ราย สร้าง journey ใหม่ให้ onboarding flow ลด drop-off 25%.'
+      }
+    ],
+    education: [
+      { degree: 'B.Eng. Computer Engineering', school: 'Chulalongkorn University', startDate: '2014', endDate: '2018' }
+    ],
+    highlights: [
+      { title: 'Launch Champion', description: 'ดูแลโปรเจ็กต์ redesign dashboard ภายใน 4 เดือน' },
+      { title: 'Team Leadership', description: 'โค้ชดีไซเนอร์รุ่นใหม่ 5 คน' }
+    ],
+    skills: [
+      { name: 'Product Strategy', level: 90 },
+      { name: 'UX Research', level: 85 },
+      { name: 'UI Systems', level: 80 },
+      { name: 'Figma', level: 90 }
+    ],
+    projects: [
+      { name: 'Insight Command Center', period: '2023', description: 'แพลตฟอร์ม data visualization สำหรับทีม growth' },
+      { name: 'AI Portfolio Kit', period: '2022', description: 'เว็บแอปสร้าง portfolio อัตโนมัติ' }
+    ],
+    languages: [
+      { name: 'Thai', proficiency: 'native' },
+      { name: 'English', proficiency: 'proficient' },
+      { name: 'Japanese', proficiency: 'working' }
+    ],
+    interests: [
+      { icon: '🎨', name: 'Creative Coding' },
+      { icon: '🚴‍♀️', name: 'Cycling' },
+      { icon: '📚', name: 'Design Books' },
+      { icon: '☕', name: 'Cafe Hunting' }
+    ],
+    contact: {
+      phone: '080-123-4567',
+      email: 'hello@vero.co',
+      location: 'Bangkok, Thailand',
+      linkedin: 'linkedin.com/in/vero-designer'
+    }
+  }
+
+  const withSampleList = (list = [], key) => {
+    const normalized = Array.isArray(list) ? list : []
+    if (!showSampleContent) return normalized
+    if (normalized.length > 0) return normalized
+    return sampleContent[key] || []
+  }
+
+
+  const sectionAccentOptions = [
+    { id: 'cards', name: 'Card Blocks', description: 'Rounded cards with soft borders' },
+    { id: 'underlines', name: 'Underlines', description: 'Clean headings with underline dividers' },
+    { id: 'minimal', name: 'Minimal', description: 'No borders, rely on spacing' }
+  ]
+
+  const dividerOptions = [
+    { id: 'solid', name: 'Solid Line' },
+    { id: 'dotted', name: 'Dotted Line' },
+    { id: 'none', name: 'No Divider' }
+  ]
+
+  const densityOptions = [
+    { id: 'cozy', name: 'Cozy', padding: 42 },
+    { id: 'standard', name: 'Standard', padding: 56 },
+    { id: 'roomy', name: 'Roomy', padding: 72 }
+  ]
+
+  const cornerOptions = [
+    { id: 'rounded', name: 'Rounded' },
+    { id: 'pill', name: 'Soft Pill' },
+    { id: 'sharp', name: 'Sharp' }
   ]
 
   // Color schemes
@@ -199,6 +326,7 @@ function ResumeCustomize({ profile, onUpdate }) {
     { id: 'blue-white', name: 'Blue & White', primary: '#1E6FB8', secondary: '#FFFFFF' },
     { id: 'navy-gold', name: 'Navy & Gold', primary: '#1a237e', secondary: '#d4af37' },
     { id: 'purple-pink', name: 'Purple & Pink', primary: '#7b1fa2', secondary: '#f48fb1' },
+    { id: 'teal-white', name: 'Teal & White', primary: '#00897b', secondary: '#FFFFFF' },
     { id: 'green-white', name: 'Green & White', primary: '#2e7d32', secondary: '#FFFFFF' },
     { id: 'black-white', name: 'Black & White', primary: '#000000', secondary: '#FFFFFF' }
   ]
@@ -241,25 +369,21 @@ function ResumeCustomize({ profile, onUpdate }) {
     {
       id: 'professional-blue',
       name: 'Professional',
-      emoji: '💼',
       colors: { left: '#1e3a5f', right: '#f8f9fa', accent: '#2563eb', title: '#fbbf24' }
     },
     {
       id: 'creative-purple',
       name: 'Creative',
-      emoji: '🎨',
       colors: { left: '#7c3aed', right: '#faf5ff', accent: '#a855f7', title: '#ffffff' }
     },
     {
       id: 'minimal-black',
       name: 'Minimal',
-      emoji: '⚫',
       colors: { left: '#1f2937', right: '#ffffff', accent: '#000000', title: '#ffffff' }
     },
     {
       id: 'warm-brown',
       name: 'Warm',
-      emoji: '☕',
       colors: { left: '#8b6f47', right: '#f5e6d3', accent: '#8b6f47', title: '#ffffff' }
     }
   ]
@@ -281,18 +405,18 @@ function ResumeCustomize({ profile, onUpdate }) {
 
   // Tabs Configuration
   const tabs = [
-    { id: 'ai-generator', label: '🤖 AI Generator', icon: 'bi-magic', category: 'ai' },
-    { id: 'template', label: '📐 Template & Layout', icon: 'bi-layout-text-window', category: 'design' },
-    { id: 'header', label: '👤 Header & Contact', icon: 'bi-person-badge', category: 'content' },
-    { id: 'summary', label: '📝 Summary', icon: 'bi-card-text', category: 'content' },
-    { id: 'highlights', label: '⭐ Highlights', icon: 'bi-star', category: 'content' },
-    { id: 'experience', label: '💼 Work Experience', icon: 'bi-briefcase', category: 'content' },
-    { id: 'education', label: '🎓 Education', icon: 'bi-mortarboard', category: 'content' },
-    { id: 'skills', label: '⚡ Skills', icon: 'bi-lightning', category: 'content' },
-    { id: 'projects', label: '🚀 Projects', icon: 'bi-folder', category: 'content' },
-    { id: 'languages', label: '🌐 Languages', icon: 'bi-translate', category: 'content' },
-    { id: 'interests', label: '💡 Interests', icon: 'bi-heart', category: 'content' },
-    { id: 'styling', label: '🎨 Colors & Style', icon: 'bi-palette', category: 'design' }
+    { id: 'ai-generator', label: 'AI Generator', icon: 'bi-magic', category: 'ai' },
+    { id: 'template', label: 'Template & Layout', icon: 'bi-layout-text-window', category: 'design' },
+    { id: 'header', label: 'Header & Contact', icon: 'bi-person-badge', category: 'content' },
+    { id: 'summary', label: 'Summary', icon: 'bi-card-text', category: 'content' },
+    { id: 'highlights', label: 'Highlights', icon: 'bi-star', category: 'content' },
+    { id: 'experience', label: 'Work Experience', icon: 'bi-briefcase', category: 'content' },
+    { id: 'education', label: 'Education', icon: 'bi-mortarboard', category: 'content' },
+    { id: 'skills', label: 'Skills', icon: 'bi-lightning', category: 'content' },
+    { id: 'projects', label: 'Projects', icon: 'bi-folder', category: 'content' },
+    { id: 'languages', label: 'Languages', icon: 'bi-translate', category: 'content' },
+    { id: 'interests', label: 'Interests', icon: 'bi-heart', category: 'content' },
+    { id: 'styling', label: 'Colors & Style', icon: 'bi-palette', category: 'design' }
   ]
 
   const tabLookup = tabs.reduce((acc, tab) => {
@@ -328,57 +452,175 @@ function ResumeCustomize({ profile, onUpdate }) {
       return
     }
 
-    // Simple AI simulation - will be replaced with actual AI
+    // Analyze AI prompt to extract information
     const prompt = aiPrompt.toLowerCase()
     
     // Detect field of study/work
     let detectedField = 'general'
-    if (prompt.includes('วิศวกร') || prompt.includes('engineer') || prompt.includes('คอมพิวเตอร์')) {
+    let suggestedTitle = 'Professional'
+    
+    if (prompt.includes('วิศวกร') || prompt.includes('engineer') || prompt.includes('คอมพิวเตอร์') || prompt.includes('computer') || prompt.includes('โปรแกรม') || prompt.includes('developer')) {
       detectedField = 'engineering'
-    } else if (prompt.includes('ธุรกิจ') || prompt.includes('business') || prompt.includes('การตลาด')) {
+      suggestedTitle = 'Software Engineer'
+    } else if (prompt.includes('ธุรกิจ') || prompt.includes('business') || prompt.includes('การตลาด') || prompt.includes('marketing') || prompt.includes('บริหาร')) {
       detectedField = 'business'
-    } else if (prompt.includes('ออกแบบ') || prompt.includes('design') || prompt.includes('creative')) {
+      suggestedTitle = 'Business Professional'
+    } else if (prompt.includes('ออกแบบ') || prompt.includes('design') || prompt.includes('creative') || prompt.includes('ui') || prompt.includes('ux') || prompt.includes('กราฟิก')) {
       detectedField = 'creative'
+      suggestedTitle = 'UX/UI Designer'
+    } else if (prompt.includes('ข้อมูล') || prompt.includes('data') || prompt.includes('วิเคราะห์') || prompt.includes('analyst')) {
+      detectedField = 'data'
+      suggestedTitle = 'Data Analyst'
     }
 
-    // Generate resume data based on prompt
+    // Extract skills from prompt
+    const skillKeywords = [
+      'python', 'javascript', 'java', 'react', 'node', 'typescript', 'sql', 'html', 'css',
+      'excel', 'powerpoint', 'word', 'photoshop', 'illustrator', 'figma',
+      'communication', 'leadership', 'teamwork', 'problem solving', 'creative thinking',
+      'การสื่อสาร', 'ภาวะผู้นำ', 'ทำงานเป็นทีม', 'แก้ปัญหา', 'คิดสร้างสรรค์'
+    ]
+    
+    const detectedSkills = []
+    skillKeywords.forEach(keyword => {
+      if (prompt.includes(keyword)) {
+        const skillName = keyword.charAt(0).toUpperCase() + keyword.slice(1)
+        if (!detectedSkills.find(s => s.name.toLowerCase() === keyword)) {
+          detectedSkills.push({ 
+            name: skillName, 
+            level: Math.floor(Math.random() * 20) + 70 
+          })
+        }
+      }
+    })
+
+    // Generate summary from prompt
+    const sentences = aiPrompt.split(/[.!?。]/).filter(s => s.trim().length > 10)
+    let generatedSummary = ''
+    
+    if (sentences.length > 0) {
+      generatedSummary = sentences.slice(0, 3).join('. ').trim()
+      if (!generatedSummary.endsWith('.')) generatedSummary += '.'
+    } else {
+      generatedSummary = `${aiPrompt.substring(0, 200)}${aiPrompt.length > 200 ? '...' : ''}`
+    }
+
+    // Extract GPA if mentioned
+    const gpaMatch = prompt.match(/gpa\s*[\:\s]*(\d+\.?\d*)/i) || prompt.match(/เกรด\s*[\:\s]*(\d+\.?\d*)/i)
+    const detectedGPA = gpaMatch ? parseFloat(gpaMatch[1]) : null
+
+    // Extract education info
+    const isStudent = prompt.includes('นักศึกษา') || prompt.includes('student') || prompt.includes('ปี ') || prompt.includes('year ')
+    const yearMatch = prompt.match(/ปี\s*(\d+)/i) || prompt.match(/year\s*(\d+)/i)
+    const detectedYear = yearMatch ? parseInt(yearMatch[1]) : null
+
+    // Extract company/internship info
+    const internMatch = prompt.match(/ฝึกงาน.*?(?:ที่|at)\s*([^\s,]+)/i) || prompt.match(/intern.*?at\s*([^\s,]+)/i)
+    const companyMatch = internMatch || prompt.match(/บริษัท\s*([^\s,]+)/i) || prompt.match(/company\s*([^\s,]+)/i)
+    const detectedCompany = companyMatch ? companyMatch[1] : null
+
+    // Extract duration
+    const durationMatch = prompt.match(/(\d+)\s*(?:เดือน|months?)/i)
+    const detectedDuration = durationMatch ? parseInt(durationMatch[1]) : null
+
+    // Build generated data
     const generatedData = {
-      fullName: 'Your Name',
-      title: detectedField === 'engineering' ? 'Software Engineer' :
-             detectedField === 'business' ? 'Business Analyst' :
-             detectedField === 'creative' ? 'UX/UI Designer' : 'Professional',
-      summary: `Motivated ${detectedField} professional with strong skills and dedication to excellence. ${aiPrompt.substring(0, 100)}...`,
-      template: detectedField === 'creative' ? 'creative' : 'modern',
+      // Header info - use existing or generate placeholder
+      fullName: resumeData.fullName || profile?.fullName || 'Your Full Name',
+      title: suggestedTitle,
+      summary: generatedSummary,
+      email: resumeData.email || profile?.email || 'your.email@example.com',
+      phone: resumeData.phone || profile?.phone || '080-XXX-XXXX',
+      location: resumeData.location || profile?.location || 'Bangkok, Thailand',
+      
+      // Template & Style selection based on field
+      template: detectedField === 'creative' ? 'creative' : detectedField === 'business' ? 'classic' : 'modern',
       colorScheme: detectedField === 'engineering' ? 'blue-white' :
                    detectedField === 'business' ? 'navy-gold' :
-                   detectedField === 'creative' ? 'purple-pink' : 'brown-beige',
-      skills: detectedField === 'engineering' ? 
-        [
-          { name: 'Python', level: 80 },
-          { name: 'JavaScript', level: 75 },
-          { name: 'Problem Solving', level: 85 },
-          { name: 'Teamwork', level: 90 }
-        ] :
-        detectedField === 'business' ?
-        [
-          { name: 'Business Analysis', level: 85 },
-          { name: 'Excel & Data', level: 80 },
-          { name: 'Communication', level: 90 },
-          { name: 'Project Management', level: 75 }
-        ] :
-        [
-          { name: 'Communication', level: 85 },
-          { name: 'Problem Solving', level: 80 },
-          { name: 'Teamwork', level: 90 },
-          { name: 'Time Management', level: 75 }
-        ]
+                   detectedField === 'creative' ? 'purple-pink' :
+                   detectedField === 'data' ? 'teal-white' : 'brown-beige',
+      layout: detectedField === 'creative' ? 'two-column' : 'single-column',
+      fontSize: 'medium',
+      contentDensity: 'standard',
+      dividerStyle: 'solid',
+      cornerStyle: 'rounded',
+      sectionAccent: detectedField === 'creative' ? 'cards' : 'underlines',
+      showSectionIcons: true,
+      
+      // Update colors based on selected scheme
+      accentColor: detectedField === 'engineering' ? '#1E6FB8' :
+                   detectedField === 'business' ? '#d4af37' :
+                   detectedField === 'creative' ? '#f48fb1' :
+                   detectedField === 'data' ? '#00897b' : '#A67C52',
+      leftColumnBg: detectedField === 'engineering' ? '#1E6FB8' :
+                    detectedField === 'business' ? '#1a237e' :
+                    detectedField === 'creative' ? '#7b1fa2' :
+                    detectedField === 'data' ? '#00897b' : '#A67C52',
+      rightColumnBg: '#FFFFFF',
+      headerBgColor: detectedField === 'engineering' ? '#1E6FB8' :
+                     detectedField === 'business' ? '#1a237e' :
+                     detectedField === 'creative' ? '#7b1fa2' :
+                     detectedField === 'data' ? '#00897b' : '#A67C52',
+      titleColor: '#FFFFFF',
+      
+      // Merge detected skills with existing skills
+      skills: [...(resumeData.skills || []), ...detectedSkills].slice(0, 8),
+      
+      // Generate experience if company detected
+      experiences: detectedCompany ? [
+        ...(resumeData.experiences || []),
+        {
+          position: 'Intern',
+          company: detectedCompany,
+          location: '',
+          startDate: detectedDuration ? `${detectedDuration} months ago` : '',
+          endDate: 'Present',
+          current: false,
+          bulletPoints: [
+            'Participated in team projects and contributed to development',
+            'Applied technical skills in real-world scenarios',
+            'Collaborated with experienced professionals'
+          ]
+        }
+      ].slice(0, 3) : resumeData.experiences,
+      
+      // Generate education if student
+      education: isStudent ? [
+        ...(resumeData.education || []),
+        {
+          school: 'มหาวิทยาลัย',
+          degree: detectedField === 'engineering' ? 'วิศวกรรมศาสตรบัณฑิต - วิศวกรรมคอมพิวเตอร์' :
+                  detectedField === 'business' ? 'บริหารธุรกิจบัณฑิต' :
+                  'ปริญญาตรี',
+          location: '',
+          startDate: detectedYear ? `ปีที่ ${detectedYear}` : '',
+          graduationDate: '',
+          gpa: detectedGPA || undefined
+        }
+      ].slice(0, 2) : resumeData.education,
+
+      // Add highlights based on prompt
+      highlights: [
+        ...(resumeData.highlights || []),
+        ...(detectedGPA ? [{ icon: 'bi-mortarboard', title: `GPA ${detectedGPA}`, description: 'Academic Achievement' }] : []),
+        ...(detectedCompany ? [{ icon: 'bi-briefcase', title: 'Internship', description: `${detectedCompany}` }] : [])
+      ].slice(0, 4)
     }
 
-    setResumeData(prev => ({ ...prev, ...generatedData }))
-    setShowSuccessNotification(true)
-    setTimeout(() => setShowSuccessNotification(false), 3000)
+    // Merge with existing data
+    const updatedData = { ...resumeData, ...generatedData }
     
-    console.log('AI Generated Resume:', generatedData)
+    // Update state and notify parent
+    setResumeData(updatedData)
+    onUpdate?.(updatedData)
+    
+    setShowSuccessNotification(true)
+    setShowAIModal(false)
+    setAIPrompt('')
+    setTimeout(() => setShowSuccessNotification(false), 4000)
+    
+    // Switch to appropriate tab to show results
+    setActiveTab('template')
   }
 
   // Update resume data
@@ -410,13 +652,75 @@ function ResumeCustomize({ profile, onUpdate }) {
     setSectionOrder(items)
   }
 
+  const selectedScheme = colorSchemes.find((scheme) => scheme.id === resumeData.colorScheme)
+  const accentColor = resumeData.accentColor || selectedScheme?.primary || '#333333'
+  const secondarySurface = resumeData.rightColumnBg || selectedScheme?.secondary || '#f5f5f5'
+  const primarySurface = resumeData.leftColumnBg || selectedScheme?.primary || '#1e3a5f'
+  const columnRatio = columnRatioOptions.find((option) => option.id === resumeData.columnRatio)?.value || [40, 60]
+  const densityPadding = densityOptions.find((option) => option.id === resumeData.contentDensity)?.padding || 56
+  const sectionRadius = resumeData.cornerStyle === 'pill' ? '28px' : resumeData.cornerStyle === 'sharp' ? '0px' : '14px'
+  const headingDivider = (color = accentColor) => {
+    if (resumeData.dividerStyle === 'none') return 'none'
+    const borderType = resumeData.dividerStyle === 'dotted' ? 'dotted' : 'solid'
+    const borderWidth = resumeData.sectionAccent === 'minimal' ? '1px' : '2px'
+    const borderColor = resumeData.sectionAccent === 'minimal' ? '#d1d5db' : color
+    return `${borderWidth} ${borderType} ${borderColor}`
+  }
+
+  const renderSectionIcon = (iconClass, color) => {
+    if (!resumeData.showSectionIcons) return null
+    return (
+      <i
+        className={`bi ${iconClass} me-2`}
+        style={{ color: color || 'currentColor', fontSize: '0.95em' }}
+        aria-hidden="true"
+      ></i>
+    )
+  }
+
+  const getSectionColor = (sectionId) => {
+    if (!sectionId) return accentColor
+    const stored = resumeData.sectionColors?.[sectionId]
+    return stored || accentColor
+  }
+
+  const updateSectionColor = (sectionId, color) => {
+    setResumeData((prev) => {
+      const nextColors = { ...(prev.sectionColors || {}) }
+      if (!color) {
+        delete nextColors[sectionId]
+      } else {
+        nextColors[sectionId] = color
+      }
+      const nextState = { ...prev, sectionColors: nextColors }
+      onUpdateRef.current?.(nextState)
+      return nextState
+    })
+  }
+
+  const previewContact = {
+    phone: resumeData.phone || (showSampleContent ? sampleContent.contact.phone : ''),
+    email: resumeData.email || (showSampleContent ? sampleContent.contact.email : ''),
+    location: resumeData.location || (showSampleContent ? sampleContent.contact.location : ''),
+    linkedin: resumeData.linkedin || (showSampleContent ? sampleContent.contact.linkedin : ''),
+    website: resumeData.website,
+    twitter: resumeData.twitter,
+    medium: resumeData.medium
+  }
+
   // Render section based on type
   const renderSection = (sectionId, isWhiteText = false) => {
+    const sectionColor = getSectionColor(sectionId)
     const sectionStyles = {
       cursor: 'grab',
       marginBottom: '1.5rem',
       position: 'relative',
       transition: 'all 0.2s ease',
+      borderRadius: resumeData.sectionAccent === 'cards' ? sectionRadius : 0,
+      padding: resumeData.sectionAccent === 'cards' ? '20px' : '0',
+      backgroundColor: resumeData.sectionAccent === 'cards' ? '#ffffff' : 'transparent',
+      border: resumeData.sectionAccent === 'cards' ? `1px solid ${sectionColor}22` : 'none',
+      boxShadow: resumeData.sectionAccent === 'cards' ? `0 14px 26px ${sectionColor}1a` : 'none',
       '&:hover': {
         transform: 'scale(1.01)'
       }
@@ -427,7 +731,7 @@ function ResumeCustomize({ profile, onUpdate }) {
       top: '8px',
       right: '8px',
       fontSize: '18px',
-      color: isWhiteText ? 'rgba(255,255,255,0.5)' : '#999',
+      color: isWhiteText ? 'rgba(255,255,255,0.5)' : `${sectionColor}aa`,
       cursor: 'grab',
       userSelect: 'none',
       padding: '4px',
@@ -480,26 +784,26 @@ function ResumeCustomize({ profile, onUpdate }) {
                 {resumeData.title || 'Your Professional Title'}
               </p>
               <div className="d-flex flex-wrap gap-3 justify-content-center" style={{ fontSize: '14px', color: resumeData.template === 'creative' ? 'rgba(255,255,255,0.95)' : '#666' }}>
-                {resumeData.phone && (
-                  <span><i className="bi bi-telephone me-1"></i>{resumeData.phone}</span>
+                {previewContact.phone && (
+                  <span><i className="bi bi-telephone me-1"></i>{previewContact.phone}</span>
                 )}
-                {resumeData.email && (
-                  <span><i className="bi bi-envelope me-1"></i>{resumeData.email}</span>
+                {previewContact.email && (
+                  <span><i className="bi bi-envelope me-1"></i>{previewContact.email}</span>
                 )}
-                {resumeData.location && (
-                  <span><i className="bi bi-geo-alt me-1"></i>{resumeData.location}</span>
+                {previewContact.location && (
+                  <span><i className="bi bi-geo-alt me-1"></i>{previewContact.location}</span>
                 )}
-                {resumeData.linkedin && (
-                  <span><i className="bi bi-linkedin me-1"></i>{resumeData.linkedin}</span>
+                {previewContact.linkedin && (
+                  <span><i className="bi bi-linkedin me-1"></i>{previewContact.linkedin}</span>
                 )}
-                {resumeData.twitter && (
+                {previewContact.twitter && (
                   <span><i className="bi bi-twitter me-1"></i>{resumeData.twitter}</span>
                 )}
-                {resumeData.medium && (
-                  <span><i className="bi bi-medium me-1"></i>{resumeData.medium}</span>
+                {previewContact.medium && (
+                  <span><i className="bi bi-medium me-1"></i>{previewContact.medium}</span>
                 )}
-                {resumeData.website && (
-                  <span><i className="bi bi-globe me-1"></i>{resumeData.website}</span>
+                {previewContact.website && (
+                  <span><i className="bi bi-globe me-1"></i>{previewContact.website}</span>
                 )}
               </div>
             </div>
@@ -507,101 +811,189 @@ function ResumeCustomize({ profile, onUpdate }) {
         )
 
       case 'summary':
-        if (!resumeData.summary) return null
+        const summaryText = resumeData.summary || (showSampleContent ? sampleContent.summary : '')
+        if (!summaryText) return null
+        const summaryDivider = isWhiteText ? '2px solid rgba(255,255,255,0.35)' : headingDivider(sectionColor)
+        const summaryHeadingColor = isWhiteText ? '#ffffff' : sectionColor
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-2" style={{ 
-              borderBottom: resumeData.template === 'minimal' ? '1px solid #ddd' : `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333'}`, 
+              borderBottom: summaryDivider,
               paddingBottom: '8px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333',
+              color: summaryHeadingColor,
               fontSize: resumeData.template === 'classic' ? '20px' : '18px'
             }}>
-              {resumeData.showSectionIcons && '📝 '}Professional Summary
+              {renderSectionIcon('bi-card-text', summaryHeadingColor)}
+              Professional Summary
             </h5>
-            <p className="text-muted" style={{ lineHeight: '1.6' }}>{resumeData.summary}</p>
+            <p className="text-muted" style={{ lineHeight: '1.6' }}>{summaryText}</p>
           </div>
         )
 
       case 'experience':
-        if (resumeData.experiences.length === 0) return null
+        const experiences = withSampleList(resumeData.experiences, 'experiences')
+        if (experiences.length === 0) return null
+        const experienceHeadingColor = isWhiteText ? '#ffffff' : sectionColor
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-3" style={{ 
-              borderBottom: resumeData.template === 'minimal' ? '1px solid #ddd' : `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333'}`, 
+              borderBottom: headingDivider(sectionColor), 
               paddingBottom: '8px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333',
+              color: experienceHeadingColor,
               fontSize: resumeData.template === 'classic' ? '20px' : '18px'
             }}>
-              {resumeData.showSectionIcons && '💼 '}Work Experience
+              {renderSectionIcon('bi-briefcase', experienceHeadingColor)}
+              Work Experience
             </h5>
-            {resumeData.experiences.map((exp, idx) => (
-              <div key={idx} className="mb-3">
-                <div className="d-flex justify-content-between align-items-start">
-                  <div>
-                    <h6 className="fw-semibold mb-0" style={{ color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333' }}>
-                      {exp.position || 'Position Title'}
-                    </h6>
-                    <p className="text-muted mb-0">{exp.company || 'Company Name'}</p>
-                  </div>
+            <div>
+              {resumeData.layout === 'timeline' && (
+                <div style={{ position: 'relative', marginLeft: '6px', marginBottom: '4px' }}>
+                  <div style={{ position: 'absolute', left: '9px', top: '10px', bottom: '10px', width: '2px', backgroundColor: `${sectionColor}55` }}></div>
                 </div>
-                {idx < resumeData.experiences.length - 1 && <hr className="my-2" style={{ opacity: 0.3 }} />}
-              </div>
-            ))}
+              )}
+              {experiences.map((exp, idx) => (
+                <div
+                  key={idx}
+                  className="mb-3"
+                  style={resumeData.layout === 'timeline' ? { position: 'relative', paddingLeft: '34px' } : undefined}
+                >
+                  {resumeData.layout === 'timeline' && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        left: '8px',
+                        top: '6px',
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: sectionColor
+                      }}
+                    ></span>
+                  )}
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div>
+                      <h6 className="fw-semibold mb-0" style={{ color: experienceHeadingColor }}>
+                        {exp.position || 'Position Title'}
+                      </h6>
+                      <p className="text-muted mb-0">{exp.company || 'Company Name'}</p>
+                    </div>
+                    {(exp.period || exp.startDate) && (
+                      <small className="text-muted">
+                        {exp.period || `${exp.startDate || ''}${exp.endDate ? ` - ${exp.endDate}` : exp.current ? ' - Present' : ''}`}
+                      </small>
+                    )}
+                  </div>
+                  {exp.description && (
+                    <p className="text-muted small mt-1 mb-0" style={{ lineHeight: '1.5' }}>{exp.description}</p>
+                  )}
+                  {idx < experiences.length - 1 && (
+                    <hr
+                      className="my-2"
+                      style={{
+                        opacity: resumeData.dividerStyle === 'none' ? 0 : 0.35,
+                        borderStyle: resumeData.dividerStyle === 'dotted' ? 'dotted' : 'solid',
+                        borderColor: sectionColor
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )
 
       case 'education':
-        if (resumeData.education.length === 0) return null
+        const educationItems = withSampleList(resumeData.education, 'education')
+        if (educationItems.length === 0) return null
+        const educationHeadingColor = isWhiteText ? '#ffffff' : sectionColor
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-3" style={{ 
-              borderBottom: resumeData.template === 'minimal' ? '1px solid #ddd' : `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333'}`, 
+              borderBottom: headingDivider(sectionColor), 
               paddingBottom: '8px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333',
+              color: educationHeadingColor,
               fontSize: resumeData.template === 'classic' ? '20px' : '18px'
             }}>
-              {resumeData.showSectionIcons && '🎓 '}Education
+              {renderSectionIcon('bi-mortarboard', educationHeadingColor)}
+              Education
             </h5>
-            {resumeData.education.map((edu, idx) => (
-              <div key={idx} className="mb-3">
-                <h6 className="fw-semibold mb-0" style={{ color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333' }}>
-                  {edu.degree || 'Degree'}
-                </h6>
-                <p className="text-muted mb-0">{edu.school || 'School Name'}</p>
-                {idx < resumeData.education.length - 1 && <hr className="my-2" style={{ opacity: 0.3 }} />}
-              </div>
-            ))}
+            <div>
+              {educationItems.map((edu, idx) => (
+                <div
+                  key={idx}
+                  className="mb-3"
+                  style={resumeData.layout === 'timeline' ? { position: 'relative', paddingLeft: '34px' } : undefined}
+                >
+                  {resumeData.layout === 'timeline' && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        left: '8px',
+                        top: '6px',
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: sectionColor
+                      }}
+                    ></span>
+                  )}
+                  <h6 className="fw-semibold mb-0" style={{ color: educationHeadingColor }}>
+                    {edu.degree || 'Education'}
+                  </h6>
+                  <p className="text-muted mb-0">{edu.school || 'School Name'}</p>
+                  {edu.startDate && (
+                    <small className="text-muted">{edu.startDate} {edu.endDate ? `- ${edu.endDate}` : ''}</small>
+                  )}
+                  {idx < educationItems.length - 1 && (
+                    <hr
+                      className="my-2"
+                      style={{
+                        opacity: resumeData.dividerStyle === 'none' ? 0 : 0.35,
+                        borderStyle: resumeData.dividerStyle === 'dotted' ? 'dotted' : 'solid',
+                        borderColor: sectionColor
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )
 
       case 'highlights':
-        if (resumeData.highlights.length === 0) return null
+        const highlights = withSampleList(resumeData.highlights, 'highlights')
+        if (highlights.length === 0) return null
+        const highlightHeadingColor = isWhiteText ? '#ffffff' : sectionColor
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-3" style={{ 
-              borderBottom: resumeData.template === 'minimal' ? '1px solid #ddd' : `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333'}`, 
+              borderBottom: headingDivider(sectionColor), 
               paddingBottom: '8px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333',
+              color: highlightHeadingColor,
               fontSize: resumeData.template === 'classic' ? '20px' : '18px'
             }}>
-              {resumeData.showSectionIcons && '⭐ '}Highlights
+              {renderSectionIcon('bi-star', highlightHeadingColor)}
+              Highlights
             </h5>
-            <div className="row g-3">
-              {resumeData.highlights.map((highlight, idx) => (
-                <div key={highlight.id || idx} className="col-md-6">
+            <div
+              className="row g-3"
+              style={resumeData.layout === 'gallery' ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' } : undefined}
+            >
+              {highlights.map((highlight, idx) => (
+                <div key={highlight.id || idx} className={resumeData.layout === 'gallery' ? '' : 'col-md-6'}>
                   <div
                     className="h-100 p-3"
                     style={{
-                      borderRadius: '14px',
-                      border: `1px solid ${(resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333')}22`,
-                      backgroundColor: `${(resumeData.rightColumnBg || '#f8f9fa')}40`
+                      borderRadius: sectionRadius,
+                      border: `1px solid ${sectionColor}22`,
+                      backgroundColor: `${sectionColor}0d`
                     }}
                   >
-                    <h6 className="fw-semibold mb-2" style={{ color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333' }}>
+                    <h6 className="fw-semibold mb-2" style={{ color: highlightHeadingColor }}>
                       {highlight.title || 'Highlight title'}
                     </h6>
                     <p className="text-muted small mb-0" style={{ lineHeight: '1.5' }}>
@@ -615,55 +1007,86 @@ function ResumeCustomize({ profile, onUpdate }) {
         )
 
       case 'skills':
-        if (resumeData.skills.length === 0) return null
+        const skills = withSampleList(resumeData.skills, 'skills')
+        if (skills.length === 0) return null
+        const skillsHeadingColor = isWhiteText ? '#ffffff' : sectionColor
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-3" style={{ 
-              borderBottom: resumeData.template === 'minimal' ? '1px solid #ddd' : `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333'}`, 
+              borderBottom: headingDivider(sectionColor), 
               paddingBottom: '8px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333',
+              color: skillsHeadingColor,
               fontSize: resumeData.template === 'classic' ? '20px' : '18px'
             }}>
-              {resumeData.showSectionIcons && '⚡ '}Skills
+              {renderSectionIcon('bi-lightning', skillsHeadingColor)}
+              Skills
             </h5>
-            {resumeData.skills.map((skill, idx) => (
-              <div key={idx} className="mb-2">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="fw-semibold">{skill.name}</span>
-                  <span className="text-muted small">{skill.level}%</span>
-                </div>
-                <div className="progress" style={{ height: resumeData.template === 'classic' ? '8px' : '6px', borderRadius: resumeData.template === 'minimal' ? '0' : '4px' }}>
-                  <div 
-                    className="progress-bar" 
-                    style={{ 
-                      width: `${skill.level}%`,
-                      backgroundColor: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333'
+            {resumeData.layout === 'gallery' ? (
+              <div className="d-flex flex-wrap gap-2">
+                {skills.map((skill, idx) => (
+                  <span
+                    key={idx}
+                    className="badge"
+                    style={{
+                      backgroundColor: `${sectionColor}15`,
+                      color: skillsHeadingColor,
+                      borderRadius: sectionRadius,
+                      padding: '8px 14px'
                     }}
-                  ></div>
-                </div>
+                  >
+                    {skill.name}
+                  </span>
+                ))}
               </div>
-            ))}
+            ) : (
+              skills.map((skill, idx) => (
+                <div key={idx} className="mb-2">
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <span className="fw-semibold">{skill.name}</span>
+                    <span className="text-muted small">{skill.level}%</span>
+                  </div>
+                  <div className="progress" style={{ height: resumeData.template === 'classic' ? '8px' : '6px', borderRadius: resumeData.template === 'minimal' ? '0' : '4px' }}>
+                    <div 
+                      className="progress-bar" 
+                      style={{ 
+                        width: `${skill.level}%`,
+                        backgroundColor: sectionColor
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )
 
       case 'projects':
-        if (resumeData.projects.length === 0) return null
+        const projects = withSampleList(resumeData.projects, 'projects')
+        if (projects.length === 0) return null
+        const projectsHeadingColor = isWhiteText ? '#ffffff' : sectionColor
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-3" style={{ 
-              borderBottom: resumeData.template === 'minimal' ? '1px solid #ddd' : `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333'}`, 
+              borderBottom: headingDivider(sectionColor), 
               paddingBottom: '8px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333',
+              color: projectsHeadingColor,
               fontSize: resumeData.template === 'classic' ? '20px' : '18px'
             }}>
-              {resumeData.showSectionIcons && '🚀 '}Projects
+              {renderSectionIcon('bi-folder', projectsHeadingColor)}
+              Projects
             </h5>
-            {resumeData.projects.map((project, idx) => (
-              <div key={idx} className="mb-3">
+            {projects.map((project, idx) => (
+              <div
+                key={idx}
+                className="mb-3"
+                style={resumeData.layout === 'gallery'
+                  ? { border: `1px solid ${sectionColor}1f`, borderRadius: sectionRadius, padding: '16px' }
+                  : undefined}
+              >
                 <div className="d-flex justify-content-between align-items-start">
-                  <h6 className="fw-semibold mb-1" style={{ color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333' }}>
+                  <h6 className="fw-semibold mb-1" style={{ color: projectsHeadingColor }}>
                     {project.name || 'Project Name'}
                   </h6>
                   {project.period && (
@@ -677,30 +1100,35 @@ function ResumeCustomize({ profile, onUpdate }) {
                     {project.description}
                   </p>
                 )}
-                {idx < resumeData.projects.length - 1 && <hr className="my-2" style={{ opacity: 0.3 }} />}
+                {idx < projects.length - 1 && (
+                  <hr className="my-2" style={{ opacity: 0.3, borderColor: sectionColor }} />
+                )}
               </div>
             ))}
           </div>
         )
 
       case 'languages':
-        if (resumeData.languages.length === 0) return null
+        const languages = withSampleList(resumeData.languages, 'languages')
+        if (languages.length === 0) return null
+        const languageHeadingColor = isWhiteText ? '#ffffff' : sectionColor
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-3" style={{ 
-              borderBottom: resumeData.template === 'minimal' ? '1px solid #ddd' : `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333'}`, 
+              borderBottom: headingDivider(sectionColor), 
               paddingBottom: '8px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333',
+              color: languageHeadingColor,
               fontSize: resumeData.template === 'classic' ? '20px' : '18px'
             }}>
-              {resumeData.showSectionIcons && '🌐 '}Languages
+              {renderSectionIcon('bi-translate', languageHeadingColor)}
+              Languages
             </h5>
             <div className="row g-2">
-              {resumeData.languages.map((lang, idx) => (
+              {languages.map((lang, idx) => (
                 <div key={idx} className="col-6">
-                  <div className="fw-semibold">{lang.name}</div>
-                  <div className="text-muted small" style={{ fontStyle: 'italic' }}>
+                  <div className="fw-semibold" style={{ color: languageHeadingColor }}>{lang.name}</div>
+                  <div className="text-muted small" style={{ fontStyle: 'italic', color: `${languageHeadingColor}aa` }}>
                     {lang.proficiency === 'native' && 'Native'}
                     {lang.proficiency === 'proficient' && 'Proficient'}
                     {lang.proficiency === 'working' && 'Working'}
@@ -714,29 +1142,33 @@ function ResumeCustomize({ profile, onUpdate }) {
         )
 
       case 'interests':
-        if (resumeData.interests.length === 0) return null
+        const interests = withSampleList(resumeData.interests, 'interests')
+        if (interests.length === 0) return null
+        const interestsHeadingColor = isWhiteText ? '#ffffff' : sectionColor
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-3" style={{ 
-              borderBottom: resumeData.template === 'minimal' ? '1px solid #ddd' : `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333'}`, 
+              borderBottom: headingDivider(sectionColor), 
               paddingBottom: '8px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333',
+              color: interestsHeadingColor,
               fontSize: resumeData.template === 'classic' ? '20px' : '18px'
             }}>
-              {resumeData.showSectionIcons && '💡 '}Interests
+              {renderSectionIcon('bi-lightbulb', interestsHeadingColor)}
+              Interests
             </h5>
             <div className="d-flex flex-wrap gap-2">
-              {resumeData.interests.map((interest, idx) => (
+              {interests.map((interest, idx) => (
                 <span 
                   key={idx}
                   className="badge"
                   style={{ 
-                    backgroundColor: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#333',
-                    color: 'white',
+                    backgroundColor: `${sectionColor}15`,
+                    color: interestsHeadingColor,
                     fontSize: '13px',
                     fontWeight: 'normal',
-                    padding: '6px 12px'
+                    padding: '6px 12px',
+                    borderRadius: sectionRadius
                   }}
                 >
                   {interest.icon} {interest.name}
@@ -759,12 +1191,13 @@ function ResumeCustomize({ profile, onUpdate }) {
       position: 'relative'
     }
 
+    const sectionColor = getSectionColor(sectionId)
     const dragHandleStyle = {
       position: 'absolute',
       top: '8px',
       right: '8px',
       fontSize: '16px',
-      color: 'rgba(255,255,255,0.5)',
+      color: `${sectionColor}aa`,
       cursor: 'grab',
       userSelect: 'none',
       padding: '4px',
@@ -773,28 +1206,43 @@ function ResumeCustomize({ profile, onUpdate }) {
 
     switch (sectionId) {
       case 'summary':
-        if (!resumeData.summary) return null
+        const summaryText = resumeData.summary || (showSampleContent ? sampleContent.summary : '')
+        if (!summaryText) return null
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
-            <h5 className="fw-bold mb-2" style={{ fontSize: '16px', color: 'white', borderBottom: '2px solid rgba(255,255,255,0.3)', paddingBottom: '8px' }}>
-              {resumeData.showSectionIcons && '📝 '}Professional Summary
+            <h5
+              className="fw-bold mb-2"
+              style={{
+                fontSize: '16px',
+                color: sectionColor,
+                borderBottom: `2px solid ${sectionColor}66`,
+                paddingBottom: '8px'
+              }}
+            >
+              {renderSectionIcon('bi-card-text', sectionColor)}
+              Professional Summary
             </h5>
             <p style={{ fontSize: '13px', lineHeight: '1.6', color: 'rgba(255,255,255,0.95)' }}>
-              {resumeData.summary}
+              {summaryText}
             </p>
           </div>
         )
 
       case 'skills':
-        if (resumeData.skills.length === 0) return null
+        const skills = withSampleList(resumeData.skills, 'skills')
+        if (skills.length === 0) return null
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
-            <h5 className="fw-bold mb-3" style={{ fontSize: '16px', color: 'white', borderBottom: '2px solid rgba(255,255,255,0.3)', paddingBottom: '8px' }}>
-              {resumeData.showSectionIcons && '⚡ '}Key Skills
+            <h5
+              className="fw-bold mb-3"
+              style={{ fontSize: '16px', color: sectionColor, borderBottom: `2px solid ${sectionColor}66`, paddingBottom: '8px' }}
+            >
+              {renderSectionIcon('bi-lightning', sectionColor)}
+              Key Skills
             </h5>
-            {resumeData.skills.map((skill, index) => (
+            {skills.map((skill, index) => (
               <div key={index} className="mb-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <span style={{ fontSize: '13px', fontWeight: '500' }}>{skill.name}</span>
@@ -804,7 +1252,7 @@ function ResumeCustomize({ profile, onUpdate }) {
                     className="progress-bar" 
                     style={{ 
                       width: `${skill.level}%`,
-                      backgroundColor: 'rgba(255,255,255,0.9)'
+                      backgroundColor: sectionColor
                     }}
                   ></div>
                 </div>
@@ -814,19 +1262,24 @@ function ResumeCustomize({ profile, onUpdate }) {
         )
 
       case 'languages':
-        if (resumeData.languages.length === 0) return null
+        const languages = withSampleList(resumeData.languages, 'languages')
+        if (languages.length === 0) return null
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
-            <h5 className="fw-bold mb-3" style={{ fontSize: '16px', color: 'white', borderBottom: '2px solid rgba(255,255,255,0.3)', paddingBottom: '8px' }}>
-              {resumeData.showSectionIcons && '🌐 '}Languages
+            <h5
+              className="fw-bold mb-3"
+              style={{ fontSize: '16px', color: sectionColor, borderBottom: `2px solid ${sectionColor}66`, paddingBottom: '8px' }}
+            >
+              {renderSectionIcon('bi-translate', sectionColor)}
+              Languages
             </h5>
-            {resumeData.languages.map((lang, index) => (
+            {languages.map((lang, index) => (
               <div key={index} className="mb-2" style={{ fontSize: '13px' }}>
-                <div className="fw-semibold">{lang.name}</div>
+                <div className="fw-semibold" style={{ color: sectionColor }}>{lang.name}</div>
                 <div style={{ 
                   fontSize: '12px', 
-                  color: 'rgba(255,255,255,0.8)',
+                  color: `${sectionColor}cc`,
                   fontStyle: 'italic'
                 }}>
                   {lang.proficiency === 'native' && 'Native or Bilingual'}
@@ -841,23 +1294,29 @@ function ResumeCustomize({ profile, onUpdate }) {
         )
 
       case 'interests':
-        if (resumeData.interests.length === 0) return null
+        const interests = withSampleList(resumeData.interests, 'interests')
+        if (interests.length === 0) return null
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
-            <h5 className="fw-bold mb-3" style={{ fontSize: '16px', color: 'white', borderBottom: '2px solid rgba(255,255,255,0.3)', paddingBottom: '8px' }}>
-              {resumeData.showSectionIcons && '💡 '}Interests
+            <h5
+              className="fw-bold mb-3"
+              style={{ fontSize: '16px', color: sectionColor, borderBottom: `2px solid ${sectionColor}66`, paddingBottom: '8px' }}
+            >
+              {renderSectionIcon('bi-lightbulb', sectionColor)}
+              Interests
             </h5>
             <div className="d-flex flex-wrap gap-2">
-              {resumeData.interests.map((interest, index) => (
+              {interests.map((interest, index) => (
                 <span 
                   key={index} 
                   style={{ 
                     fontSize: '12px',
-                    backgroundColor: 'rgba(255,255,255,0.15)',
+                    backgroundColor: `${sectionColor}22`,
                     padding: '4px 10px',
                     borderRadius: '12px',
-                    border: '1px solid rgba(255,255,255,0.2)'
+                    border: `1px solid ${sectionColor}55`,
+                    color: sectionColor,
                   }}
                 >
                   {interest.icon} {interest.name}
@@ -880,12 +1339,13 @@ function ResumeCustomize({ profile, onUpdate }) {
       position: 'relative'
     }
 
+    const sectionColor = getSectionColor(sectionId)
     const dragHandleStyle = {
       position: 'absolute',
       top: '8px',
       right: '8px',
       fontSize: '16px',
-      color: '#999',
+      color: `${sectionColor}aa`,
       cursor: 'grab',
       userSelect: 'none',
       padding: '4px',
@@ -894,7 +1354,8 @@ function ResumeCustomize({ profile, onUpdate }) {
 
     switch (sectionId) {
       case 'highlights':
-        if (resumeData.highlights.length === 0) return null
+        const highlights = withSampleList(resumeData.highlights, 'highlights')
+        if (highlights.length === 0) return null
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
@@ -903,14 +1364,15 @@ function ResumeCustomize({ profile, onUpdate }) {
                 backgroundColor: '#fff',
                 borderRadius: '18px',
                 padding: '18px',
-                border: `1px solid ${(resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52')}22`,
+                border: `1px solid ${sectionColor}22`,
                 boxShadow: '0 8px 20px rgba(0,0,0,0.05)'
               }}
             >
-              <h5 className="fw-bold mb-2" style={{ color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52' }}>
-                {resumeData.showSectionIcons && '⭐ '}Key Highlights
+              <h5 className="fw-bold mb-2" style={{ color: sectionColor }}>
+                {renderSectionIcon('bi-star', sectionColor)}
+                Key Highlights
               </h5>
-              {resumeData.highlights.map((highlight, index) => (
+              {highlights.map((highlight, index) => (
                 <div key={highlight.id || index} className="mb-2">
                   <p className="mb-1 fw-semibold" style={{ fontSize: '14px' }}>
                     {highlight.title || 'Highlight title'}
@@ -918,7 +1380,7 @@ function ResumeCustomize({ profile, onUpdate }) {
                   <p className="mb-0 text-muted" style={{ fontSize: '13px', lineHeight: '1.5' }}>
                     {highlight.description || 'Add a concise description here.'}
                   </p>
-                  {index < resumeData.highlights.length - 1 && (
+                  {index < highlights.length - 1 && (
                     <hr className="my-3" style={{ opacity: 0.2 }} />
                   )}
                 </div>
@@ -928,91 +1390,97 @@ function ResumeCustomize({ profile, onUpdate }) {
         )
 
       case 'experience':
-        if (resumeData.experiences.length === 0) return null
+        const experiences = withSampleList(resumeData.experiences, 'experiences')
+        if (experiences.length === 0) return null
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-3" style={{ 
               fontSize: '18px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52',
-              borderBottom: `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52'}`,
+              color: sectionColor,
+              borderBottom: `2px solid ${sectionColor}`,
               paddingBottom: '8px'
             }}>
-              {resumeData.showSectionIcons && '💼 '}Professional Experience
+              {renderSectionIcon('bi-briefcase', sectionColor)}
+              Professional Experience
             </h5>
-            {resumeData.experiences.map((exp, index) => (
+            {experiences.map((exp, index) => (
               <div key={index} className="mb-3">
                 <h6 className="fw-semibold mb-0" style={{ 
                   fontSize: '15px',
-                  color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52' 
+                  color: sectionColor 
                 }}>
                   {exp.position || 'Position Title'}
                 </h6>
                 <p className="mb-2" style={{ fontSize: '13px', color: '#666' }}>
                   <em>{exp.company || 'Company Name'}</em>
                 </p>
-                {index < resumeData.experiences.length - 1 && <hr style={{ opacity: 0.3, margin: '15px 0' }} />}
+                {index < experiences.length - 1 && <hr style={{ opacity: 0.3, margin: '15px 0', borderColor: sectionColor }} />}
               </div>
             ))}
           </div>
         )
 
       case 'education':
-        if (resumeData.education.length === 0) return null
+        const educationItems = withSampleList(resumeData.education, 'education')
+        if (educationItems.length === 0) return null
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-3" style={{ 
               fontSize: '18px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52',
-              borderBottom: `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52'}`,
+              color: sectionColor,
+              borderBottom: `2px solid ${sectionColor}`,
               paddingBottom: '8px'
             }}>
-              {resumeData.showSectionIcons && '🎓 '}Education
+              {renderSectionIcon('bi-mortarboard', sectionColor)}
+              Education
             </h5>
-            {resumeData.education.map((edu, index) => (
+            {educationItems.map((edu, index) => (
               <div key={index} className="mb-3">
                 <h6 className="fw-semibold mb-0" style={{ 
                   fontSize: '15px',
-                  color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52' 
+                  color: sectionColor 
                 }}>
                   {edu.degree || 'Degree'}
                 </h6>
                 <p className="mb-0" style={{ fontSize: '13px', color: '#666' }}>
                   {edu.school || 'School Name'}
                 </p>
-                {index < resumeData.education.length - 1 && <hr style={{ opacity: 0.3, margin: '15px 0' }} />}
+                {index < educationItems.length - 1 && <hr style={{ opacity: 0.3, margin: '15px 0', borderColor: sectionColor }} />}
               </div>
             ))}
           </div>
         )
 
       case 'projects':
-        if (resumeData.projects.length === 0) return null
+        const projects = withSampleList(resumeData.projects, 'projects')
+        if (projects.length === 0) return null
         return (
           <div style={sectionStyles}>
             <span style={dragHandleStyle}>⋮⋮</span>
             <h5 className="fw-bold mb-3" style={{ 
               fontSize: '18px',
-              color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52',
-              borderBottom: `2px solid ${resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52'}`,
+              color: sectionColor,
+              borderBottom: `2px solid ${sectionColor}`,
               paddingBottom: '8px'
             }}>
-              {resumeData.showSectionIcons && '🚀 '}Projects
+              {renderSectionIcon('bi-folder', sectionColor)}
+              Projects
             </h5>
-            {resumeData.projects.map((project, index) => (
+            {projects.map((project, index) => (
               <div key={index} className="mb-3">
                 <div className="d-flex justify-content-between align-items-start">
                   <h6 className="fw-semibold mb-1" style={{ 
                     fontSize: '15px',
-                    color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52' 
+                    color: sectionColor 
                   }}>
                     {project.name || 'Project Name'}
                   </h6>
                   {project.period && (
                     <span style={{ 
                       fontSize: '12px', 
-                      color: resumeData.accentColor || colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52',
+                      color: sectionColor,
                       fontStyle: 'italic'
                     }}>
                       {project.period}
@@ -1024,7 +1492,7 @@ function ResumeCustomize({ profile, onUpdate }) {
                     {project.description}
                   </p>
                 )}
-                {index < resumeData.projects.length - 1 && <hr style={{ opacity: 0.3, margin: '15px 0' }} />}
+                {index < resumeData.projects.length - 1 && <hr style={{ opacity: 0.3, margin: '15px 0', borderColor: sectionColor }} />}
               </div>
             ))}
           </div>
@@ -1033,6 +1501,307 @@ function ResumeCustomize({ profile, onUpdate }) {
       default:
         return null
     }
+  }
+
+  const spacingScale = parseFloat(spacingOptions.find((s) => s.id === resumeData.spacing)?.value || '1')
+  const paddingValue = densityPadding * spacingScale
+  const previewShellPadding = compactPreview ? 24 : 40
+  const previewPaperMinHeight = compactPreview ? '820px' : '1000px'
+  const previewPaperShadow = compactPreview ? '0 8px 24px rgba(15,23,42,0.12)' : '0 18px 45px rgba(15,23,42,0.18)'
+
+  const renderSplitHeroBanner = () => {
+    if (resumeData.layout !== 'split-hero') return null
+    const isCard = resumeData.heroStyle === 'card'
+    const isAngular = resumeData.heroStyle === 'angular'
+    const heroBackground = isCard
+      ? '#ffffff'
+      : isAngular
+        ? `linear-gradient(120deg, ${accentColor}, ${primarySurface})`
+        : `linear-gradient(135deg, ${accentColor}, ${accentColor}dd)`
+    const heroText = isCard ? '#111111' : '#ffffff'
+    const heroWrapperStyle = {
+      background: heroBackground,
+      color: heroText,
+      borderRadius: '32px',
+      padding: '48px',
+      marginBottom: '28px',
+      boxShadow: isCard ? '0 35px 70px rgba(15,23,42,0.18)' : '0 25px 60px rgba(15,23,42,0.25)'
+    }
+
+    const stats = [
+      { label: 'Experiences', value: withSampleList(resumeData.experiences, 'experiences').length },
+      { label: 'Projects', value: withSampleList(resumeData.projects, 'projects').length },
+      { label: 'Skills', value: withSampleList(resumeData.skills, 'skills').length }
+    ].filter((stat) => stat.value > 0)
+
+    const contactChips = [
+      previewContact.location,
+      previewContact.phone,
+      previewContact.email,
+      previewContact.linkedin
+    ].filter(Boolean).slice(0, 3)
+
+    const heroSummary = resumeData.summary || (showSampleContent ? sampleContent.summary : '')
+
+    return (
+      <div style={heroWrapperStyle}>
+        <div className="d-flex flex-column flex-lg-row align-items-center align-items-lg-start gap-4">
+          <div className="text-center text-lg-start">
+            {resumeData.profilePhoto && (
+              <img
+                src={resumeData.profilePhoto}
+                alt="Profile"
+                style={{
+                  width: '140px',
+                  height: '140px',
+                  borderRadius: '35px',
+                  objectFit: 'cover',
+                  border: isCard ? `8px solid ${secondarySurface}` : '8px solid rgba(255,255,255,0.2)',
+                  boxShadow: '0 15px 30px rgba(0,0,0,0.25)'
+                }}
+                onError={(e) => { e.target.style.display = 'none' }}
+              />
+            )}
+          </div>
+          <div className="flex-grow-1">
+            <div className="d-flex align-items-center gap-2 mb-2">
+              <span className="badge bg-light text-dark">Showcase Hero</span>
+              <span className="badge bg-light text-dark">Template: {resumeData.template}</span>
+            </div>
+            <h1 className="fw-bold mb-1" style={{ color: heroText }}>{resumeData.fullName || 'Your Name'}</h1>
+            <p className="mb-3" style={{ color: isCard ? '#444' : 'rgba(255,255,255,0.9)' }}>{resumeData.title || 'Professional Title'}</p>
+            {heroSummary && (
+              <p className="mb-3" style={{ color: isCard ? '#555' : 'rgba(255,255,255,0.85)' }}>
+                {heroSummary.length > 180 ? `${heroSummary.slice(0, 180)}...` : heroSummary}
+              </p>
+            )}
+            {contactChips.length > 0 && (
+              <div className="d-flex flex-wrap gap-2 mb-4">
+                {contactChips.map((chip, idx) => (
+                  <span
+                    key={idx}
+                    className="badge"
+                    style={{
+                      backgroundColor: isCard ? '#f1f3f5' : 'rgba(255,255,255,0.15)',
+                      color: heroText,
+                      padding: '8px 16px',
+                      borderRadius: '20px'
+                    }}
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            )}
+            {stats.length > 0 && (
+              <div className="row g-3">
+                {stats.map((stat) => (
+                  <div key={stat.label} className="col-6 col-lg-4">
+                    <div
+                      className="p-3"
+                      style={{
+                        borderRadius: '18px',
+                        backgroundColor: isCard ? '#111' : 'rgba(255,255,255,0.15)',
+                        color: isCard ? '#fff' : '#fff'
+                      }}
+                    >
+                      <div className="fw-bold" style={{ fontSize: '26px' }}>{stat.value}</div>
+                      <small style={{ opacity: 0.8 }}>{stat.label}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderDualColumnLayout = () => {
+    const [leftWidth, rightWidth] = columnRatio
+    return (
+      <>
+        {renderSplitHeroBanner()}
+        <div className="d-flex flex-wrap" style={{ overflow: 'hidden', borderRadius: resumeData.layout === 'split-hero' ? '32px' : '12px' }}>
+          <div
+            style={{
+              flex: `0 0 ${leftWidth}%`,
+              maxWidth: `${leftWidth}%`,
+              background: primarySurface,
+              color: '#ffffff',
+              padding: `${paddingValue}px 40px`
+            }}
+          >
+            {resumeData.profilePhoto && resumeData.layout !== 'split-hero' && (
+              <div className="text-center mb-4">
+                <img
+                  src={resumeData.profilePhoto}
+                  alt="Profile"
+                  style={{
+                    width: '150px',
+                    height: '150px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '5px solid rgba(255,255,255,0.3)',
+                    marginBottom: '20px'
+                  }}
+                  onError={(e) => { e.target.style.display = 'none' }}
+                />
+              </div>
+            )}
+            <div className="text-center mb-4">
+              <h2 className="fw-bold mb-2" style={{ fontSize: '28px', color: resumeData.titleColor || '#ffffff' }}>
+                {resumeData.fullName || 'Your Name'}
+              </h2>
+              <p className="mb-3" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)' }}>
+                {resumeData.title || 'Your Professional Title'}
+              </p>
+            </div>
+            <div className="mb-4" style={{ fontSize: '13px' }}>
+              {previewContact.location && (
+                <div className="mb-2"><i className="bi bi-geo-alt me-2"></i>{previewContact.location}</div>
+              )}
+              {previewContact.phone && (
+                <div className="mb-2"><i className="bi bi-telephone me-2"></i>{previewContact.phone}</div>
+              )}
+              {previewContact.email && (
+                <div className="mb-2"><i className="bi bi-envelope me-2"></i>{previewContact.email}</div>
+              )}
+              {previewContact.linkedin && (
+                <div className="mb-2"><i className="bi bi-linkedin me-2"></i>{previewContact.linkedin}</div>
+              )}
+              {previewContact.website && (
+                <div className="mb-2"><i className="bi bi-globe me-2"></i>{previewContact.website}</div>
+              )}
+            </div>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="left-column-sections">
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                    {['summary', 'skills', 'languages', 'interests'].map((sectionId, index) => {
+                      const sectionContent = renderSectionTwoColumnLeft(sectionId)
+                      if (!sectionContent) return null
+                      return (
+                        <Draggable key={sectionId} draggableId={`left-${sectionId}`} index={index}>
+                          {(dragProvided, snapshot) => (
+                            <div
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              {...dragProvided.dragHandleProps}
+                              style={{
+                                ...dragProvided.draggableProps.style,
+                                opacity: snapshot.isDragging ? 0.85 : 1,
+                                backgroundColor: snapshot.isDragging ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                borderRadius: snapshot.isDragging ? '8px' : '0',
+                                padding: snapshot.isDragging ? '10px' : '0',
+                                border: snapshot.isDragging ? '2px dashed rgba(255,255,255,0.4)' : 'none'
+                              }}
+                            >
+                              {sectionContent}
+                            </div>
+                          )}
+                        </Draggable>
+                      )
+                    })}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </div>
+          <div
+            style={{
+              flex: `0 0 ${rightWidth}%`,
+              maxWidth: `${rightWidth}%`,
+              backgroundColor: secondarySurface,
+              padding: `${paddingValue}px 40px`
+            }}
+          >
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="right-column-sections">
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                    {['highlights', 'experience', 'education', 'projects'].map((sectionId, index) => {
+                      const sectionContent = renderSectionTwoColumnRight(sectionId)
+                      if (!sectionContent) return null
+                      return (
+                        <Draggable key={sectionId} draggableId={`right-${sectionId}`} index={index}>
+                          {(dragProvided, snapshot) => (
+                            <div
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              {...dragProvided.dragHandleProps}
+                              style={{
+                                ...dragProvided.draggableProps.style,
+                                opacity: snapshot.isDragging ? 0.85 : 1,
+                                backgroundColor: snapshot.isDragging ? '#f8f9fa' : 'transparent',
+                                borderRadius: snapshot.isDragging ? '8px' : '0',
+                                padding: snapshot.isDragging ? '10px' : '0',
+                                border: snapshot.isDragging ? '2px dashed #333' : 'none'
+                              }}
+                            >
+                              {sectionContent}
+                            </div>
+                          )}
+                        </Draggable>
+                      )
+                    })}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  const renderSingleColumnLayout = () => (
+    <div style={{ padding: `${paddingValue}px` }}>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="resume-sections">
+          {(provided) => (
+            <div ref={provided.innerRef} {...provided.droppableProps}>
+              {sectionOrder.map((sectionId, index) => {
+                const sectionContent = renderSection(sectionId)
+                if (!sectionContent) return null
+                return (
+                  <Draggable key={sectionId} draggableId={sectionId} index={index}>
+                    {(dragProvided, snapshot) => (
+                      <div
+                        ref={dragProvided.innerRef}
+                        {...dragProvided.draggableProps}
+                        {...dragProvided.dragHandleProps}
+                        style={{
+                          ...dragProvided.draggableProps.style,
+                          opacity: snapshot.isDragging ? 0.85 : 1,
+                          backgroundColor: snapshot.isDragging ? '#f8f9fa' : 'transparent',
+                          borderRadius: snapshot.isDragging ? '8px' : '0',
+                          padding: snapshot.isDragging ? '10px' : '0',
+                          border: snapshot.isDragging ? '2px dashed #333' : 'none'
+                        }}
+                      >
+                        {sectionContent}
+                      </div>
+                    )}
+                  </Draggable>
+                )
+              })}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+    </div>
+  )
+
+  const renderPreviewLayout = () => {
+    if (['two-column', 'split-hero'].includes(resumeData.layout)) {
+      return renderDualColumnLayout()
+    }
+    return renderSingleColumnLayout()
   }
 
   const tabBadgeCounts = {
@@ -1179,7 +1948,10 @@ function ResumeCustomize({ profile, onUpdate }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="d-flex justify-content-between align-items-center mb-4">
-              <h5 className="mb-0 fw-bold">🎨 Quick Styles</h5>
+              <h5 className="mb-0 fw-bold">
+                <i className="bi bi-palette me-2" aria-hidden="true"></i>
+                Quick Styles
+              </h5>
               <button
                 onClick={() => setShowQuickStylesModal(false)}
                 className="btn-close"
@@ -1210,9 +1982,6 @@ function ResumeCustomize({ profile, onUpdate }) {
                       e.currentTarget.style.transform = 'translateY(0)'
                     }}
                   >
-                    <div className="text-center mb-2" style={{ fontSize: '32px' }}>
-                      {preset.emoji}
-                    </div>
                     <div className="fw-bold mb-1" style={{ fontSize: '14px' }}>
                       {preset.name}
                     </div>
@@ -1260,8 +2029,8 @@ function ResumeCustomize({ profile, onUpdate }) {
               to { opacity: 1; }
             }
             @keyframes spin {
-              from { transform: translate(-50%, -50%) rotate(0deg); }
-              to { transform: translate(-50%, -50%) rotate(360deg); }
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
             }
             @keyframes fadeOut {
               from { opacity: 1; }
@@ -1280,7 +2049,7 @@ function ResumeCustomize({ profile, onUpdate }) {
             position: 'relative',
             animation: showSuccessNotification ? 'fadeIn 0.3s ease-out, fadeOut 0.3s ease-in 2.7s' : 'none'
           }}>
-            {/* V Logo with spinning arc */}
+            {/* V Logo with spinning arc effect */}
             <div style={{
               width: '120px',
               height: '120px',
@@ -1290,13 +2059,18 @@ function ResumeCustomize({ profile, onUpdate }) {
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <svg width="120" height="120" style={{ position: 'absolute', top: 0, left: 0 }}>
-                <defs>
-                  <linearGradient id="arcGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 1 }} />
-                    <stop offset="100%" style={{ stopColor: '#888888', stopOpacity: 0.8 }} />
-                  </linearGradient>
-                </defs>
+              {/* Spinning arc */}
+              <svg
+                width="120"
+                height="120"
+                viewBox="0 0 120 120"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  animation: 'spin 2s linear infinite'
+                }}
+              >
                 <circle
                   cx="60"
                   cy="60"
@@ -1306,32 +2080,37 @@ function ResumeCustomize({ profile, onUpdate }) {
                   strokeWidth="3"
                   strokeLinecap="round"
                   strokeDasharray="140 180"
-                  style={{
-                    position: 'absolute',
-                    animation: 'spin 2s linear infinite',
-                    transformOrigin: 'center'
-                  }}
                   filter="drop-shadow(0 0 8px rgba(255,255,255,0.8))"
                 />
-              </svg>
-              
-              <svg width="120" height="120" viewBox="0 0 120 120">
                 <defs>
-                  <linearGradient id="vGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 1 }} />
-                    <stop offset="100%" style={{ stopColor: '#888888', stopOpacity: 0.8 }} />
+                  <linearGradient id="arcGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 0.2 }} />
+                    <stop offset="50%" style={{ stopColor: '#ffffff', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: '#ffffff', stopOpacity: 0.2 }} />
                   </linearGradient>
                 </defs>
+              </svg>
+              
+              {/* V Logo */}
+              <svg
+                width="120"
+                height="120"
+                viewBox="0 0 120 120"
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))'
+                }}
+              >
                 <text
                   x="60"
                   y="75"
                   fontSize="80"
                   fontWeight="bold"
                   fontFamily="Arial, sans-serif"
-                  fill="url(#vGradient)"
+                  fill="white"
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  filter="drop-shadow(0 4px 8px rgba(0,0,0,0.5))"
                 >
                   V
                 </text>
@@ -1402,7 +2181,10 @@ function ResumeCustomize({ profile, onUpdate }) {
               `}</style>
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <h4 className="mb-1" style={{ fontWeight: '700' }}>🤖 AI Resume Generator</h4>
+                  <h4 className="mb-1" style={{ fontWeight: '700' }}>
+                    <i className="bi bi-robot me-2" aria-hidden="true"></i>
+                    AI Resume Generator
+                  </h4>
                   <p className="mb-0" style={{ opacity: 0.9, fontSize: '14px' }}>บอก AI เกี่ยวกับตัวคุณแล้วเราจะสร้าง Resume ให้</p>
                 </div>
                 <button 
@@ -1451,8 +2233,51 @@ function ResumeCustomize({ profile, onUpdate }) {
                   }}
                 />
                 <small className="text-muted d-block mt-2">
-                  💡 ยิ่งอธิบายละเอียด AI จะสร้าง Resume ได้ดีและเหมาะสมกับคุณมากขึ้น
+                  <i className="bi bi-lightbulb me-1" aria-hidden="true"></i>
+                  ยิ่งอธิบายละเอียด AI จะสร้าง Resume ได้ดีและเหมาะสมกับคุณมากขึ้น
                 </small>
+              </div>
+
+              {/* Quick Example Templates */}
+              <div className="mb-4">
+                <label className="form-label fw-semibold mb-2" style={{ fontSize: '13px' }}>
+                  <i className="bi bi-lightning-fill me-1"></i>
+                  ตัวอย่างที่ใช้ได้เลย (คลิกเพื่อใส่)
+                </label>
+                <div className="d-flex flex-column gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary text-start"
+                    style={{ borderRadius: '8px', fontSize: '12px', padding: '8px 12px' }}
+                    onClick={() => setAIPrompt('ผมเป็นนักศึกษาวิศวกรรมคอมพิวเตอร์ปี 4 มี GPA 3.52 เคยทำ project จบเกี่ยวกับ AI chatbot และเคยฝึกงานที่บริษัท Tech Innovate เป็นเวลา 3 เดือน มีทักษะด้าน Python, JavaScript, React และชอบทำงานเป็นทีม')}
+                  >
+                    💻 <strong>วิศวกร Software:</strong> นักศึกษาปี 4 มี GPA 3.52 เคยฝึกงาน มีทักษะ Python, JS, React
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary text-start"
+                    style={{ borderRadius: '8px', fontSize: '12px', padding: '8px 12px' }}
+                    onClick={() => setAIPrompt('ผมสำเร็จการศึกษาบริหารธุรกิจ มีประสบการณ์ทำงานด้านการตลาด 2 ปี เคยทำแคมเปญที่เพิ่ม engagement 35% มีทักษะด้าน Excel, PowerPoint, Google Analytics และ Social Media Marketing')}
+                  >
+                    📊 <strong>นักการตลาด:</strong> จบบริหารธุรกิจ ประสบการณ์ 2 ปี เคยทำแคมเปญสำเร็จ
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary text-start"
+                    style={{ borderRadius: '8px', fontSize: '12px', padding: '8px 12px' }}
+                    onClick={() => setAIPrompt('ผมเป็น UX/UI Designer มีประสบการณ์ 3 ปี ทำงานกับ startup และ agency ออกแบบแอพและเว็บไซต์มากกว่า 20 โปรเจกต์ มีทักษะ Figma, Adobe XD, Photoshop และเข้าใจ user research')}
+                  >
+                    🎨 <strong>UX/UI Designer:</strong> ประสบการณ์ 3 ปี ทำโปรเจกต์ 20+ ใช้ Figma และ Adobe
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary text-start"
+                    style={{ borderRadius: '8px', fontSize: '12px', padding: '8px 12px' }}
+                    onClick={() => setAIPrompt('ผมจบสถิติและวิเคราะห์ข้อมูล มีประสบการณ์ทำ data analysis 1 ปี เคยทำโปรเจกต์วิเคราะห์พฤติกรรมลูกค้าและสร้าง dashboard มีทักษะ Python, SQL, Excel, Tableau และ Power BI')}
+                  >
+                    📈 <strong>Data Analyst:</strong> จบสถิติ ประสบการณ์ 1 ปี ใช้ Python, SQL, Tableau
+                  </button>
+                </div>
               </div>
 
               <button
@@ -1466,7 +2291,8 @@ function ResumeCustomize({ profile, onUpdate }) {
                   fontSize: '16px'
                 }}
               >
-                ✨ สร้าง Resume ด้วย AI
+                <i className="bi bi-stars me-2" aria-hidden="true"></i>
+                Vcreate
               </button>
             </div>
           </div>
@@ -1475,49 +2301,6 @@ function ResumeCustomize({ profile, onUpdate }) {
 
       {/* Main Layout */}
       <div className="container-fluid" style={{ padding: '20px' }}>
-        {/* Quick Actions Bar */}
-        <div className="card shadow-sm mb-3" style={{ borderRadius: '16px', border: 'none' }}>
-          <div className="card-body p-3">
-            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
-              <div className="d-flex align-items-center gap-2">
-                <button
-                  onClick={() => setShowAIModal(true)}
-                  className="btn btn-dark btn-sm"
-                  style={{ borderRadius: '8px' }}
-                >
-                  <i className="bi bi-magic me-1"></i> AI Generate
-                </button>
-                <button
-                  onClick={() => setShowQuickStylesModal(true)}
-                  className="btn btn-outline-dark btn-sm"
-                  style={{ borderRadius: '8px' }}
-                >
-                  <i className="bi bi-palette me-1"></i> Quick Styles
-                </button>
-                <button
-                  onClick={() => setShowFontModal(true)}
-                  className="btn btn-outline-secondary btn-sm"
-                  style={{ borderRadius: '8px' }}
-                >
-                  <i className="bi bi-fonts me-1"></i> Fonts
-                </button>
-              </div>
-              <div className="d-flex align-items-center gap-2">
-                <small className="text-muted">
-                  <i className="bi bi-clock-history me-1"></i>
-                  Auto-saved
-                </small>
-                <button
-                  className="btn btn-outline-primary btn-sm"
-                  style={{ borderRadius: '8px' }}
-                  onClick={handleDownloadResumePdf}
-                >
-                  <i className="bi bi-download me-1"></i> Export PDF
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div className="row g-3">
           {/* Left Panel - Controls */}
@@ -1574,7 +2357,7 @@ function ResumeCustomize({ profile, onUpdate }) {
                     <path d="M2 17l10 5 10-5"/>
                     <path d="M2 12l10 5 10-5"/>
                   </svg>
-                  <span style={{ position: 'relative', zIndex: 1 }}>สร้าง Resume ด้วย AI</span>
+                  <span style={{ position: 'relative', zIndex: 1 }}>Vcreate</span>
                 </button>
                 {themeMeta && (
                   <div
@@ -1697,10 +2480,13 @@ function ResumeCustomize({ profile, onUpdate }) {
                 <div style={{ padding: '20px', minHeight: '400px' }}>
                   {activeTab === 'ai-generator' && (
                     <div>
-                      <h6 className="fw-bold mb-3">🤖 AI Tools</h6>
+                      <h6 className="fw-bold mb-3">
+                        <i className="bi bi-robot me-2" aria-hidden="true"></i>
+                        AI Tools
+                      </h6>
                       <div className="alert alert-info" style={{ borderRadius: '12px' }}>
                         <i className="bi bi-lightbulb me-2"></i>
-                        คลิกปุ่ม "สร้าง Resume ด้วย AI" ด้านบนเพื่อให้ AI ช่วยสร้าง Resume ให้คุณอัตโนมัติ
+                        คลิกปุ่ม "Vcreate" ด้านบนเพื่อให้ AI ช่วยสร้าง Resume ให้คุณอัตโนมัติ
                       </div>
                       <p className="text-muted small">
                         AI จะช่วยคุณ:
@@ -1718,6 +2504,32 @@ function ResumeCustomize({ profile, onUpdate }) {
                     <div>
                       <h6 className="fw-bold mb-3">Template & Layout</h6>
                       <p className="text-muted small mb-3">เลือกรูปแบบ Resume ที่คุณชอบ</p>
+
+                      <div className="form-check form-switch mb-2">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="toggleSampleContent"
+                          checked={showSampleContent}
+                          onChange={(e) => setShowSampleContent(e.target.checked)}
+                        />
+                        <label className="form-check-label" htmlFor="toggleSampleContent">
+                          แสดงตัวอย่างข้อมูลอัตโนมัติ
+                        </label>
+                      </div>
+
+                      <div className="form-check form-switch mb-4">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="toggleCompactPreview"
+                          checked={compactPreview}
+                          onChange={(e) => setCompactPreview(e.target.checked)}
+                        />
+                        <label className="form-check-label" htmlFor="toggleCompactPreview">
+                          Compact Preview (ลดระยะขอบ & scale)
+                        </label>
+                      </div>
                       
                       {/* Template Selection */}
                       <div className="mb-4">
@@ -1736,7 +2548,7 @@ function ResumeCustomize({ profile, onUpdate }) {
                                 }}
                               >
                                 <div className="d-flex align-items-center gap-2 mb-1">
-                                  <span style={{ fontSize: '20px' }}>{template.icon}</span>
+                                  <i className={`bi ${template.iconClass}`} style={{ fontSize: '20px' }} aria-hidden="true"></i>
                                   <strong className="small">{template.name}</strong>
                                 </div>
                                 <small className="text-muted d-block">{template.description}</small>
@@ -1777,30 +2589,186 @@ function ResumeCustomize({ profile, onUpdate }) {
                       </div>
 
                       {/* Layout Selection */}
-                      <div className="mb-3">
+                      <div className="mb-4">
                         <label className="form-label small fw-semibold mb-2">Layout</label>
-                        <div className="row g-2">
-                          {layouts.map(layout => (
-                            <div key={layout.id} className="col-6">
+                        <div className="row g-3">
+                          {layoutVariants.map(layout => (
+                            <div key={layout.id} className="col-12 col-md-6">
                               <button
                                 onClick={() => updateResumeData('layout', layout.id)}
                                 className="btn w-100 text-start p-3"
                                 style={{
-                                  borderRadius: '12px',
+                                  borderRadius: '14px',
                                   border: resumeData.layout === layout.id ? '2px solid #000' : '2px solid #e9ecef',
-                                  backgroundColor: resumeData.layout === layout.id ? '#f8f9fa' : 'white',
-                                  transition: 'all 0.2s'
+                                  backgroundColor: resumeData.layout === layout.id ? '#111' : 'white',
+                                  color: resumeData.layout === layout.id ? '#fff' : '#111',
+                                  transition: 'all 0.2s',
+                                  boxShadow: resumeData.layout === layout.id ? '0 18px 30px rgba(15,23,42,0.18)' : '0 4px 12px rgba(15,23,42,0.08)'
                                 }}
                               >
                                 <div className="d-flex align-items-center gap-2 mb-1">
-                                  <span style={{ fontSize: '18px' }}>{layout.icon}</span>
+                                  <i className={`bi ${layout.icon}`}></i>
                                   <strong className="small">{layout.name}</strong>
                                 </div>
-                                <small className="text-muted d-block">{layout.description}</small>
+                                <small className="d-block" style={{ opacity: 0.75 }}>{layout.description}</small>
                               </button>
                             </div>
                           ))}
                         </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <label className="form-label small fw-semibold mb-2">Preview Background</label>
+                        <div className="row g-2">
+                          {previewBackdropOptions.map(option => (
+                            <div className="col-12 col-md-4" key={option.id}>
+                              <button
+                                onClick={() => setPreviewBackdrop(option.id)}
+                                className="btn w-100 text-start"
+                                style={{
+                                  borderRadius: '12px',
+                                  padding: '12px',
+                                  border: previewBackdrop === option.id ? '2px solid #000' : '2px solid #e9ecef',
+                                  backgroundColor: '#fff'
+                                }}
+                              >
+                                <strong className="small d-block">{option.name}</strong>
+                                <small className="text-muted">{option.description}</small>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {['two-column', 'split-hero'].includes(resumeData.layout) && (
+                        <div className="mb-4">
+                          <label className="form-label small fw-semibold mb-2">Column Ratio</label>
+                          <div className="btn-group w-100 flex-wrap" role="group">
+                            {columnRatioOptions.map(option => (
+                              <button
+                                key={option.id}
+                                type="button"
+                                onClick={() => updateResumeData('columnRatio', option.id)}
+                                className={`btn ${resumeData.columnRatio === option.id ? 'btn-dark' : 'btn-outline-secondary'}`}
+                                style={{ borderRadius: '10px', marginBottom: '6px' }}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {resumeData.layout === 'split-hero' && (
+                        <div className="mb-4">
+                          <label className="form-label small fw-semibold mb-2">Hero Treatment</label>
+                          <div className="row g-2">
+                            {heroStyles.map(style => (
+                              <div key={style.id} className="col-12 col-md-4">
+                                <button
+                                  onClick={() => updateResumeData('heroStyle', style.id)}
+                                  className="btn w-100 text-start p-3"
+                                  style={{
+                                    borderRadius: '14px',
+                                    border: resumeData.heroStyle === style.id ? '2px solid #000' : '2px solid #e9ecef',
+                                    backgroundColor: 'white',
+                                    minHeight: '100px'
+                                  }}
+                                >
+                                  <strong className="small d-block mb-1">{style.name}</strong>
+                                  <small className="text-muted">{style.description}</small>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Section styling */}
+                      <div className="mb-4">
+                        <label className="form-label small fw-semibold mb-2">Section Surface</label>
+                        <div className="row g-2">
+                          {sectionAccentOptions.map(option => (
+                            <div className="col-12 col-md-4" key={option.id}>
+                              <button
+                                onClick={() => updateResumeData('sectionAccent', option.id)}
+                                className="btn w-100 text-start p-3"
+                                style={{
+                                  borderRadius: '12px',
+                                  border: resumeData.sectionAccent === option.id ? '2px solid #000' : '2px solid #e9ecef',
+                                  backgroundColor: 'white'
+                                }}
+                              >
+                                <strong className="small d-block mb-1">{option.name}</strong>
+                                <small className="text-muted">{option.description}</small>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <label className="form-label small fw-semibold mb-2">Dividers</label>
+                        <div className="btn-group w-100" role="group">
+                          {dividerOptions.map(option => (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => updateResumeData('dividerStyle', option.id)}
+                              className={`btn ${resumeData.dividerStyle === option.id ? 'btn-dark' : 'btn-outline-secondary'}`}
+                              style={{ borderRadius: '10px' }}
+                            >
+                              {option.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <label className="form-label small fw-semibold mb-2">Corner Radius</label>
+                        <div className="btn-group w-100" role="group">
+                          {cornerOptions.map(option => (
+                            <button
+                              key={option.id}
+                              onClick={() => updateResumeData('cornerStyle', option.id)}
+                              className={`btn ${resumeData.cornerStyle === option.id ? 'btn-dark' : 'btn-outline-secondary'}`}
+                              style={{ borderRadius: '10px' }}
+                            >
+                              {option.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <label className="form-label small fw-semibold mb-2">Section Spacing</label>
+                        <div className="btn-group w-100" role="group">
+                          {densityOptions.map(option => (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => updateResumeData('contentDensity', option.id)}
+                              className={`btn ${resumeData.contentDensity === option.id ? 'btn-dark' : 'btn-outline-secondary'}`}
+                              style={{ borderRadius: '10px' }}
+                            >
+                              {option.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="form-check form-switch mb-2">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          id="toggleSectionIcons"
+                          checked={!!resumeData.showSectionIcons}
+                          onChange={(e) => updateResumeData('showSectionIcons', e.target.checked)}
+                        />
+                        <label className="form-check-label" htmlFor="toggleSectionIcons">
+                          แสดงไอคอนหน้าหัวข้อ
+                        </label>
                       </div>
                     </div>
                   )}
@@ -1993,7 +2961,10 @@ function ResumeCustomize({ profile, onUpdate }) {
                   {activeTab === 'experience' && (
                     <div>
                       <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h6 className="fw-bold mb-0">💼 Work Experience</h6>
+                        <h6 className="fw-bold mb-0">
+                          <i className="bi bi-briefcase me-2" aria-hidden="true"></i>
+                          Work Experience
+                        </h6>
                         <button
                           className="btn btn-sm btn-dark"
                           style={{ borderRadius: '8px' }}
@@ -2078,7 +3049,10 @@ function ResumeCustomize({ profile, onUpdate }) {
                   {activeTab === 'education' && (
                     <div>
                       <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h6 className="fw-bold mb-0">🎓 Education</h6>
+                        <h6 className="fw-bold mb-0">
+                          <i className="bi bi-mortarboard me-2" aria-hidden="true"></i>
+                          Education
+                        </h6>
                         <button
                           className="btn btn-sm btn-dark"
                           style={{ borderRadius: '8px' }}
@@ -2162,7 +3136,10 @@ function ResumeCustomize({ profile, onUpdate }) {
                   {activeTab === 'skills' && (
                     <div>
                       <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h6 className="fw-bold mb-0">⚡ Skills</h6>
+                        <h6 className="fw-bold mb-0">
+                          <i className="bi bi-lightning me-2" aria-hidden="true"></i>
+                          Skills
+                        </h6>
                         <button
                           className="btn btn-sm btn-dark"
                           style={{ borderRadius: '8px' }}
@@ -2332,7 +3309,10 @@ function ResumeCustomize({ profile, onUpdate }) {
                     <div>
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="me-3">
-                          <h6 className="fw-bold mb-1">⭐ Key Highlights</h6>
+                          <h6 className="fw-bold mb-1">
+                            <i className="bi bi-star me-2" aria-hidden="true"></i>
+                            Key Highlights
+                          </h6>
                           <p className="text-muted small mb-0">
                             ใช้การ์ดสั้นๆ เพื่อโชว์ผลลัพธ์, impact หรือ strength ที่อยากเน้น
                           </p>
@@ -2435,7 +3415,10 @@ function ResumeCustomize({ profile, onUpdate }) {
                   {activeTab === 'languages' && (
                     <div>
                       <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h6 className="fw-bold mb-0">🌐 Languages</h6>
+                        <h6 className="fw-bold mb-0">
+                          <i className="bi bi-translate me-2" aria-hidden="true"></i>
+                          Languages
+                        </h6>
                         <button
                           className="btn btn-sm btn-dark"
                           style={{ borderRadius: '8px' }}
@@ -2582,14 +3565,18 @@ function ResumeCustomize({ profile, onUpdate }) {
                         ))
                       )}
                       <small className="text-muted">
-                        💡 Tip: ใช้ emoji เป็นไอคอน เช่น ⚽ 🎨 📚 🎸 ✈️
+                        <i className="bi bi-lightbulb me-1" aria-hidden="true"></i>
+                        Tip: ใช้ emoji เป็นไอคอน เช่น ⚽ 🎨 📚 🎸 ✈️
                       </small>
                     </div>
                   )}
 
                   {activeTab === 'styling' && (
                     <div>
-                      <h6 className="fw-bold mb-3">🎨 Colors & Styling</h6>
+                      <h6 className="fw-bold mb-3">
+                        <i className="bi bi-palette me-2" aria-hidden="true"></i>
+                        Colors & Styling
+                      </h6>
                       
                       {/* Column Colors (for 2-column layout) */}
                       <div className="mb-4">
@@ -2631,6 +3618,72 @@ function ResumeCustomize({ profile, onUpdate }) {
                         />
                       </div>
 
+                      {/* Content Block Colors */}
+                      <div className="mb-4">
+                        <label className="form-label small fw-semibold mb-1">Content Block Colors</label>
+                        <small className="text-muted d-block mb-3">เลือกสีเฉพาะสำหรับแต่ละส่วนเพื่อเน้นข้อมูลให้ชัดขึ้น</small>
+                        <div className="d-flex flex-column gap-2">
+                          {contentBlockOptions.map((block) => {
+                            const appliedColor = getSectionColor(block.id)
+                            const isCustom = !!resumeData.sectionColors?.[block.id]
+                            return (
+                              <div
+                                key={block.id}
+                                className="d-flex align-items-center justify-content-between p-2"
+                                style={{
+                                  borderRadius: '12px',
+                                  border: '1px solid #edf0f5',
+                                  backgroundColor: '#fff'
+                                }}
+                              >
+                                <div className="d-flex align-items-center gap-3">
+                                  <div
+                                    className="d-flex align-items-center justify-content-center"
+                                    style={{
+                                      width: '36px',
+                                      height: '36px',
+                                      borderRadius: '10px',
+                                      backgroundColor: `${appliedColor}22`,
+                                      color: appliedColor,
+                                      fontSize: '18px'
+                                    }}
+                                  >
+                                    <i className={`bi ${block.icon}`}></i>
+                                  </div>
+                                  <div>
+                                    <div className="fw-semibold" style={{ fontSize: '13px' }}>{block.label}</div>
+                                    <small className="text-muted">{block.description}</small>
+                                  </div>
+                                </div>
+                                <div className="d-flex align-items-center gap-2">
+                                  <input
+                                    type="color"
+                                    className="form-control form-control-color"
+                                    id={`section-color-${block.id}`}
+                                    value={appliedColor}
+                                    title={`เลือกสีสำหรับ ${block.label}`}
+                                    onChange={(e) => updateSectionColor(block.id, e.target.value)}
+                                    style={{ width: '52px', height: '38px', borderRadius: '8px' }}
+                                  />
+                                  {isCustom ? (
+                                    <button
+                                      type="button"
+                                      className="btn btn-sm btn-outline-secondary"
+                                      style={{ borderRadius: '8px' }}
+                                      onClick={() => updateSectionColor(block.id, null)}
+                                    >
+                                      รีเซ็ต
+                                    </button>
+                                  ) : (
+                                    <span className="badge bg-light text-dark" style={{ borderRadius: '20px' }}>default</span>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+
                       <hr className="my-4" />
 
                       {/* Section Icons Toggle */}
@@ -2646,7 +3699,7 @@ function ResumeCustomize({ profile, onUpdate }) {
                             style={{ cursor: 'pointer' }}
                           />
                           <label className="form-check-label text-muted small" htmlFor="sectionIconsToggle" style={{ cursor: 'pointer' }}>
-                            แสดง emoji ที่หัวข้อแต่ละ section (📝 💼 🎓 ⚡ 🚀 🌐 💡)
+                            แสดงไอคอนที่หัวข้อแต่ละ section
                           </label>
                         </div>
                       </div>
@@ -2720,218 +3773,85 @@ function ResumeCustomize({ profile, onUpdate }) {
 
           {/* Right Panel - Preview */}
           <div className="col-lg-7 col-xl-8">
-            <div className="card shadow-sm" style={{ borderRadius: '16px', border: 'none', minHeight: '800px' }}>
-              <div className="card-header bg-white border-0 p-4">
-                <div className="d-flex justify-content-between align-items-center">
-                  <h5 className="mb-0 fw-bold">Preview</h5>
-                  <button
-                    className="btn btn-outline-dark btn-sm"
-                    style={{ borderRadius: '8px' }}
-                    onClick={handleDownloadResumePdf}
-                  >
-                    <i className="bi bi-download me-1"></i> Export PDF
-                  </button>
-                </div>
-              </div>
-              <div className="card-body" style={{ backgroundColor: '#f8f9fa', padding: '40px' }}>
-                {/* Resume Preview */}
-                <div style={{
-                  backgroundColor: 'white',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                  borderRadius: resumeData.template === 'minimal' ? '0px' : resumeData.template === 'creative' ? '20px' : '8px',
-                  maxWidth: '800px',
-                  margin: '0 auto',
-                  minHeight: '1000px',
-                  fontFamily: resumeData.fontFamily || 'Inter',
-                  fontSize: fontSizes.find(s => s.id === resumeData.fontSize)?.size || '1em',
-                  lineHeight: spacingOptions.find(s => s.id === resumeData.spacing)?.value || '1',
-                  overflow: 'hidden'
-                }}>
-                  {resumeData.layout === 'two-column' ? (
-                    <div className="row g-0">
-                      {/* Left Column - Header & Summary */}
-                      <div className="col-5" style={{
-                        background: resumeData.leftColumnBg || `linear-gradient(180deg, ${colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52'}, ${colorSchemes.find(c => c.id === resumeData.colorScheme)?.primary || '#A67C52'})`,
-                        color: 'white',
-                        padding: `${60 * parseFloat(spacingOptions.find(s => s.id === resumeData.spacing)?.value || '1')}px 40px`
-                      }}>
-                        {/* Profile Photo */}
-                        {resumeData.profilePhoto && (
-                          <div className="text-center mb-4">
-                            <img 
-                              src={resumeData.profilePhoto} 
-                              alt="Profile" 
-                              style={{
-                                width: '150px',
-                                height: '150px',
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                                border: '5px solid rgba(255,255,255,0.3)',
-                                marginBottom: '20px'
-                              }}
-                              onError={(e) => { e.target.style.display = 'none' }}
-                            />
+            <div className="resume-preview-sticky">
+              <div className="resume-preview-scroll">
+                <div className="card shadow-sm" style={{ borderRadius: '16px', border: 'none', minHeight: compactPreview ? 'auto' : '800px' }}>
+                  <div className="card-header bg-white border-0 p-4">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h5 className="mb-0 fw-bold">Preview</h5>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {profiles.length > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <label style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>Editing:</label>
+                            <select 
+                              className="form-select form-select-sm" 
+                              style={{ width: 'auto', minWidth: '200px' }}
+                              value={currentProfileId || ''}
+                              onChange={onProfileSwitch}
+                            >
+                              {profiles.map(p => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name} ({p.type})
+                                </option>
+                              ))}
+                            </select>
                           </div>
                         )}
-
-                        {/* Name & Title */}
-                        <div className="text-center mb-4">
-                          <h2 className="fw-bold mb-2" style={{ fontSize: '28px', color: resumeData.titleColor || 'white' }}>
-                            {resumeData.fullName || 'Your Name'}
-                          </h2>
-                          <p className="mb-3" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)' }}>
-                            {resumeData.title || 'Your Professional Title'}
-                          </p>
-                        </div>
-
-                        {/* Contact Info */}
-                        <div className="mb-4" style={{ fontSize: '13px' }}>
-                          {resumeData.location && (
-                            <div className="mb-2"><i className="bi bi-geo-alt me-2"></i>{resumeData.location}</div>
-                          )}
-                          {resumeData.phone && (
-                            <div className="mb-2"><i className="bi bi-telephone me-2"></i>{resumeData.phone}</div>
-                          )}
-                          {resumeData.email && (
-                            <div className="mb-2"><i className="bi bi-envelope me-2"></i>{resumeData.email}</div>
-                          )}
-                          {resumeData.linkedin && (
-                            <div className="mb-2"><i className="bi bi-linkedin me-2"></i>{resumeData.linkedin}</div>
-                          )}
-                          {resumeData.twitter && (
-                            <div className="mb-2"><i className="bi bi-twitter me-2"></i>{resumeData.twitter}</div>
-                          )}
-                          {resumeData.medium && (
-                            <div className="mb-2"><i className="bi bi-medium me-2"></i>{resumeData.medium}</div>
-                          )}
-                          {resumeData.website && (
-                            <div className="mb-2"><i className="bi bi-globe me-2"></i>{resumeData.website}</div>
-                          )}
-                        </div>
-
-                        {/* Draggable Left Column Sections */}
-                        <DragDropContext onDragEnd={handleDragEnd}>
-                          <Droppable droppableId="left-column-sections">
-                            {(provided) => (
-                              <div ref={provided.innerRef} {...provided.droppableProps}>
-                                {['summary', 'skills', 'languages', 'interests'].map((sectionId, index) => {
-                                  const sectionContent = renderSectionTwoColumnLeft(sectionId)
-                                  if (!sectionContent) return null
-                                  
-                                  return (
-                                    <Draggable key={sectionId} draggableId={`left-${sectionId}`} index={index}>
-                                      {(provided, snapshot) => (
-                                        <div
-                                          ref={provided.innerRef}
-                                          {...provided.draggableProps}
-                                          {...provided.dragHandleProps}
-                                          style={{
-                                            ...provided.draggableProps.style,
-                                            opacity: snapshot.isDragging ? 0.8 : 1,
-                                            backgroundColor: snapshot.isDragging ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                            borderRadius: snapshot.isDragging ? '8px' : '0',
-                                            padding: snapshot.isDragging ? '10px' : '0',
-                                            border: snapshot.isDragging ? '2px dashed rgba(255,255,255,0.5)' : 'none'
-                                          }}
-                                        >
-                                          {sectionContent}
-                                        </div>
-                                      )}
-                                    </Draggable>
-                                  )
-                                })}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </DragDropContext>
-                      </div>
-
-                      {/* Right Column - Experience & Education */}
-                      <div className="col-7" style={{
-                        backgroundColor: resumeData.rightColumnBg || colorSchemes.find(c => c.id === resumeData.colorScheme)?.secondary || '#F5E6D3',
-                        padding: `${60 * parseFloat(spacingOptions.find(s => s.id === resumeData.spacing)?.value || '1')}px 40px`
-                      }}>
-                        {/* Draggable Right Column Sections */}
-                        <DragDropContext onDragEnd={handleDragEnd}>
-                          <Droppable droppableId="right-column-sections">
-                            {(provided) => (
-                              <div ref={provided.innerRef} {...provided.droppableProps}>
-                                {['highlights', 'experience', 'education', 'projects'].map((sectionId, index) => {
-                                  const sectionContent = renderSectionTwoColumnRight(sectionId)
-                                  if (!sectionContent) return null
-                                  
-                                  return (
-                                    <Draggable key={sectionId} draggableId={`right-${sectionId}`} index={index}>
-                                      {(provided, snapshot) => (
-                                        <div
-                                          ref={provided.innerRef}
-                                          {...provided.draggableProps}
-                                          {...provided.dragHandleProps}
-                                          style={{
-                                            ...provided.draggableProps.style,
-                                            opacity: snapshot.isDragging ? 0.8 : 1,
-                                            backgroundColor: snapshot.isDragging ? '#f8f9fa' : 'transparent',
-                                            borderRadius: snapshot.isDragging ? '8px' : '0',
-                                            padding: snapshot.isDragging ? '10px' : '0',
-                                            border: snapshot.isDragging ? '2px dashed #333' : 'none'
-                                          }}
-                                        >
-                                          {sectionContent}
-                                        </div>
-                                      )}
-                                    </Draggable>
-                                  )
-                                })}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </DragDropContext>
+                        
+                        <button
+                          onClick={() => {
+                            onUpdateRef.current({
+                              ...profile,
+                              ...resumeData
+                            })
+                            setShowSuccessNotification(true)
+                            setTimeout(() => setShowSuccessNotification(false), 3000)
+                          }}
+                          className="btn btn-dark btn-sm"
+                          style={{
+                            borderRadius: '8px',
+                            background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%)',
+                            border: '2px solid rgba(255,255,255,0.15)',
+                            boxShadow: '0 0 20px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.1)',
+                            textShadow: '0 0 10px rgba(255,255,255,0.5)'
+                          }}
+                        >
+                          Save
+                        </button>
+                        
+                        <button
+                          className="btn btn-outline-dark btn-sm"
+                          style={{ borderRadius: '8px' }}
+                          onClick={handleDownloadResumePdf}
+                        >
+                          <i className="bi bi-download me-1"></i> Export PDF
+                        </button>
                       </div>
                     </div>
-                  ) : (
-                    <div style={{ 
-                      padding: `${60 * parseFloat(spacingOptions.find(s => s.id === resumeData.spacing)?.value || '1')}px`
+                  </div>
+                  <div
+                    className={`card-body preview-stage preview-stage--${previewBackdrop}`}
+                    style={{ padding: previewShellPadding }}
+                  >
+                    {/* Resume Preview */}
+                    <div style={{
+                      backgroundColor: 'white',
+                      boxShadow: previewPaperShadow,
+                      borderRadius: resumeData.template === 'minimal' ? '0px' : resumeData.template === 'creative' ? '20px' : '8px',
+                      maxWidth: '800px',
+                      margin: '0 auto',
+                      minHeight: previewPaperMinHeight,
+                      fontFamily: resumeData.fontFamily || 'Inter',
+                      fontSize: fontSizes.find(s => s.id === resumeData.fontSize)?.size || '1em',
+                      lineHeight: spacingOptions.find(s => s.id === resumeData.spacing)?.value || '1',
+                      overflow: 'hidden',
+                      transform: compactPreview ? 'scale(0.97)' : 'scale(1)',
+                      transformOrigin: 'top center',
+                      transition: 'transform 0.3s ease, box-shadow 0.3s ease'
                     }}>
-                      {/* Draggable Sections */}
-                      <DragDropContext onDragEnd={handleDragEnd}>
-                        <Droppable droppableId="resume-sections">
-                          {(provided) => (
-                            <div ref={provided.innerRef} {...provided.droppableProps}>
-                              {sectionOrder.map((sectionId, index) => {
-                                const sectionContent = renderSection(sectionId)
-                                if (!sectionContent) return null
-                                
-                                return (
-                                  <Draggable key={sectionId} draggableId={sectionId} index={index}>
-                                    {(provided, snapshot) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        style={{
-                                          ...provided.draggableProps.style,
-                                          opacity: snapshot.isDragging ? 0.8 : 1,
-                                          backgroundColor: snapshot.isDragging ? '#f8f9fa' : 'transparent',
-                                          borderRadius: snapshot.isDragging ? '8px' : '0',
-                                          padding: snapshot.isDragging ? '10px' : '0',
-                                          border: snapshot.isDragging ? '2px dashed #333' : 'none'
-                                        }}
-                                      >
-                                        {sectionContent}
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                )
-                              })}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                      </DragDropContext>
+                      {renderPreviewLayout()}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>

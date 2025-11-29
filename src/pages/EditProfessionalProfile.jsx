@@ -357,6 +357,158 @@ function EditProfessionalProfile() {
             </Card.Body>
           </Card>
 
+          {/* VIEW MODE Section */}
+          <Card className="mb-4">
+            <Card.Header className="bg-white">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <small className="text-muted text-uppercase fw-semibold d-block mb-1">VIEW MODE</small>
+                  <p className="mb-0 small text-muted">เลือก layout ที่สอดคล้องกับจุดประสงค์ของหน้าคุณ</p>
+                </div>
+                <Button variant="outline-secondary" size="sm">
+                  <i className="bi bi-magic me-1"></i>
+                  เลือก Preset
+                </Button>
+              </div>
+            </Card.Header>
+            <Card.Body>
+              <Row className="g-3">
+                <Col md={4}>
+                  <div 
+                    className="p-3 border rounded h-100 position-relative"
+                    style={{ cursor: 'pointer', transition: 'all 0.2s', backgroundColor: '#f8f9fa' }}
+                  >
+                    <div className="d-flex align-items-center mb-2">
+                      <div 
+                        className="rounded-circle d-flex align-items-center justify-content-center me-2"
+                        style={{ width: '40px', height: '40px', backgroundColor: '#0d6efd', color: 'white' }}
+                      >
+                        <i className="bi bi-briefcase"></i>
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex align-items-center justify-content-between">
+                          <strong>Professional</strong>
+                          <Badge bg="primary" className="ms-2">ATS Ready</Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="small text-muted mb-2">CV-style layout best for recruiters</p>
+                    <div className="d-flex align-items-center">
+                      <Badge bg="info" className="me-1"><i className="bi bi-check-circle-fill me-1"></i>Preset: Link Hub</Badge>
+                    </div>
+                  </div>
+                </Col>
+                
+                <Col md={4}>
+                  <div 
+                    className="p-3 border rounded h-100"
+                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                  >
+                    <div className="d-flex align-items-center mb-2">
+                      <div 
+                        className="rounded-circle d-flex align-items-center justify-content-center me-2"
+                        style={{ width: '40px', height: '40px', backgroundColor: '#6c757d', color: 'white' }}
+                      >
+                        <i className="bi bi-stars"></i>
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex align-items-center justify-content-between">
+                          <strong>Showcase</strong>
+                          <Badge bg="secondary" className="ms-2">Spotlight</Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="small text-muted mb-0">Hero cover with highlight cards</p>
+                  </div>
+                </Col>
+                
+                <Col md={4}>
+                  <div 
+                    className="p-3 border rounded h-100"
+                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                  >
+                    <div className="d-flex align-items-center mb-2">
+                      <div 
+                        className="rounded-circle d-flex align-items-center justify-content-center me-2"
+                        style={{ width: '40px', height: '40px', backgroundColor: '#6c757d', color: 'white' }}
+                      >
+                        <i className="bi bi-link-45deg"></i>
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex align-items-center justify-content-between">
+                          <strong>Link Hub</strong>
+                          <Badge bg="secondary" className="ms-2">Multi-link</Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="small text-muted mb-0">Compact link-in-bio inspired view</p>
+                  </div>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+
+          {/* SMART ASSISTANTS Section */}
+          <Card className="mb-4">
+            <Card.Header className="bg-white">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <small className="text-muted text-uppercase fw-semibold d-block mb-1">SMART ASSISTANTS</small>
+                  <h6 className="mb-0">Automate profile updates & exports</h6>
+                </div>
+                <Badge bg="light" text="dark">Beta</Badge>
+              </div>
+            </Card.Header>
+            <Card.Body>
+              <Row className="g-3">
+                <Col md={6}>
+                  <Card className="border-0 shadow-sm h-100">
+                    <Card.Body>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                          <h6 className="mb-2">Import from social</h6>
+                          <p className="small text-muted mb-2">
+                            Pull the latest roles, links, and bio from LinkedIn, Twitter, or Medium in one click.
+                          </p>
+                          <small className="text-muted">Best for quick refreshes before sharing your profile.</small>
+                        </div>
+                        <Badge bg="primary" pill>Sync</Badge>
+                      </div>
+                      <Button variant="outline-primary" size="sm">
+                        <i className="bi bi-cloud-arrow-down me-1"></i>
+                        Start import
+                      </Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                
+                <Col md={6}>
+                  <Card className="border-0 shadow-sm h-100" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+                    <Card.Body>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                          <h6 className="mb-2">AI Draft Builder</h6>
+                          <p className="small mb-2" style={{ opacity: 0.9 }}>
+                            Let our AI summarize your wins, write highlights, and suggest sections instantly.
+                          </p>
+                          <small style={{ opacity: 0.8 }}>Great for brand-new profiles or major rewrites.</small>
+                        </div>
+                        <Badge bg="light" text="dark" pill>AI</Badge>
+                      </div>
+                      <Button variant="light" size="sm">
+                        <i className="bi bi-stars me-1"></i>
+                        Launch builder
+                      </Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+              <small className="text-muted d-block mt-3">
+                Use these assistants to sync profile data instantly.
+              </small>
+            </Card.Body>
+          </Card>
+
           {/* Experience Section */}
           <Card className="mb-4">
             <Card.Header className="bg-white d-flex justify-content-between align-items-center">

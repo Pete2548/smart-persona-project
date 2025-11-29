@@ -1,18 +1,18 @@
 /* Basic styles for Customize page */
 .customize-container {
-  --vheart-primary: #f43f5e;
-  --vheart-accent: #fb7185;
-  --vheart-dark: #be123c;
-  --vheart-soft: #fff1f2;
-  --vheart-border: rgba(244, 63, 94, 0.2);
+  --vheart-primary: #000000;
+  --vheart-accent: #1a1a1a;
+  --vheart-dark: #0a0a0a;
+  --vheart-soft: #f5f5f5;
+  --vheart-border: rgba(0, 0, 0, 0.15);
   width: 100%;
   max-width: none;
   margin: 0;
   padding: 32px 40px;
-  background: radial-gradient(circle at top, rgba(244,63,94,0.15), rgba(255,241,242,0.92));
+  background: #ffffff;
   border-radius: 18px;
   border: 1px solid var(--vheart-border);
-  box-shadow: 0 30px 60px rgba(244, 63, 94, 0.15);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.1);
 }
 
 .customize-container h1 {
@@ -39,8 +39,8 @@
   background: #ffffff;
   border-radius: 18px;
   padding: 20px;
-  border: 1px solid rgba(244, 63, 94, 0.16);
-  box-shadow: 0 15px 35px rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06);
 }
 
 .preview-description {
@@ -62,8 +62,8 @@
 .customize-row .form-group { flex:1 }
 
 .neutral-input {
-  background: rgba(244, 63, 94, 0.06);
-  border: 1px solid rgba(244, 63, 94, 0.2);
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 14px;
   padding: 12px 16px;
   color: #0f172a;
@@ -71,10 +71,10 @@
 
 .neutral-input:focus {
   border-color: var(--vheart-primary);
-  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
-.assets-grid { display:flex; gap:20px; padding:20px; background:#fff; border-radius:18px; border:1px solid rgba(244,63,94,0.1); }
+.assets-grid { display:flex; gap:20px; padding:20px; background:#fff; border-radius:18px; border:1px solid rgba(0,0,0,0.1); }
 .asset-item { text-align:center }
 .asset-title { margin-top:8px; font-weight:600; color: var(--vheart-primary); }
 .asset-box {
@@ -82,19 +82,19 @@
   width:160px;
   height:120px;
   border-radius:12px;
-  background: linear-gradient(135deg, #fff7f9 0%, #ffe4e6 100%);
+  background: linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%);
   align-items:center;
   justify-content:center;
   flex-direction:column;
-  border: 1px dashed rgba(244,63,94,0.35);
+  border: 1px dashed rgba(0,0,0,0.25);
   cursor:pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .asset-box:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(244, 63, 94, 0.15);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
 }
-.asset-label { color:#be123c; font-size:0.9rem; margin-top:8px }
+.asset-label { color:#1a1a1a; font-size:0.9rem; margin-top:8px }
 
 /* Constrain uploaded images inside asset boxes and profile preview */
 .asset-box img,
@@ -180,6 +180,27 @@
   background: rgba(244,63,94,0.06);
   border-radius: 18px;
   padding: 24px;
+}
+
+.preview-stage {
+  border-radius: 24px;
+  background: #f5f6fa;
+  transition: background 0.3s ease;
+}
+
+.preview-stage--clean {
+  background: #f8f9fa;
+}
+
+.preview-stage--gradient {
+  background: radial-gradient(circle at top, rgba(14, 165, 233, 0.12), rgba(248, 250, 252, 0.95)), #f8fafc;
+}
+
+.preview-stage--grid {
+  background-color: #f3f4f6;
+  background-image: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 .creative-studio {
@@ -268,4 +289,30 @@
 @media (max-width: 900px) {
   .customize-grid { grid-template-columns: 1fr; }
   .customize-logo { width: 90px }
+}
+
+@media (min-width: 992px) {
+  .resume-preview-sticky {
+    position: sticky;
+    top: 24px;
+  }
+
+  .resume-preview-scroll {
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .resume-preview-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .resume-preview-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .resume-preview-scroll::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.25);
+    border-radius: 999px;
+  }
 }

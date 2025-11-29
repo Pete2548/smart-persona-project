@@ -758,6 +758,9 @@ const Customize = () => {
                                 const newLayoutSettings = { ...layoutSettings, ...updates }
                                 setLayoutSettings(newLayoutSettings)
                             }}
+                            profiles={profiles}
+                            currentProfileId={currentProfileId}
+                            onProfileSwitch={handleProfileSwitch}
                         />
                     </main>
                 </div>
@@ -1167,24 +1170,21 @@ const Customize = () => {
                                 </div>
                             )}
 
-                            <div className="mt-3 d-flex justify-content-between align-items-center">
+                            <div className="mt-3 d-flex justify-content-end align-items-center">
                                 <button
                                     className="btn btn-primary"
-                                    onClick={() => {
-                                        if (checkLogin()) {
-                                            setVisualEditorMode(true)
-                                        }
-                                    }}
+                                    onClick={saveProfile}
                                     style={{
-                                        background: 'linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)',
-                                        border: 'none',
-                                        fontWeight: 600
+                                        background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%)',
+                                        border: '2px solid rgba(255,255,255,0.15)',
+                                        fontWeight: 600,
+                                        boxShadow: '0 0 20px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.1)',
+                                        color: '#ffffff',
+                                        textShadow: '0 0 10px rgba(255,255,255,0.5)'
                                     }}
                                 >
-                                    <i className="bi bi-brush me-2"></i>
-                                    Visual Editor
+                                    Save Profile
                                 </button>
-                                <button className="btn btn-dark" onClick={saveProfile}>Save Profile</button>
                             </div>
                         </div>
 

@@ -23,6 +23,7 @@ import Sidebar from '../components/Sidebar';
 import LoginModal from '../components/LoginModal';
 import { fetchSocialProfile, SOCIAL_PROVIDERS } from '../services/socialSync';
 import { generateAIProfileDraft, AI_TONES, AI_FOCUS_OPTIONS } from '../services/aiAssistant';
+import { VIEW_MODES, PROFILE_PRESETS, VIEW_MODE_LABELS } from '../config/profileViewModes';
 import './myprofile.css';
 
 const APP_LINK_OPTIONS = [
@@ -43,6 +44,7 @@ const APP_LINK_MAP = APP_LINK_OPTIONS.reduce((acc, option) => {
   acc[option.id] = option;
   return acc;
 }, {});
+
 
 const normalizeContactLinks = (links = []) => {
   const timestamp = Date.now();
@@ -105,6 +107,8 @@ function MyProfile() {
   const [educationForm, setEducationForm] = useState(educationInitialState);
   const [skillsInput, setSkillsInput] = useState('');
   const [contactForm, setContactForm] = useState({ email: '', phone: '', address: '', tagline: '', links: [] });
+  const [showBasicsModal, setShowBasicsModal] = useState(false);
+  const [basicInfoForm, setBasicInfoForm] = useState({ displayName: '', jobTitle: '', tagline: '', description: '' });
   const avatarInputRef = React.useRef(null);
   const coverInputRef = React.useRef(null);
   const [showSocialImport, setShowSocialImport] = useState(false);
@@ -115,7 +119,8 @@ function MyProfile() {
   const [aiForm, setAiForm] = useState({ role: '', tone: 'professional', focus: 'job_search' });
   const [aiDraft, setAiDraft] = useState(null);
   const [aiStatus, setAiStatus] = useState({ loading: false, error: '' });
-  const [smartToolsOpen, setSmartToolsOpen] = useState(false);
+  // Removed unused smartToolsOpen state
+  const [showPresetModal, setShowPresetModal] = useState(false);
 
   const setProfileFromRecord = (record) => {
     if (!record) return;
@@ -242,6 +247,38 @@ function MyProfile() {
       setProfileFromRecord(updated);
     }
     setIsUpdatingVisibility(false);
+  };
+
+  const handleViewModeChange = (modeId) => {
+    if (!profileId || !modeId) return;
+    if (activeViewMode === modeId) return;
+    const updated = updateProfessionalProfile(profileId, { viewMode: modeId });
+    if (updated) {
+      setProfileFromRecord(updated);
+    }
+  };
+
+  const handleApplyPreset = (preset) => {
+    if (!profileId || !preset) return;
+    const updates = {
+      profilePreset: preset.id,
+      viewMode: preset.viewMode,
+      coverColor: preset.color || profile.coverColor
+    };
+    if (!profile?.tagline) {
+      updates.tagline = preset.defaultTagline;
+    }
+    if (!profile?.description) {
+      updates.description = preset.defaultDescription;
+    }
+    const updated = updateProfessionalProfile(profileId, updates);
+    if (updated) {
+      setProfileFromRecord(updated);
+      if (updates.tagline) {
+        setContactForm(prev => ({ ...prev, tagline: updates.tagline }));
+      }
+      setShowPresetModal(false);
+    }
   };
 
   const getProfileUrl = () => {
@@ -575,6 +612,33 @@ function MyProfile() {
     }));
   };
 
+  const openBasicsModal = () => {
+    setBasicInfoForm({
+      displayName: profile?.displayName || '',
+      jobTitle: profile?.jobTitle || '',
+      tagline: profile?.tagline || '',
+      description: profile?.description || ''
+    });
+    setShowBasicsModal(true);
+  };
+
+  const handleBasicsSubmit = (event) => {
+    event.preventDefault();
+    if (!profileId) return;
+    const updates = {
+      displayName: basicInfoForm.displayName?.trim() || '',
+      jobTitle: basicInfoForm.jobTitle?.trim() || '',
+      tagline: basicInfoForm.tagline?.trim() || '',
+      description: basicInfoForm.description?.trim() || ''
+    };
+    const updated = updateProfessionalProfile(profileId, updates);
+    if (updated) {
+      setProfileFromRecord(updated);
+      setContactForm(prev => ({ ...prev, tagline: updates.tagline }));
+      setShowBasicsModal(false);
+    }
+  };
+
   if (!profile) {
     return (
       <div className="dashboard-shell p-4">
@@ -612,6 +676,9 @@ function MyProfile() {
   const vheartLikes = profile.vheartLikes ?? profile.followers ?? 0;
   const vheartCount = (analytics?.uniqueViewers || 0) + vheartLikes;
   const selectedProvider = SOCIAL_PROVIDERS.find(item => item.id === socialForm.provider) || SOCIAL_PROVIDERS[0];
+  const activeViewMode = profile.viewMode || 'standard';
+  const activePresetId = profile.profilePreset || '';
+  const activePreset = PROFILE_PRESETS.find(preset => preset.id === activePresetId) || null;
 
   const sharePlatforms = [
     {
@@ -768,10 +835,10 @@ function MyProfile() {
                       <Button 
                         variant="outline-primary" 
                         size="sm"
-                        onClick={() => navigate('/links')}
+                        onClick={openBasicsModal}
                       >
-                        <i className="bi bi-chat-dots me-1"></i>
-                        {t('message', { defaultValue: 'Message' })}
+                        <i className="bi bi-pencil-square me-1"></i>
+                        {t('edit_profile', { defaultValue: 'Edit Profile' })}
                       </Button>
                       <Button 
                         variant="outline-secondary" 
@@ -799,109 +866,6 @@ function MyProfile() {
                         <i className="bi bi-person-lines-fill me-1"></i>
                         {t('add_contact', { defaultValue: 'Add contact' })}
                       </Button>
-                    </div>
-
-                    <div className="profile-visibility-inline mt-3">
-                      <div className="visibility-inline-controls" role="group" aria-label={t('profile_visibility', { defaultValue: 'Profile visibility' })}>
-                        <div className="visibility-floating-controls compact">
-                          <button
-                            type="button"
-                            className={`visibility-toggle-btn ${profile?.isPublic === false ? '' : 'active'}`}
-                            title={t('make_public', { defaultValue: 'Make profile public' })}
-                            aria-pressed={profile?.isPublic !== false}
-                            disabled={isUpdatingVisibility || profile?.isPublic !== false}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleVisibilityChange(true)
-                            }}
-                          >
-                            <i className="bi bi-globe"></i>
-                            <span>{t('public', { defaultValue: 'Public' })}</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={`visibility-toggle-btn ${profile?.isPublic === false ? 'active' : ''}`}
-                            title={t('make_private', { defaultValue: 'Hide profile (private)' })}
-                            aria-pressed={profile?.isPublic === false}
-                            disabled={isUpdatingVisibility || profile?.isPublic === false}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleVisibilityChange(false)
-                            }}
-                          >
-                            <i className="bi bi-lock-fill"></i>
-                            <span>{t('private', { defaultValue: 'Private' })}</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={`profile-smart-tools mt-3 ${smartToolsOpen ? 'expanded' : ''}`}>
-                      <button
-                        type="button"
-                        className="smart-tools-toggle"
-                        aria-expanded={smartToolsOpen}
-                        onClick={() => setSmartToolsOpen(prev => !prev)}
-                      >
-                        <div>
-                          <small className="text-muted text-uppercase fw-semibold">Smart assistants</small>
-                          <h6 className="mb-0">Automate profile updates & exports</h6>
-                        </div>
-                        <div className="smart-tools-toggle-meta">
-                          <Badge bg="light" text="dark">Beta</Badge>
-                          <span className="smart-tools-toggle-icon">
-                            <i className={`bi ${smartToolsOpen ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
-                          </span>
-                        </div>
-                      </button>
-                      <div className={`smart-tools-panel ${smartToolsOpen ? 'open' : ''}`}>
-                        <div className="smart-tools-split">
-                          <div className="smart-tool-card">
-                            <div className="smart-tool-card__body">
-                              <div>
-                                <h6 className="smart-tool-card__title mb-1">Import from social</h6>
-                                <p className="smart-tool-card__text mb-2">
-                                  Pull the latest roles, links, and bio from LinkedIn, Twitter, or Medium in one click.
-                                </p>
-                                <small className="text-muted">Best for quick refreshes before sharing your profile.</small>
-                              </div>
-                              <span className="smart-tool-chip">Sync</span>
-                            </div>
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() => setShowSocialImport(true)}
-                            >
-                              <i className="bi bi-cloud-arrow-down me-1"></i>
-                              Start import
-                            </Button>
-                          </div>
-                          <div className="smart-tool-card accent">
-                            <div className="smart-tool-card__body">
-                              <div>
-                                <h6 className="smart-tool-card__title mb-1">AI Draft Builder</h6>
-                                <p className="smart-tool-card__text mb-2">
-                                  Let our AI summarize your wins, write highlights, and suggest sections instantly.
-                                </p>
-                                <small className="text-muted">Great for brand-new profiles or major rewrites.</small>
-                              </div>
-                              <span className="smart-tool-chip">AI</span>
-                            </div>
-                            <Button
-                              variant="outline-light"
-                              size="sm"
-                              className="text-dark"
-                              onClick={() => setShowAIBuild(true)}
-                            >
-                              <i className="bi bi-stars me-1"></i>
-                              Launch builder
-                            </Button>
-                          </div>
-                        </div>
-                        <small className="smart-tools-caption">
-                          Use these assistants to sync profile data instantly.
-                        </small>
-                      </div>
                     </div>
 
                     <div className="profile-vheart mt-3">
@@ -1386,13 +1350,20 @@ function MyProfile() {
         show={showSocialImport}
         onHide={handleCloseSocialModal}
         centered
-        dialogClassName="sheet-modal"
+        dialogClassName="sheet-modal profile-modal social-modal"
       >
         <Form onSubmit={handleSocialLookup}>
           <Modal.Header closeButton className="border-0">
             <Modal.Title>ดึงข้อมูลจากโซเชียล</Modal.Title>
           </Modal.Header>
           <Modal.Body>
+            <div className="social-hint">
+              <i className="bi bi-magic"></i>
+              <div>
+                <strong>Sync once, reuse everywhere</strong>
+                <p className="mb-0 text-muted small">ดึงข้อมูลตำแหน่ง งาน และไบโอล่าสุดจากแพลตฟอร์มที่ไว้ใจได้ แล้วเลือกสิ่งที่อยากอัปเดตในคลิกเดียว</p>
+              </div>
+            </div>
             <Row className="g-3">
               <Col md={5}>
                 <Form.Label>แพลตฟอร์ม</Form.Label>
@@ -1519,14 +1490,26 @@ function MyProfile() {
         show={showAIBuild}
         onHide={handleCloseAIModal}
         centered
-        dialogClassName="sheet-modal"
+        dialogClassName="sheet-modal ai-modal"
       >
         <Form onSubmit={handleGenerateAIDraft}>
           <Modal.Header closeButton className="border-0">
             <Modal.Title>AI Draft Builder</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Row className="g-3">
+            <div className="ai-modal-hero">
+              <div>
+                <span className="ai-chip">
+                  <i className="bi bi-stars me-1"></i>
+                  VERE AI Copilot
+                </span>
+                <h4 className="mb-2">ให้ AI ช่วยเล่าเรื่องของคุณ</h4>
+                <p className="mb-0">เลือกโทน เสียง และเป้าหมาย เราจะสรุปผลงานและประสบการณ์ให้พร้อมใช้ในไม่กี่วินาที</p>
+              </div>
+              <div className="ai-orb" aria-hidden="true"></div>
+            </div>
+
+            <Row className="g-3 mt-1 ai-modal-fields">
               <Col md={6}>
                 <Form.Label>ตำแหน่ง/บทบาท</Form.Label>
                 <Form.Control
@@ -1905,6 +1888,240 @@ function MyProfile() {
         </Form>
       </Modal>
 
+      {/* Basic Info Modal */}
+      <Modal
+        show={showBasicsModal}
+        onHide={() => setShowBasicsModal(false)}
+        centered
+        size="lg"
+        dialogClassName="sheet-modal profile-edit-modal"
+      >
+        <Form onSubmit={handleBasicsSubmit}>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title>{t('edit_profile', { defaultValue: 'Edit Profile' })}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {/* Profile Visibility Toggle */}
+            <div className="mb-4 p-3" style={{ 
+              background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+              borderRadius: '12px',
+              border: '1px solid #dee2e6'
+            }}>
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 className="mb-1 fw-bold">Profile Visibility</h6>
+                  <small className="text-muted">เลือกว่าโปรไฟล์ของคุณจะเปิดเผยต่อสาธารณะหรือไม่</small>
+                </div>
+                <div className="visibility-floating-controls compact">
+                  <button
+                    type="button"
+                    className={`visibility-toggle-btn ${profile?.isPublic === false ? '' : 'active'}`}
+                    title={t('make_public', { defaultValue: 'Make profile public' })}
+                    aria-pressed={profile?.isPublic !== false}
+                    disabled={isUpdatingVisibility || profile?.isPublic !== false}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleVisibilityChange(true)
+                    }}
+                  >
+                    <i className="bi bi-globe"></i>
+                    <span>{t('public', { defaultValue: 'Public' })}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`visibility-toggle-btn ${profile?.isPublic === false ? 'active' : ''}`}
+                    title={t('make_private', { defaultValue: 'Hide profile (private)' })}
+                    aria-pressed={profile?.isPublic === false}
+                    disabled={isUpdatingVisibility || profile?.isPublic === false}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleVisibilityChange(false)
+                    }}
+                  >
+                    <i className="bi bi-lock-fill"></i>
+                    <span>{t('private', { defaultValue: 'Private' })}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <Form.Group className="mb-3">
+              <Form.Label>{t('display_name', { defaultValue: 'Display name' })}</Form.Label>
+              <Form.Control
+                value={basicInfoForm.displayName}
+                onChange={(e) => setBasicInfoForm(prev => ({ ...prev, displayName: e.target.value }))}
+                placeholder={t('display_name_placeholder', { defaultValue: 'e.g. Jane Doe' })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('job_title', { defaultValue: 'Headline / role' })}</Form.Label>
+              <Form.Control
+                value={basicInfoForm.jobTitle}
+                onChange={(e) => setBasicInfoForm(prev => ({ ...prev, jobTitle: e.target.value }))}
+                placeholder={t('job_title_placeholder', { defaultValue: 'e.g. Senior Product Strategist' })}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('tagline', { defaultValue: 'Tagline' })}</Form.Label>
+              <Form.Control
+                value={basicInfoForm.tagline}
+                onChange={(e) => setBasicInfoForm(prev => ({ ...prev, tagline: e.target.value }))}
+                placeholder={t('tagline_placeholder', { defaultValue: 'Short punchy intro' })}
+              />
+            </Form.Group>
+            <Form.Group className="mb-4">
+              <Form.Label>{t('about', { defaultValue: 'About / description' })}</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={4}
+                value={basicInfoForm.description}
+                onChange={(e) => setBasicInfoForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder={t('about_placeholder', { defaultValue: 'Tell people what you do, wins you are proud of, or what you are building next.' })}
+              />
+            </Form.Group>
+
+            {/* VIEW MODE Section */}
+            <div className="mb-4 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '12px' }}>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 className="mb-1 fw-bold">VIEW MODE</h6>
+                  <small className="text-muted">เลือก layout ที่สอดคล้องกับจุดประสงค์ของหน้าคุณ</small>
+                </div>
+                <Button variant="outline-secondary" size="sm" onClick={() => setShowPresetModal(true)}>
+                  <i className="bi bi-magic me-1"></i>
+                  เลือก Preset
+                </Button>
+              </div>
+              <div className="row g-2">
+                {VIEW_MODES.map(mode => (
+                  <div key={mode.id} className="col-4">
+                    <button
+                      type="button"
+                      className={`w-100 p-3 border-0 rounded text-start shadow-sm ${activeViewMode === mode.id ? 'bg-primary text-white' : 'bg-white'}`}
+                      style={{ cursor: 'pointer', transition: 'all 0.2s', minHeight: '110px' }}
+                      onClick={() => handleViewModeChange(mode.id)}
+                    >
+                      <div className="d-flex align-items-start mb-2">
+                        <div 
+                          className="rounded-circle d-flex align-items-center justify-content-center me-2"
+                          style={{ 
+                            width: '36px', 
+                            height: '36px', 
+                            backgroundColor: activeViewMode === mode.id ? 'rgba(255,255,255,0.3)' : '#0d6efd',
+                            color: 'white',
+                            flexShrink: 0
+                          }}
+                        >
+                          <i className={`bi ${mode.icon}`}></i>
+                        </div>
+                        <div className="flex-grow-1">
+                          <div className="fw-bold mb-1" style={{ fontSize: '13px' }}>{mode.label}</div>
+                          <Badge 
+                            bg={activeViewMode === mode.id ? 'light' : 'primary'} 
+                            text={activeViewMode === mode.id ? 'dark' : 'white'}
+                            style={{ fontSize: '10px' }}
+                          >
+                            {mode.badge}
+                          </Badge>
+                        </div>
+                      </div>
+                      <p className={`mb-0 ${activeViewMode === mode.id ? 'text-white' : 'text-muted'}`} style={{ fontSize: '11px', opacity: activeViewMode === mode.id ? 0.9 : 1 }}>
+                        {mode.description}
+                      </p>
+                      {activePreset && activeViewMode === mode.id && (
+                        <Badge bg="light" text="primary" className="mt-2" style={{ fontSize: '10px' }}>
+                          <i className="bi bi-check-circle-fill me-1"></i>
+                          Preset: {activePreset.title}
+                        </Badge>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SMART ASSISTANTS Section */}
+            <div className="mb-3 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '12px' }}>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 className="mb-1 fw-bold">SMART ASSISTANTS</h6>
+                  <small className="text-muted">Automate profile updates & exports</small>
+                </div>
+                <Badge bg="primary" style={{ fontSize: '11px' }}>Beta</Badge>
+              </div>
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <div className="bg-white rounded shadow-sm p-3 h-100 border-0">
+                    <div className="d-flex align-items-start mb-3">
+                      <div 
+                        className="rounded-circle d-flex align-items-center justify-content-center me-3"
+                        style={{ width: '40px', height: '40px', backgroundColor: '#e7f3ff', color: '#0d6efd', flexShrink: 0 }}
+                      >
+                        <i className="bi bi-cloud-arrow-down" style={{ fontSize: '18px' }}></i>
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <h6 className="mb-1 fw-semibold">Import from social</h6>
+                          <Badge bg="primary" pill style={{ fontSize: '10px' }}>Sync</Badge>
+                        </div>
+                        <p className="text-muted mb-2" style={{ fontSize: '12px' }}>
+                          Pull the latest roles, links, and bio from LinkedIn, Twitter, or Medium in one click.
+                        </p>
+                        <small className="text-muted d-block mb-3" style={{ fontSize: '11px' }}>Best for quick refreshes before sharing your profile.</small>
+                        <Button variant="outline-primary" size="sm" className="w-100" onClick={() => setShowSocialImport(true)}>
+                          <i className="bi bi-cloud-arrow-down me-1"></i>
+                          Start import
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="col-md-6">
+                  <div className="rounded shadow-sm p-3 h-100 border-0" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+                    <div className="d-flex align-items-start mb-3">
+                      <div 
+                        className="rounded-circle d-flex align-items-center justify-content-center me-3"
+                        style={{ width: '40px', height: '40px', backgroundColor: 'rgba(255,255,255,0.3)', color: 'white', flexShrink: 0 }}
+                      >
+                        <i className="bi bi-stars" style={{ fontSize: '18px' }}></i>
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <h6 className="mb-1 fw-semibold">AI Draft Builder</h6>
+                          <Badge bg="light" text="dark" pill style={{ fontSize: '10px' }}>AI</Badge>
+                        </div>
+                        <p className="mb-2" style={{ opacity: 0.95, fontSize: '12px' }}>
+                          Let our AI summarize your wins, write highlights, and suggest sections instantly.
+                        </p>
+                        <small className="d-block mb-3" style={{ opacity: 0.85, fontSize: '11px' }}>Great for brand-new profiles or major rewrites.</small>
+                        <Button variant="light" size="sm" className="w-100" onClick={() => setShowAIBuild(true)}>
+                          <i className="bi bi-stars me-1"></i>
+                          Launch builder
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <small className="text-muted d-block mt-3 text-center" style={{ fontSize: '11px' }}>
+                <i className="bi bi-info-circle me-1"></i>
+                Use these assistants to sync profile data instantly.
+              </small>
+            </div>
+          </Modal.Body>
+          <Modal.Footer className="border-0 d-flex justify-content-between">
+            <Button variant="link" onClick={() => setShowBasicsModal(false)}>
+              {t('cancel', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button type="submit" variant="primary">
+              {t('save_changes', { defaultValue: 'Save changes' })}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
       {/* Skills Modal */}
       <Modal
         show={showAddSkill}
@@ -1945,7 +2162,7 @@ function MyProfile() {
         show={showAddContact}
         onHide={() => setShowAddContact(false)}
         centered
-        dialogClassName="sheet-modal"
+        dialogClassName="sheet-modal profile-modal contact-modal"
       >
         <Form onSubmit={(e) => {
           e.preventDefault();
@@ -1983,6 +2200,9 @@ function MyProfile() {
             <Modal.Title>{t('contact_card', { defaultValue: 'Contact card' })}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
+            <p className="modal-subtitle">
+              {t('contact_card_helper', { defaultValue: 'Keep your preferred channels tidy so collaborators can reach you anywhere.' })}
+            </p>
             <Form.Group className="mb-3">
               <Form.Label>{t('tagline', { defaultValue: 'Tagline' })}</Form.Label>
               <Form.Control
@@ -2074,6 +2294,65 @@ function MyProfile() {
             </Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      {/* Preset Modal */}
+      <Modal
+        show={showPresetModal}
+        onHide={() => setShowPresetModal(false)}
+        centered
+        dialogClassName="sheet-modal profile-modal preset-modal"
+      >
+        <Modal.Header closeButton className="border-0">
+          <Modal.Title>เลือก Preset ให้โปรไฟล์</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="modal-subtitle">
+            ปรับโทนและ layout ให้เหมาะกับ Use-case ทันที พร้อมตั้ง view mode อัตโนมัติ
+          </p>
+          <div className="preset-grid">
+            {PROFILE_PRESETS.map((preset) => (
+              <div
+                key={preset.id}
+                className={`preset-card ${activePresetId === preset.id ? 'active' : ''}`}
+              >
+                <div className="preset-card-icon" style={{ backgroundColor: preset.color }}>
+                  <i className={`bi ${preset.icon}`}></i>
+                </div>
+                <div className="preset-card-body">
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <div>
+                      <h5 className="mb-0">{preset.title}</h5>
+                      <small className="text-muted">View mode: {VIEW_MODE_LABELS[preset.viewMode] || preset.viewMode}</small>
+                    </div>
+                    <Badge bg="light" text="dark">{preset.badge}</Badge>
+                  </div>
+                  <p className="text-muted small mb-3">{preset.description}</p>
+                  <div className="d-flex align-items-center justify-content-between">
+                    <Button
+                      variant={activePresetId === preset.id ? 'primary' : 'outline-primary'}
+                      size="sm"
+                      onClick={() => handleApplyPreset(preset)}
+                    >
+                      {activePresetId === preset.id ? 'Preset กำลังใช้งาน' : 'ใช้ preset นี้'}
+                    </Button>
+                    {activePresetId === preset.id && (
+                      <span className="text-primary small">
+                        <i className="bi bi-check-circle-fill me-1"></i>
+                        กำลังใช้อยู่
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="border-0">
+          <Button variant="link" onClick={() => setShowPresetModal(false)}>
+            ปิดหน้าต่าง
+          </Button>
+        </Modal.Footer>
       </Modal>
 
       <LoginModal 

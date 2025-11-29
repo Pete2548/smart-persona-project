@@ -1,6 +1,8 @@
 // Professional Profile Manager - Separate from Personal/Vtree/Resume profiles
 // This manages LinkedIn-style professional profiles
 
+import { getCurrentUser } from './auth'
+
 const STORAGE_KEY = 'professional_profiles';
 const ACTIVE_PROFILE_KEY = 'active_professional_profile';
 
@@ -32,9 +34,9 @@ export const getProfessionalProfileByUsername = (username) => {
 
 // Get current user's professional profile
 export const getCurrentUserProfessionalProfile = () => {
-  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  if (!currentUser.username) return null;
-  
+  const currentUser = getCurrentUser() || JSON.parse(localStorage.getItem('currentUser') || '{}');
+  if (!currentUser?.username) return null;
+
   return getProfessionalProfileByUsername(currentUser.username);
 };
 
