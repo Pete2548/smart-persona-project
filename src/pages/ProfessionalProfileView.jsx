@@ -5,6 +5,7 @@ import { getProfessionalProfileByUsername } from '../services/professionalProfil
 import { createReport } from '../services/reportService';
 import { getProfileAnalytics, recordProfileView } from '../services/profileAnalytics';
 import { getCurrentUser } from '../services/auth';
+import { VIEW_MODE_LABELS, getPresetById } from '../config/profileViewModes';
 import './publicProfile.css';
 
 const APP_LINK_OPTIONS = [
@@ -36,7 +37,7 @@ const ProfessionalProfileView = () => {
   const { username } = useParams();
   const [profileRecord, setProfileRecord] = useState(null);
   const [analytics, setAnalytics] = useState(null);
-  const [status, setStatus] = useState('loading'); // loading, ready, private, notfound
+  const [status, setStatus] = useState('loading');
   const [contactCopied, setContactCopied] = useState(false);
 
   // Report Modal State
@@ -74,7 +75,12 @@ const ProfessionalProfileView = () => {
     if (!profileRecord) return null;
     return { ...profileRecord.data, username: profileRecord.username };
   }, [profileRecord]);
+
   const contactLinks = useMemo(() => normalizeContactLinks(profile?.contact?.links || []), [profile]);
+  const viewMode = profile?.viewMode || 'standard';
+  const presetMeta = getPresetById(profile?.profilePreset);
+  const viewModeLabel = VIEW_MODE_LABELS[viewMode] || 'Professional';
+  const accentColor = profile?.coverColor || presetMeta?.color || '#0a66c2';
   const primaryLocation = profile?.contact?.address || profile?.location || '';
   const vheartLikes = profile?.vheartLikes ?? profile?.followers ?? 0;
   const vheartCount = (analytics?.uniqueViewers || 0) + vheartLikes;
@@ -84,6 +90,7 @@ const ProfessionalProfileView = () => {
   const featuredItems = profile?.featuredItems || profile?.featured || [];
   const recentActivity = profile?.recentActivity || profile?.activity || [];
   const hasContactDetails = Boolean(profile?.contact?.email || profile?.contact?.phone || contactLinks.length > 0);
+
   const contactSummary = useMemo(() => {
     if (!profile) return '';
     const lines = [];
@@ -174,11 +181,202 @@ const ProfessionalProfileView = () => {
 
   if (!profile) return null;
 
-  return (
-    <div className="public-profile-page" style={{ minHeight: '100vh', padding: '32px 0' }}>
+  const renderCoreSections = () => (
+    <>
+      <Card className="section-card border-0 shadow-sm mb-3">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="section-title mb-0">Highlights</h5>
+          </div>
+          {featuredItems.length === 0 ? (
+            <div className="empty-state text-center py-4">
+              <i className="bi bi-bookmark-star display-4 text-muted"></i>
+              <p className="text-muted mt-2">No highlights to show yet.</p>
+            </div>
+          ) : (
+            <div className="highlights-grid">
+              {featuredItems.map((item, index) => (
+                <div key={item.id || index} className="highlight-card">
+                  {item.cover && (
+                    <div className="highlight-cover" style={{ backgroundImage: `url(${item.cover})` }} />
+                  )}
+                  <div className="highlight-meta">
+                    <div className="highlight-label text-uppercase small text-muted">{item.type || 'Featured'}</div>
+                    <h6 className="highlight-title mb-1">{item.title || 'Untitled highlight'}</h6>
+                    {item.description && (
+                      <p className="text-muted small mb-2">{item.description}</p>
+                    )}
+                    {item.url && (
+                      <Button variant="link" size="sm" className="p-0" onClick={() => window.open(item.url, '_blank')}>
+                        View
+                        <i className="bi bi-box-arrow-up-right ms-1"></i>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+
+      <Card className="section-card border-0 shadow-sm mb-3">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="section-title mb-0">Activity</h5>
+          </div>
+          {recentActivity.length === 0 ? (
+            <div className="empty-state text-center py-4">
+              <i className="bi bi-activity display-4 text-muted"></i>
+              <p className="text-muted mt-2">No recent updates.</p>
+            </div>
+          ) : (
+            <div className="activity-timeline">
+              {recentActivity.map((item, index) => (
+                <div key={item.id || index} className="activity-item position-relative">
+                  <div className="activity-badge">
+                    <i className="bi bi-dot"></i>
+                    {item.type || 'Update'}
+                  </div>
+                  <div className="activity-content">
+                    <div className="d-flex justify-content-between align-items-start">
+                      <h6 className="activity-title mb-1">{item.title || item.summary || 'New activity'}</h6>
+                      {item.timestamp && (
+                        <span className="activity-meta text-muted small">{item.timestamp}</span>
+                      )}
+                    </div>
+                    {item.description && (
+                      <p className="text-muted small mb-0">{item.description}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+
+      {profile.description && (
+        <Card className="section-card border-0 shadow-sm mb-3">
+          <Card.Body>
+            <h5 className="section-title mb-3">About</h5>
+            <div>{profile.description}</div>
+          </Card.Body>
+        </Card>
+      )}
+
+      <Card className="section-card border-0 shadow-sm mb-3">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="section-title mb-0">Experience</h5>
+          </div>
+          {experience.length === 0 ? (
+            <div className="empty-state text-center py-4">
+              <i className="bi bi-briefcase display-4 text-muted"></i>
+              <p className="text-muted mt-2">No experience added yet.</p>
+            </div>
+          ) : (
+            <div className="experience-list">
+              {experience.map((exp, index) => (
+                <div key={exp.id || index} className="experience-item">
+                  <div className="d-flex gap-3">
+                    <div className="experience-icon">
+                      <i className="bi bi-building"></i>
+                    </div>
+                    <div className="flex-grow-1">
+                      <h6 className="mb-1">{exp.position || 'Role'}</h6>
+                      <div className="text-muted small mb-1">
+                        {exp.company} {exp.location ? `• ${exp.location}` : ''}
+                      </div>
+                      <div className="text-muted small mb-2">
+                        {exp.startDate} {exp.endDate ? `- ${exp.endDate}` : ''}
+                      </div>
+                      {exp.description && (
+                        <p className="text-muted small mb-0">{exp.description}</p>
+                      )}
+                      {Array.isArray(exp.bullets) && exp.bullets.length > 0 && (
+                        <ul className="mt-2 mb-0 text-muted small">
+                          {exp.bullets.map((bullet, bulletIndex) => (
+                            <li key={bulletIndex}>{bullet}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+
+      <Card className="section-card border-0 shadow-sm mb-3">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="section-title mb-0">Education</h5>
+          </div>
+          {education.length === 0 ? (
+            <div className="empty-state text-center py-4">
+              <i className="bi bi-mortarboard display-4 text-muted"></i>
+              <p className="text-muted mt-2">No education entries yet.</p>
+            </div>
+          ) : (
+            <div className="education-list">
+              {education.map((edu, index) => (
+                <div key={edu.id || index} className="education-item">
+                  <div className="d-flex gap-3">
+                    <div className="education-icon">
+                      <i className="bi bi-award"></i>
+                    </div>
+                    <div className="flex-grow-1">
+                      <h6 className="mb-1">{edu.degree || 'Education'}</h6>
+                      <div className="text-muted small mb-1">
+                        {edu.school} {edu.location ? `• ${edu.location}` : ''}
+                      </div>
+                      <div className="text-muted small mb-2">
+                        {edu.startDate} {edu.endDate ? `- ${edu.endDate}` : ''}
+                      </div>
+                      {edu.coursework && (
+                        <p className="text-muted small mb-0">{edu.coursework}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+
+      <Card className="section-card border-0 shadow-sm mb-3">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="section-title mb-0">Skills</h5>
+          </div>
+          {skills.length === 0 ? (
+            <div className="empty-state text-center py-4">
+              <i className="bi bi-lightning display-4 text-muted"></i>
+              <p className="text-muted mt-2">No skills listed yet.</p>
+            </div>
+          ) : (
+            <div className="d-flex flex-wrap gap-2">
+              {skills.map((skill, index) => (
+                <Badge key={index} bg="light" text="dark" className="px-3 py-2 border rounded-pill">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+    </>
+  );
+
+  const renderStandardLayout = () => (
+    <div className="public-profile-page standard-mode" style={{ minHeight: '100vh', padding: '32px 0' }}>
       <Container className="linkedin-profile">
         <Card className="profile-header-card border-0 shadow-sm mb-4">
-          <div className="cover-photo" style={{ height: 220, backgroundColor: profile.coverColor || '#0a66c2' }}>
+          <div className="cover-photo" style={{ height: 220, backgroundColor: accentColor }}>
             {profile.bgImage && (
               <img
                 src={profile.bgImage}
@@ -199,6 +397,18 @@ const ProfessionalProfileView = () => {
                 )}
               </div>
               <div className="flex-grow-1">
+                <div className="view-mode-pill mb-2">
+                  <Badge bg="light" text="dark" className="me-2">
+                    <i className="bi bi-layout-text-sidebar me-1"></i>
+                    {viewModeLabel}
+                  </Badge>
+                  {presetMeta && (
+                    <Badge bg="light" text="dark">
+                      <i className="bi bi-magic me-1"></i>
+                      {presetMeta.title}
+                    </Badge>
+                  )}
+                </div>
                 <h2 className="profile-name mb-1">{profile.displayName || profile.username}</h2>
                 {profile.jobTitle && (
                   <p className="profile-headline mb-2">{profile.jobTitle}</p>
@@ -339,192 +549,7 @@ const ProfessionalProfileView = () => {
           </Card.Body>
         </Card>
 
-        <Card className="section-card border-0 shadow-sm mb-3">
-          <Card.Body>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="section-title mb-0">Highlights</h5>
-            </div>
-            {featuredItems.length === 0 ? (
-              <div className="empty-state text-center py-4">
-                <i className="bi bi-bookmark-star display-4 text-muted"></i>
-                <p className="text-muted mt-2">No highlights to show yet.</p>
-              </div>
-            ) : (
-              <div className="highlights-grid">
-                {featuredItems.map((item, index) => (
-                  <div key={item.id || index} className="highlight-card">
-                    {item.cover && (
-                      <div className="highlight-cover" style={{ backgroundImage: `url(${item.cover})` }} />
-                    )}
-                    <div className="highlight-meta">
-                      <div className="highlight-label text-uppercase small text-muted">{item.type || 'Featured'}</div>
-                      <h6 className="highlight-title mb-1">{item.title || 'Untitled highlight'}</h6>
-                      {item.description && (
-                        <p className="text-muted small mb-2">{item.description}</p>
-                      )}
-                      {item.url && (
-                        <Button variant="link" size="sm" className="p-0" onClick={() => window.open(item.url, '_blank')}>
-                          View
-                          <i className="bi bi-box-arrow-up-right ms-1"></i>
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card.Body>
-        </Card>
-
-        <Card className="section-card border-0 shadow-sm mb-3">
-          <Card.Body>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="section-title mb-0">Activity</h5>
-            </div>
-            {recentActivity.length === 0 ? (
-              <div className="empty-state text-center py-4">
-                <i className="bi bi-activity display-4 text-muted"></i>
-                <p className="text-muted mt-2">No recent updates.</p>
-              </div>
-            ) : (
-              <div className="activity-timeline">
-                {recentActivity.map((item, index) => (
-                  <div key={item.id || index} className="activity-item position-relative">
-                    <div className="activity-badge">
-                      <i className="bi bi-dot"></i>
-                      {item.type || 'Update'}
-                    </div>
-                    <div className="activity-content">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <h6 className="activity-title mb-1">{item.title || item.summary || 'New activity'}</h6>
-                        {item.timestamp && (
-                          <span className="activity-meta text-muted small">{item.timestamp}</span>
-                        )}
-                      </div>
-                      {item.description && (
-                        <p className="text-muted small mb-0">{item.description}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card.Body>
-        </Card>
-
-        {profile.description && (
-          <Card className="section-card border-0 shadow-sm mb-3">
-            <Card.Body>
-              <h5 className="section-title mb-3">About</h5>
-              <div>{profile.description}</div>
-            </Card.Body>
-          </Card>
-        )}
-
-        <Card className="section-card border-0 shadow-sm mb-3">
-          <Card.Body>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="section-title mb-0">Experience</h5>
-            </div>
-            {experience.length === 0 ? (
-              <div className="empty-state text-center py-4">
-                <i className="bi bi-briefcase display-4 text-muted"></i>
-                <p className="text-muted mt-2">No experience added yet.</p>
-              </div>
-            ) : (
-              <div className="experience-list">
-                {experience.map((exp, index) => (
-                  <div key={exp.id || index} className="experience-item">
-                    <div className="d-flex gap-3">
-                      <div className="experience-icon">
-                        <i className="bi bi-building"></i>
-                      </div>
-                      <div className="flex-grow-1">
-                        <h6 className="mb-1">{exp.position || 'Role'}</h6>
-                        <div className="text-muted small mb-1">
-                          {exp.company} {exp.location ? `• ${exp.location}` : ''}
-                        </div>
-                        <div className="text-muted small mb-2">
-                          {exp.startDate} {exp.endDate ? `- ${exp.endDate}` : ''}
-                        </div>
-                        {exp.description && (
-                          <p className="text-muted small mb-0">{exp.description}</p>
-                        )}
-                        {Array.isArray(exp.bullets) && exp.bullets.length > 0 && (
-                          <ul className="mt-2 mb-0 text-muted small">
-                            {exp.bullets.map((bullet, bulletIndex) => (
-                              <li key={bulletIndex}>{bullet}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card.Body>
-        </Card>
-
-        <Card className="section-card border-0 shadow-sm mb-3">
-          <Card.Body>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="section-title mb-0">Education</h5>
-            </div>
-            {education.length === 0 ? (
-              <div className="empty-state text-center py-4">
-                <i className="bi bi-mortarboard display-4 text-muted"></i>
-                <p className="text-muted mt-2">No education entries yet.</p>
-              </div>
-            ) : (
-              <div className="education-list">
-                {education.map((edu, index) => (
-                  <div key={edu.id || index} className="education-item">
-                    <div className="d-flex gap-3">
-                      <div className="education-icon">
-                        <i className="bi bi-award"></i>
-                      </div>
-                      <div className="flex-grow-1">
-                        <h6 className="mb-1">{edu.degree || 'Education'}</h6>
-                        <div className="text-muted small mb-1">
-                          {edu.school} {edu.location ? `• ${edu.location}` : ''}
-                        </div>
-                        <div className="text-muted small mb-2">
-                          {edu.startDate} {edu.endDate ? `- ${edu.endDate}` : ''}
-                        </div>
-                        {edu.coursework && (
-                          <p className="text-muted small mb-0">{edu.coursework}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card.Body>
-        </Card>
-
-        <Card className="section-card border-0 shadow-sm mb-3">
-          <Card.Body>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="section-title mb-0">Skills</h5>
-            </div>
-            {skills.length === 0 ? (
-              <div className="empty-state text-center py-4">
-                <i className="bi bi-lightning display-4 text-muted"></i>
-                <p className="text-muted mt-2">No skills listed yet.</p>
-              </div>
-            ) : (
-              <div className="d-flex flex-wrap gap-2">
-                {skills.map((skill, index) => (
-                  <Badge key={index} bg="light" text="dark" className="px-3 py-2 border rounded-pill">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </Card.Body>
-        </Card>
+        {renderCoreSections()}
       </Container>
 
       <Modal show={showReportModal} onHide={() => setShowReportModal(false)} centered>
@@ -578,6 +603,221 @@ const ProfessionalProfileView = () => {
       </Modal>
     </div>
   );
+
+  const renderShowcaseLayout = () => {
+    const heroStyle = profile.bgImage
+      ? {
+          backgroundImage: `linear-gradient(120deg, rgba(5,5,7,0.85), rgba(5,5,7,0.6)), url(${profile.bgImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }
+      : {
+          backgroundImage: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`
+        };
+
+    const statCards = [
+      { label: 'Profile views', value: analytics?.totalViews || 0, icon: 'bi-eye' },
+      { label: 'Highlights', value: featuredItems.length, icon: 'bi-stars' },
+      { label: 'Skills', value: skills.length, icon: 'bi-patch-check' },
+      { label: 'Experience', value: experience.length, icon: 'bi-briefcase' }
+    ];
+
+    return (
+      <div className="public-profile-page showcase-mode" style={{ minHeight: '100vh' }}>
+        <div className="showcase-hero" style={heroStyle}>
+          <Container>
+            <div className="showcase-hero-inner">
+              <div className="showcase-identity">
+                {profile.avatar && (
+                  <div className="showcase-avatar">
+                    <img src={profile.avatar} alt={profile.displayName || profile.username} />
+                  </div>
+                )}
+                <div>
+                  <div className="showcase-pill-row">
+                    <Badge bg="light" text="dark">
+                      <i className="bi bi-stars me-1"></i>
+                      {viewModeLabel}
+                    </Badge>
+                    {presetMeta && (
+                      <Badge bg="light" text="dark" className="ms-2">
+                        <i className="bi bi-magic me-1"></i>
+                        {presetMeta.title}
+                      </Badge>
+                    )}
+                  </div>
+                  <h1 className="showcase-name">{profile.displayName || profile.username}</h1>
+                  {profile.jobTitle && <p className="showcase-headline">{profile.jobTitle}</p>}
+                  {profile.tagline && <p className="showcase-tagline">{profile.tagline}</p>}
+                  <div className="showcase-meta">
+                    {primaryLocation && (
+                      <span>
+                        <i className="bi bi-geo-alt me-1"></i>
+                        {primaryLocation}
+                      </span>
+                    )}
+                    {profile.username && (
+                      <span>
+                        <i className="bi bi-link-45deg me-1"></i>
+                        vere.me/{profile.username}
+                      </span>
+                    )}
+                  </div>
+                  <div className="showcase-cta">
+                    <Button
+                      variant="light"
+                      size="sm"
+                      onClick={handleMessage}
+                      disabled={!profile.contact?.email && !profile.contact?.phone}
+                    >
+                      <i className="bi bi-chat-dots me-1"></i>
+                      Message
+                    </Button>
+                    <Button
+                      variant="outline-light"
+                      size="sm"
+                      onClick={handleCopyContact}
+                      disabled={!contactSummary}
+                    >
+                      <i className="bi bi-person-lines-fill me-1"></i>
+                      {contactCopied ? 'Contact copied!' : 'Save contact'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <div className="showcase-stat-grid">
+                {statCards.map((stat) => (
+                  <div key={stat.label} className="showcase-stat-card">
+                    <i className={`bi ${stat.icon}`}></i>
+                    <strong>{stat.value}</strong>
+                    <span>{stat.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Container>
+        </div>
+
+        <Container className="showcase-content">
+          {hasContactDetails && (
+            <Card className="section-card border-0 shadow-sm mb-4">
+              <Card.Body className="showcase-contact-card">
+                {profile.contact?.email && (
+                  <div>
+                    <small className="text-muted">Email</small>
+                    <div className="contact-value">{profile.contact.email}</div>
+                  </div>
+                )}
+                {profile.contact?.phone && (
+                  <div>
+                    <small className="text-muted">Phone</small>
+                    <div className="contact-value">{profile.contact.phone}</div>
+                  </div>
+                )}
+                {contactLinks.length > 0 && (
+                  <div className="showcase-contact-links">
+                    {contactLinks.map((link, index) => {
+                      const config = APP_LINK_MAP[link.service] || APP_LINK_MAP.custom;
+                      return (
+                        <Button
+                          key={link.id || `${config.id}-${index}`}
+                          size="sm"
+                          variant="outline-secondary"
+                          className="me-2 mb-2"
+                          onClick={() => window.open(link.url, '_blank', 'noopener')}
+                        >
+                          <i className={`bi ${config.icon} me-1`}></i>
+                          {config.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
+          )}
+
+          {renderCoreSections()}
+        </Container>
+      </div>
+    );
+  };
+
+  const renderMinimalLayout = () => (
+    <div className="public-profile-page minimal-mode" style={{ minHeight: '100vh', padding: '32px 0' }}>
+      <Container className="linkhub-shell">
+        <div className="linkhub-card">
+          {profile.avatar && (
+            <img src={profile.avatar} alt={profile.displayName || profile.username} className="linkhub-avatar" />
+          )}
+          <Badge bg="light" text="dark" className="mb-2">
+            <i className="bi bi-layout-text-sidebar me-1"></i>
+            {viewModeLabel}
+          </Badge>
+          {presetMeta && (
+            <Badge bg="light" text="dark" className="mb-3">
+              <i className="bi bi-magic me-1"></i>
+              {presetMeta.title}
+            </Badge>
+          )}
+          <h1>{profile.displayName || profile.username}</h1>
+          {profile.tagline && <p className="text-muted mb-2">{profile.tagline}</p>}
+          {profile.jobTitle && <p className="text-muted small mb-3">{profile.jobTitle}</p>}
+          <div className="linkhub-actions">
+            <Button
+              variant="dark"
+              className="w-100"
+              onClick={handleMessage}
+              disabled={!profile.contact?.email && !profile.contact?.phone}
+            >
+              <i className="bi bi-chat-dots me-1"></i>
+              Message
+            </Button>
+            <Button
+              variant="outline-dark"
+              className="w-100"
+              onClick={handleCopyContact}
+              disabled={!contactSummary}
+            >
+              <i className="bi bi-link-45deg me-1"></i>
+              {contactCopied ? 'Contact copied!' : 'Save contact'}
+            </Button>
+          </div>
+          <div className="linkhub-links mt-3">
+            {contactLinks.length === 0 && (
+              <p className="text-muted small mb-0">No links added yet.</p>
+            )}
+            {contactLinks.map((link, index) => {
+              const config = APP_LINK_MAP[link.service] || APP_LINK_MAP.custom;
+              return (
+                <button
+                  type="button"
+                  key={link.id || `${config.id}-${index}`}
+                  className="linkhub-link"
+                  style={{ borderColor: config.color }}
+                  onClick={() => window.open(link.url, '_blank', 'noopener')}
+                >
+                  <span>
+                    <i className={`bi ${config.icon} me-2`} style={{ color: config.color }}></i>
+                    {config.label}
+                  </span>
+                  <i className="bi bi-box-arrow-up-right"></i>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="linkhub-extra">
+          {renderCoreSections()}
+        </div>
+      </Container>
+    </div>
+  );
+
+  if (viewMode === 'minimal') return renderMinimalLayout();
+  if (viewMode === 'showcase') return renderShowcaseLayout();
+  return renderStandardLayout();
 };
 
 export default ProfessionalProfileView;

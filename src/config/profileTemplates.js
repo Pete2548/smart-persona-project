@@ -35,39 +35,6 @@ export const profileTemplates = {
     }
   },
 
-  creative: {
-    name: 'Creative',
-    icon: 'bi-brush',
-    description: 'Bold portfolio space for designers, artists, and creators',
-    color: '#f97316',
-
-    defaultSettings: {
-      layout: 'creative',
-      nameColor: '#ffd369',
-      blockColor: '#12021c',
-      bgColor: '#050014',
-      descColor: '#e0e7ff',
-      bgOverlay: 0.45
-    },
-
-    placeholders: {
-      displayName: 'Studio Name / Alias',
-      description: 'Visual storyteller crafting immersive experiences through color, motion, and bold typography.'
-    },
-
-    recommendedThemes: [
-      { id: 'creative-neon-portfolio', name: 'Neon Portfolio' },
-      { id: 'creative-holographic-dream', name: 'Holographic Dream' },
-      { id: 'creative-muse-lab', name: 'Muse Lab' }
-    ],
-
-    hints: {
-      avatar: 'Use a hero shot, self portrait, or stylized logo',
-      description: 'Lead with your creative point-of-view, signature medium, and current collaborations',
-      social: 'Link Behance, Dribbble, Instagram, Gumroad, or booking form'
-    }
-  },
-
   vtree: {
     name: 'Vtree',
     icon: 'bi-link-45deg',
@@ -135,39 +102,6 @@ export const profileTemplates = {
       avatar: 'Use a professional headshot photo',
       description: 'Highlight your expertise, experience, and professional achievements',
       social: 'Add LinkedIn, GitHub, and professional portfolio links'
-    }
-  },
-
-  freelance: {
-    name: 'Freelance',
-    icon: 'bi-person-workspace',
-    description: 'Showcase your services and attract clients',
-    color: '#ff6b6b',
-    
-    defaultSettings: {
-      layout: 'linktree',
-      nameColor: '#ff6b6b',
-      blockColor: '#ffffff',
-      bgColor: '#2d1b4e',
-      descColor: '#ffd93d',
-      bgOverlay: 0.3
-    },
-    
-    placeholders: {
-      displayName: 'Your Creative Name',
-      description: 'Freelance specialist helping clients bring their visions to life. Available for collaborations and exciting projects!',
-    },
-    
-    recommendedThemes: [
-      { id: 3, name: 'Sunset Vibes' },
-      { id: 5, name: 'Emerald Dream' },
-      { id: 16, name: 'Gold Luxury' }
-    ],
-    
-    hints: {
-      avatar: 'Creative photo that represents your brand',
-      description: 'Describe your services, specialties, and what makes you unique',
-      social: 'Add portfolio, Instagram, Behance, and contact methods'
     }
   }
 }

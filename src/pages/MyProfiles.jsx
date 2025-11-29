@@ -68,16 +68,148 @@ function MyProfiles() {
       return
     }
     
-    if (window.confirm('Are you sure you want to delete this profile?')) {
-      deleteProfile(profileId)
-      loadProfiles()
+    // Show custom confirm dialog
+    const confirmDelete = () => {
+      return new Promise((resolve) => {
+        const overlay = document.createElement('div')
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          animation: fadeIn 0.2s ease-out;
+        `
+        
+        const modal = document.createElement('div')
+        modal.style.cssText = `
+          background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+          border-radius: 20px;
+          padding: 40px;
+          text-align: center;
+          min-width: 400px;
+          max-width: 500px;
+          border: 1px solid rgba(255,255,255,0.2);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+          position: relative;
+        `
+        
+        modal.innerHTML = `
+          <style>
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          </style>
+          <div style="width: 100px; height: 100px; margin: 0 auto 24px; position: relative; display: flex; align-items: center; justify-content: center;">
+            <svg width="100" height="100" viewBox="0 0 120 120" style="position: absolute; top: 0; left: 0; animation: spin 3s linear infinite;">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="url(#warnGradient)" stroke-width="3" stroke-linecap="round" stroke-dasharray="140 180" filter="drop-shadow(0 0 8px rgba(255,107,107,0.8))"/>
+              <defs>
+                <linearGradient id="warnGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color: #ff6b6b; stop-opacity: 0.2" />
+                  <stop offset="50%" style="stop-color: #ff6b6b; stop-opacity: 1" />
+                  <stop offset="100%" style="stop-color: #ff6b6b; stop-opacity: 0.2" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <svg width="100" height="100" viewBox="0 0 120 120" style="position: relative; z-index: 1; filter: drop-shadow(0 0 20px rgba(255,255,255,0.5));">
+              <text x="60" y="75" font-size="70" font-weight="bold" font-family="Arial, sans-serif" fill="white" text-anchor="middle" dominant-baseline="middle">V</text>
+            </svg>
+          </div>
+          <h4 style="color: white; margin-bottom: 12px; font-weight: 600; font-size: 20px;">Are you sure?</h4>
+          <p style="color: rgba(255,255,255,0.7); margin: 0 0 24px 0; font-size: 14px;">Do you want to delete this profile?</p>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="cancelBtn" style="
+              background: rgba(255,255,255,0.1);
+              border: 1px solid rgba(255,255,255,0.2);
+              color: white;
+              padding: 10px 24px;
+              border-radius: 10px;
+              cursor: pointer;
+              font-weight: 600;
+              transition: all 0.2s;
+            ">Cancel</button>
+            <button id="okBtn" style="
+              background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+              border: none;
+              color: white;
+              padding: 10px 24px;
+              border-radius: 10px;
+              cursor: pointer;
+              font-weight: 600;
+              box-shadow: 0 4px 12px rgba(255,107,107,0.4);
+              transition: all 0.2s;
+            ">OK</button>
+          </div>
+        `
+        
+        overlay.appendChild(modal)
+        document.body.appendChild(overlay)
+        
+        const cancelBtn = modal.querySelector('#cancelBtn')
+        const okBtn = modal.querySelector('#okBtn')
+        
+        cancelBtn.onmouseenter = () => cancelBtn.style.background = 'rgba(255,255,255,0.2)'
+        cancelBtn.onmouseleave = () => cancelBtn.style.background = 'rgba(255,255,255,0.1)'
+        
+        okBtn.onmouseenter = () => {
+          okBtn.style.transform = 'translateY(-2px)'
+          okBtn.style.boxShadow = '0 6px 20px rgba(255,107,107,0.5)'
+        }
+        okBtn.onmouseleave = () => {
+          okBtn.style.transform = 'translateY(0)'
+          okBtn.style.boxShadow = '0 4px 12px rgba(255,107,107,0.4)'
+        }
+        
+        cancelBtn.onclick = () => {
+          document.body.removeChild(overlay)
+          resolve(false)
+        }
+        
+        okBtn.onclick = () => {
+          document.body.removeChild(overlay)
+          resolve(true)
+        }
+        
+        overlay.onclick = (e) => {
+          if (e.target === overlay) {
+            document.body.removeChild(overlay)
+            resolve(false)
+          }
+        }
+      })
     }
+    
+    confirmDelete().then((confirmed) => {
+      if (confirmed) {
+        deleteProfile(profileId)
+        loadProfiles()
+      }
+    })
   }
 
   const handleViewProfile = (profile) => {
     const user = getCurrentUser()
     const username = user?.username || profile.data?.username || 'demo'
-    window.open(`/u/${username}/${profile.type}`, '_blank')
+    
+    // Map profile type to the correct URL path
+    const typePathMap = {
+      'personal': 'personal',
+      'vtree': 'vtree',
+      'resume': 'resume'
+    }
+    
+    const pathType = typePathMap[profile.type] || profile.type
+    window.open(`/u/${username}/${pathType}`, '_blank')
   }
 
   const handleSwitchToSignup = () => {

@@ -29,12 +29,12 @@ const THEME_TAB_COPY = {
     subtitleKey: 'discover_personal_themes',
     subtitle: 'Discover themes for your personal profile page'
   },
-  creative: {
-    titleKey: 'creative_profile_themes',
-    title: 'Creative Studio Themes',
-    subtitleKey: 'discover_creative_themes',
-    subtitle: 'Bold looks for designers, artists, and studios'
-  },
+  // creative: {
+  //   titleKey: 'creative_profile_themes',
+  //   title: 'Creative Studio Themes',
+  //   subtitleKey: 'discover_creative_themes',
+  //   subtitle: 'Bold looks for designers, artists, and studios'
+  // },
   vtree: {
     titleKey: 'vtree_link_themes',
     title: 'Vtree Link Themes',
@@ -49,16 +49,7 @@ const THEME_TAB_COPY = {
   }
 }
 
-const formatUseCount = (count) => {
-  const value = Number(count)
-  if (!value) {
-    return 'New'
-  }
-  if (value >= 1000) {
-    return `${(value / 1000).toFixed(1)}k uses`
-  }
-  return `${value} uses`
-}
+// Removed unused formatUseCount
 
 const getTokens = (theme) => theme?.tokens || theme?.config || {}
 
@@ -310,8 +301,8 @@ const Themes = () => {
             padding: '16px 24px',
             borderRadius: '12px',
             background: toast.theme === 'success'
-              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-              : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              ? 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)'
+              : 'linear-gradient(135deg, #f472b6 0%, #fb7185 100%)',
             color: 'white',
             fontSize: '16px',
             fontWeight: '600',
@@ -384,13 +375,7 @@ const Themes = () => {
                 <i className="bi bi-person-fill me-2"></i>
                 {t('personal')}
               </button>
-              <button
-                className={`tab-btn ${selectedTab === 'creative' ? 'active' : ''}`}
-                onClick={() => setSelectedTab('creative')}
-              >
-                <i className="bi bi-brush-fill me-2"></i>
-                {t('creative') || 'Creative'}
-              </button>
+              {/* Removed creative tab */}
               <button
                 className={`tab-btn ${selectedTab === 'vtree' ? 'active' : ''}`}
                 onClick={() => setSelectedTab('vtree')}
@@ -453,7 +438,7 @@ const Themes = () => {
                 filteredThemes.map(theme => {
                   const tokens = getTokens(theme)
                   const preview = getPreviewDescriptor(theme)
-                  const uses = theme.stats?.uses ?? theme.uses
+                  // const uses = theme.stats?.uses ?? theme.uses // unused
                   const isTrending = theme.stats?.trending || theme.trending
                   const sourceLabel = THEME_SOURCE_LABELS[theme.source || 'builtin'] || 'Theme'
 
@@ -504,9 +489,6 @@ const Themes = () => {
                           <div className="theme-author">
                             <i className="bi bi-person-circle"></i>
                             <span>@{theme.author || 'creator'}</span>
-                          </div>
-                          <div className="theme-stats">
-                            <span>{formatUseCount(uses)}</span>
                           </div>
                         </div>
                         <div className="theme-meta">

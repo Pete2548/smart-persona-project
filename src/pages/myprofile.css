@@ -394,6 +394,124 @@
   width: 100%;
 }
 
+.view-mode-selector {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.view-mode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.view-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.view-mode-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  background: #f8fafc;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  cursor: pointer;
+  width: 100%;
+  color: inherit;
+}
+
+.view-mode-card:hover,
+.view-mode-card:focus-visible {
+  border-color: #cbd5f5;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.view-mode-card.active {
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.25);
+}
+
+.view-mode-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #1d4ed8;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.view-mode-card-body h6 {
+  font-weight: 700;
+}
+
+.view-mode-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.preset-modal .modal-body {
+  padding-top: 0;
+}
+
+.preset-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preset-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.preset-card.active {
+  border-color: #2563eb;
+  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.25);
+}
+
+.preset-card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+
+.preset-card-body h5 {
+  font-weight: 700;
+}
+
+.preset-card .btn {
+  min-width: 150px;
+}
+
 .profile-action-bar .btn-outline-primary:hover,
 .profile-action-bar .btn-outline-secondary:hover {
   background-color: var(--vheart-primary);
@@ -627,6 +745,190 @@
   border-radius: 12px;
   border-color: #d0d7de;
   padding: 12px 14px;
+}
+
+.profile-modal .modal-content {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fb 60%, #f5f7fb 100%);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 34px 65px rgba(15, 23, 42, 0.18);
+}
+
+.profile-modal .modal-title {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.profile-modal .modal-subtitle {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 18px;
+}
+
+.profile-modal .modal-body {
+  padding: 0 30px 30px;
+}
+
+.profile-modal .modal-header,
+.profile-modal .modal-footer {
+  border: none;
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
+.profile-modal .form-label {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.basics-modal .form-control,
+.contact-modal .form-control,
+.contact-modal .form-select {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.contact-modal .contact-links-editor {
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+  background: #f8fafc;
+}
+
+.contact-modal .contact-link-row {
+  align-items: center;
+}
+
+.contact-modal .contact-link-row .btn {
+  border-radius: 10px;
+  height: 46px;
+}
+
+.contact-modal .contact-links-editor .btn-outline-secondary {
+  width: 100%;
+  border-style: dashed;
+}
+
+.social-modal .social-hint {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #eef2ff;
+  border-radius: 16px;
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  margin-bottom: 18px;
+}
+
+.social-modal .social-hint i {
+  font-size: 1.4rem;
+  color: #6366f1;
+}
+
+.social-modal .alert {
+  border-radius: 12px;
+  border: none;
+}
+
+.ai-modal .modal-content {
+  background: radial-gradient(circle at top, #242658 0%, #090b1a 80%);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #f5f7ff;
+}
+
+.ai-modal .modal-title {
+  color: #ffffff;
+}
+
+.ai-modal .modal-body {
+  padding-bottom: 32px;
+}
+
+.ai-modal .modal-header,
+.ai-modal .modal-footer {
+  border: none;
+}
+
+.ai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ai-modal-hero {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(140deg, rgba(79, 70, 229, 0.4), rgba(14, 165, 233, 0.2));
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-modal-hero h4 {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.ai-modal-hero p {
+  color: rgba(248, 250, 252, 0.85);
+}
+
+.ai-orb {
+  min-width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(199, 210, 254, 0.9), rgba(129, 140, 248, 0.7), rgba(99, 102, 241, 0));
+  box-shadow: 0 0 40px rgba(129, 140, 248, 0.65);
+}
+
+.ai-modal .form-control,
+.ai-modal .form-select {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: #f8fafc;
+}
+
+.ai-modal .form-label {
+  color: #c7d2fe;
+}
+
+.ai-modal .form-control::placeholder {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.ai-modal .alert {
+  background: rgba(248, 113, 113, 0.15);
+  color: #fecaca;
+  border: none;
+}
+
+.ai-modal .btn-primary {
+  background-image: linear-gradient(90deg, #818cf8, #c084fc);
+  border: none;
+  box-shadow: 0 10px 25px rgba(129, 140, 248, 0.35);
+}
+
+.ai-modal .btn-link {
+  color: #c7d2fe;
+}
+
+.ai-modal .ai-draft-card {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #f8fafc;
+}
+
+.ai-modal .ai-draft-card .text-muted {
+  color: rgba(226, 232, 240, 0.8) !important;
 }
 
 .spotlight-modal .modal-header,
@@ -938,6 +1240,15 @@
     justify-content: space-between;
   }
 
+  .view-mode-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .view-mode-grid {
+    grid-template-columns: 1fr;
+  }
+
   .smart-tools-grid {
     flex-direction: column;
   }
@@ -998,6 +1309,10 @@
 
   .analytics-bar {
     padding: 12px;
+  }
+
+  .preset-card {
+    flex-direction: column;
   }
 
   .analytics-value {

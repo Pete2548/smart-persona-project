@@ -12,23 +12,37 @@
   padding: 6px;
   background: linear-gradient(180deg, rgba(255,255,255,1), rgba(255,255,255,1));
   box-shadow: 0 4px 12px rgba(147,136,169,0.08);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   align-items: stretch; /* ensure children stretch to full height */
   min-height: calc(100vh - 80px); /* make the card fill the viewport (minus header) */
 }
 
 .dashboard-sidebar {
-  width: 220px;
-  background: #f7f6f8;
+  --sidebar-width: 220px;
+  --sidebar-bg: #f7f6f8;
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
   border-radius: 12px 0 0 12px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  min-height: calc(100vh - 80px); /* span full viewport height (minus header) */
+  min-height: calc(100vh - 80px); /* at least viewport height (minus header) */
+  align-self: stretch;
   position: relative;
+}
+
+.dashboard-sidebar .sidebar-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
+}
+
+.dashboard-sidebar .sidebar-nav {
+  flex: 1 1 auto;
+  padding-bottom: 140px;
 }
 
 .dashboard-sidebar .logo {
@@ -60,21 +74,31 @@
 }
 
 .sidebar-footer {
-  margin-top: auto; /* push footer to the bottom of the sidebar */
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding: 12px;
+  background: var(--sidebar-bg, #f7f6f8);
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  position: sticky;
+  bottom: 12px;
+  z-index: 2;
 }
 
-@media (min-width: 769px) {
-  .sidebar-footer {
-    position: sticky;
-    bottom: 16px;
-    background: #f7f6f8;
-    z-index: 2;
-    box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.05);
-    border-radius: 16px;
-    padding-left: 12px;
-    padding-right: 12px;
+@media (min-width: 992px) {
+  .floating-profile-card {
+    position: fixed;
+    left: var(--floating-sidebar-left, 24px);
+    bottom: 32px;
+    width: var(--floating-sidebar-width, var(--sidebar-width, 220px));
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(23, 15, 47, 0.25);
+    background: var(--sidebar-bg, #f7f6f8);
+    z-index: 30;
+  }
+
+  .floating-profile-card .view-profile-btn {
+    background: #141414;
+    color: #fff;
+    border-color: #141414;
   }
 }
 

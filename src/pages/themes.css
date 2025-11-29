@@ -5,10 +5,10 @@
   padding: 24px 32px;
   background: #fff;
   border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.04);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  border: 1px solid rgba(219, 112, 147, 0.15);
+  box-shadow: 0 8px 32px rgba(219, 39, 119, 0.1);
   min-height: 100vh;
-  color: #333;
+  color: #4a1942;
 }
 
 .themes-header {
@@ -24,10 +24,18 @@
 
 .theme-workbench input {
   flex: 1;
-  border: 1px solid rgba(0,0,0,0.1);
+  border: 1px solid rgba(236, 72, 153, 0.2);
   border-radius: 10px;
   padding: 10px 14px;
   font-size: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #4a1942;
+}
+
+.theme-workbench input:focus {
+  outline: none;
+  border-color: rgba(236, 72, 153, 0.5);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
 }
 
 .workbench-btn {
@@ -40,14 +48,16 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, #6c5ce7 0%, #a363d9 100%);
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
   color: #fff;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
 }
 
 .workbench-btn.secondary {
-  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #db2777 0%, #c026d3 100%);
+  box-shadow: 0 4px 12px rgba(219, 39, 119, 0.3);
 }
 
 .workbench-btn:disabled {
@@ -62,19 +72,19 @@
 .workbench-hint {
   margin-top: 8px;
   font-size: 12px;
-  color: #666;
+  color: #831843;
 }
 
 .themes-title {
   font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: #000000;
   margin-bottom: 8px;
 }
 
 .themes-subtitle {
   font-size: 14px;
-  color: #666;
+  color: #6b7280;
   margin: 0;
 }
 
@@ -88,10 +98,10 @@
 
 .tab-btn {
   padding: 10px 20px;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(236, 72, 153, 0.2);
   border-radius: 8px;
-  color: #666;
+  color: #831843;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -101,15 +111,17 @@
 }
 
 .tab-btn:hover {
-  background: #f8f8f8;
-  color: #333;
-  border-color: #ccc;
+  background: rgba(255, 255, 255, 0.9);
+  color: #be185d;
+  border-color: rgba(236, 72, 153, 0.4);
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.15);
 }
 
 .tab-btn.active {
-  background: #6c5ce7;
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
   color: #fff;
-  border-color: #6c5ce7;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);
 }
 
 .themes-filters {
@@ -122,25 +134,27 @@
 
 .filter-btn {
   padding: 8px 16px;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(236, 72, 153, 0.2);
   border-radius: 20px;
-  color: #666;
+  color: #831843;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .filter-btn:hover {
-  background: #f8f8f8;
-  color: #333;
-  border-color: #ccc;
+  background: rgba(255, 255, 255, 0.9);
+  color: #be185d;
+  border-color: rgba(236, 72, 153, 0.4);
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.15);
 }
 
 .filter-btn.active {
-  background: #6c5ce7;
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
   color: #fff;
-  border-color: #6c5ce7;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);
 }
 
 .themes-grid {
@@ -158,18 +172,18 @@
 }
 
 .theme-card {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 12px;
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
-  border: 1px solid rgba(0,0,0,0.1);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid rgba(236, 72, 153, 0.15);
+  box-shadow: 0 4px 16px rgba(236, 72, 153, 0.1);
 }
 
 .theme-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  border-color: rgba(108,92,231,0.3);
+  box-shadow: 0 12px 32px rgba(236, 72, 153, 0.25);
+  border-color: rgba(168, 85, 247, 0.4);
 }
 
 .theme-preview {
@@ -347,7 +361,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  background: #6c5ce7;
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
   color: #fff;
   padding: 4px 12px;
   border-radius: 12px;
@@ -356,6 +370,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.4);
 }
 
 .theme-info {
@@ -380,18 +395,18 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
-  background: rgba(108,92,231,0.1);
-  color: #5f4dd1;
+  background: rgba(236, 72, 153, 0.15);
+  color: #be185d;
 }
 
 .theme-source-pill.source-community {
-  background: rgba(16,185,129,0.12);
-  color: #059669;
+  background: rgba(168, 85, 247, 0.15);
+  color: #7c3aed;
 }
 
 .theme-source-pill.source-saved {
-  background: rgba(79,70,229,0.12);
-  color: #4f46e5;
+  background: rgba(219, 39, 119, 0.15);
+  color: #be185d;
 }
 
 .theme-actions {
@@ -403,10 +418,10 @@
 .btn-save-theme {
   width: 100%;
   padding: 10px;
-  border: 1px solid rgba(0,0,0,0.12);
+  border: 1px solid rgba(236, 72, 153, 0.2);
   border-radius: 8px;
-  background: #fff;
-  color: #333;
+  background: rgba(255, 255, 255, 0.8);
+  color: #831843;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -418,8 +433,9 @@
 }
 
 .btn-save-theme:hover {
-  background: rgba(108,92,231,0.08);
-  border-color: rgba(108,92,231,0.3);
+  background: rgba(236, 72, 153, 0.1);
+  border-color: rgba(236, 72, 153, 0.4);
+  color: #be185d;
 }
 
 .btn-delete-theme {
@@ -449,7 +465,7 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #666;
+  color: #831843;
 }
 
 .theme-author i {
@@ -458,13 +474,13 @@
 
 .theme-stats {
   font-size: 12px;
-  color: #888;
+  color: #9d174d;
 }
 
 .theme-name {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: #be185d;
   margin: 8px 0 12px 0;
 }
 
@@ -483,8 +499,8 @@
 }
 
 .theme-tag {
-  background: rgba(108,92,231,0.1);
-  color: #6c5ce7;
+  background: rgba(236, 72, 153, 0.15);
+  color: #be185d;
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 11px;
@@ -494,18 +510,20 @@
 .btn-use-theme {
   width: 100%;
   padding: 10px;
-  background: #6c5ce7;
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
   color: #fff;
   border: none;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
 }
 
 .btn-use-theme:hover {
-  background: #5f4dd1;
+  background: linear-gradient(135deg, #db2777 0%, #9333ea 100%);
+  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.4);
 }
 
 .btn-use-theme:active {

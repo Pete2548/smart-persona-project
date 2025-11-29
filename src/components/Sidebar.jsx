@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Dropdown } from 'react-bootstrap'
+import React, { useState, useEffect, useRef } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getCurrentUser } from '../services/auth'
 import { getActiveProfile, updateProfile } from '../services/profileManager'
@@ -17,6 +16,7 @@ function Sidebar() {
   const [viewPath, setViewPath] = useState('/customize')
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false)
   const [professionalProfileData, setProfessionalProfileData] = useState(null)
+  const sidebarRef = useRef(null)
 
   const handleProtectedAction = (e, path) => {
     e.preventDefault()
@@ -45,6 +45,22 @@ function Sidebar() {
   useEffect(() => {
     loadSidebarProfile()
     loadProfessionalProfile()
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    const updateSidebarMetrics = () => {
+      if (!sidebarRef.current) return
+      const rect = sidebarRef.current.getBoundingClientRect()
+      const root = document.documentElement
+      root.style.setProperty('--floating-sidebar-left', `${rect.left}px`)
+      root.style.setProperty('--floating-sidebar-width', `${rect.width}px`)
+    }
+
+    updateSidebarMetrics()
+    window.addEventListener('resize', updateSidebarMetrics)
+    return () => window.removeEventListener('resize', updateSidebarMetrics)
   }, [])
 
   const loadSidebarProfile = () => {
@@ -86,9 +102,13 @@ function Sidebar() {
     try {
       const professionalProfile = getCurrentUserProfessionalProfile()
       if (professionalProfile?.data) {
-        setProfessionalProfileData(professionalProfile.data)
-        if (professionalProfile.data.username) {
-          setViewPath(`/pro/${professionalProfile.data.username}`)
+        const profileUsername = professionalProfile.data.username || professionalProfile.username
+        setProfessionalProfileData({
+          ...professionalProfile.data,
+          username: profileUsername
+        })
+        if (profileUsername) {
+          setViewPath(`/pro/${profileUsername}`)
         }
       } else {
         setProfessionalProfileData(null)
@@ -101,6 +121,7 @@ function Sidebar() {
 
   const profile = activeProfileRecord?.data || legacyProfile || null
   const displayProfile = professionalProfileData || profile
+  const sidebarName = displayProfile?.username || displayProfile?.displayName || 'Guest'
 
   const handleVisibilityChange = (makePublic) => {
     if (!profile || isUpdatingVisibility) return
@@ -131,12 +152,13 @@ function Sidebar() {
   }
 
   return (
-    <aside className="dashboard-sidebar d-flex flex-column">
+    <aside ref={sidebarRef} className="dashboard-sidebar d-flex flex-column">
       <div className="sidebar-top p-3">
         <div className="logo fw-bold fs-4">VERE</div>
       </div>
-      <nav className="sidebar-nav flex-grow-1">
-        <ul className="list-unstyled m-0 p-2">
+      <div className="sidebar-content flex-grow-1 d-flex flex-column">
+        <nav className="sidebar-nav flex-grow-1">
+          <ul className="list-unstyled m-0 p-2">
           <li className="nav-item mb-3">
             <NavLink to="/my-profile" className={({isActive}) => `d-flex align-items-center text-decoration-none text-dark nav-link ${isActive ? 'active' : ''}`}>
               <i className="bi bi-person-circle fs-4 me-2"></i>
@@ -200,66 +222,73 @@ function Sidebar() {
               <span className="nav-label">{t('links')}</span>
             </NavLink>
           </li>
-        </ul>
-      </nav>
+          </ul>
+        </nav>
 
-      <div className="sidebar-footer p-3">
+        <div className="sidebar-footer floating-profile-card p-3">
         <div className="mb-3">
           <button 
             onClick={() => handleProtectedClick(() => window.open(viewPath, '_blank'))}
-            className="btn view-profile-btn w-100 d-flex align-items-center justify-content-center"
+            className="btn w-100 d-flex align-items-center justify-content-center"
+            style={{
+              background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%)',
+              border: '2px solid rgba(255, 255, 255, 0.15)',
+              color: 'white',
+              fontWeight: '700',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 0 20px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+              position: 'relative',
+              overflow: 'hidden',
+              textShadow: '0 2px 8px rgba(255, 255, 255, 0.2)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 255, 255, 0.2), 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)'
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'
+            }}
           >
             <i className="bi bi-eye me-2"></i>
             <span>{t('view_profile')}</span>
           </button>
         </div>
 
-        <div className="profile d-flex align-items-center">
+        <div 
+          className="d-flex align-items-center"
+          style={{
+            background: 'var(--sidebar-bg, #f7f6f8)',
+            borderRadius: '14px',
+            padding: '12px 14px',
+            border: '1px solid #eceff1'
+          }}
+        >
           {displayProfile && displayProfile.avatar ? (
             <img 
               src={displayProfile.avatar} 
               alt="profile" 
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
+                width: 52,
+                height: 52,
+                borderRadius: '14px',
                 objectFit: 'cover',
-                marginRight: 8
+                marginRight: 12,
+                border: '1px solid rgba(0,0,0,0.05)'
               }}
             />
           ) : (
-            <i className="bi bi-person-circle fs-4 me-2"></i>
+            <i className="bi bi-person-circle fs-2 me-3"></i>
           )}
-          <div className="flex-grow-1">
-            <div className="profile-name">{displayProfile?.displayName || displayProfile?.username || 'Guest'}</div>
+          <div className="flex-grow-1" style={{ lineHeight: 1.15 }}>
+            <div className="profile-name" style={{ fontSize: '0.9rem', fontWeight: 600 }}>{sidebarName}</div>
           </div>
-          <Dropdown align="end">
-            <Dropdown.Toggle 
-              variant="link" 
-              bsPrefix="p-0"
-              className="text-dark text-decoration-none border-0 bg-transparent"
-              style={{ boxShadow: 'none' }}
-            >
-              <i className="bi bi-three-dots fs-5"></i>
-            </Dropdown.Toggle>
-
-            <Dropdown.Menu>
-              <Dropdown.Item onClick={() => navigate('/settings')}>
-                <i className="bi bi-gear me-2"></i>
-                {t('settings')}
-              </Dropdown.Item>
-              <Dropdown.Divider />
-              <Dropdown.Item onClick={() => {
-                localStorage.removeItem('currentUser');
-                navigate('/');
-                window.location.reload();
-              }} className="text-danger">
-                <i className="bi bi-box-arrow-right me-2"></i>
-                {t('logout')}
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
         </div>
+      </div>
       </div>
 
       <LoginModal 

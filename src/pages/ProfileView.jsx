@@ -47,6 +47,7 @@ const ProfileView = () => {
   const audioRef = useRef(null)
   const [isMuted, setIsMuted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [actualProfileType, setActualProfileType] = useState(null)
 
   // Report Modal State
   const [showReportModal, setShowReportModal] = useState(false)
@@ -76,10 +77,8 @@ const ProfileView = () => {
           }
 
           if (targetProfile) {
-            setProfile(targetProfile.data)
-
             // Load audio from IndexedDB if exists
-            if (targetProfile.data.hasAudio) {
+            if (mergedProfile.hasAudio) {
               try {
                 const audioData = await getAudioFromDB()
                 setAudioFile(audioData)
@@ -1291,6 +1290,17 @@ const ProfileView = () => {
         </div>
       </div>
     )
+  }
+
+  // Check if this is vtree or resume type and render appropriate view
+  if (actualProfileType === 'vtree') {
+    const VtreePublicView = require('./VtreePublicView').default
+    return <VtreePublicView profile={profile} />
+  }
+  
+  if (actualProfileType === 'resume') {
+    const ResumePublicView = require('./ResumePublicView').default
+    return <ResumePublicView profile={profile} />
   }
 
   return (

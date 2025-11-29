@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ThemeContext } from './ThemeContextUtils';
 
 const DEFAULT_THEME = 'vheart';
 
@@ -52,8 +53,6 @@ const THEME_DEFINITIONS = {
 
 const ORDERED_THEMES = Object.keys(THEME_DEFINITIONS);
 
-const ThemeContext = createContext();
-
 const sanitizeTheme = (name) => ORDERED_THEMES.includes(name) ? name : DEFAULT_THEME;
 
 const applyThemeVariables = (themeKey) => {
@@ -65,15 +64,7 @@ const applyThemeVariables = (themeKey) => {
   });
 };
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider');
-  }
-  return context;
-};
-
-export const ThemeProvider = ({ children }) => {
+const ThemeProvider = ({ children }) => {
   const getInitialTheme = () => {
     if (typeof window === 'undefined') return DEFAULT_THEME;
     const savedTheme = window.localStorage.getItem('theme');
@@ -123,3 +114,5 @@ export const ThemeProvider = ({ children }) => {
     </ThemeContext.Provider>
   );
 };
+
+export default ThemeProvider;
