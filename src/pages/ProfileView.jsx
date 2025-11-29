@@ -77,8 +77,9 @@ const ProfileView = () => {
           }
 
           if (targetProfile) {
+            setProfile(targetProfile.data);
             // Load audio from IndexedDB if exists
-            if (mergedProfile.hasAudio) {
+            if (targetProfile.data.hasAudio) {
               try {
                 const audioData = await getAudioFromDB()
                 setAudioFile(audioData)
@@ -89,6 +90,7 @@ const ProfileView = () => {
             } else {
               setAudioFile(null)
             }
+            setActualProfileType(targetProfile.type);
             return
           }
         }
@@ -639,45 +641,61 @@ const ProfileView = () => {
 
     // Default Card Layout
     if (layoutType === 'default') {
-      const cardStyle = {
-        background: profile.bgImage ? 'transparent' : (profile.blockColor || undefined),
-      }
+      // Show avatar, username, and background overlay like preview
+      const overlay = typeof profile.bgOverlay === 'number' ? profile.bgOverlay : 0.3;
+      const cardStyle = profile.bgImage
+        ? {
+            backgroundImage: `linear-gradient(rgba(0,0,0,${overlay}), rgba(0,0,0,${overlay})), url(${profile.bgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            minHeight: '260px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+          }
+        : {
+            background: profile.blockColor || '#050505',
+            minHeight: '260px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+          };
 
       return (
         <>
           {commonAudioControl}
           <div className="profile-card" style={cardStyle}>
-            <div className="profile-center">
-              {profile.avatar && (
-                <img src={profile.avatar} alt="avatar" className="avatar-circle" style={{
+            {profile.avatar && (
+              <img
+                src={profile.avatar}
+                alt="avatar"
+                className="avatar-circle"
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  marginBottom: 12,
+                  border: `3px solid ${profile.nameColor || '#fff'}`,
                   boxShadow: `0 12px 36px ${hexToRgba(profile.nameColor, 0.28)}`,
-                  border: `4px solid ${hexToRgba(profile.nameColor, 0.12)}`
-                }} />
-              )}
-              <div className="username-glow" style={usernameStyle}>{profile.username}</div>
-              <div className="profile-description" style={{ color: descColor, marginTop: 8, fontSize: 16, textAlign: 'center' }}>{profile.description}</div>
-              {renderSocialIcons()}
-
-              {/* Render profile sections */}
-              <SectionRenderer
-                sections={profile.sections || []}
-                theme={{ nameColor: profile.nameColor, descColor: profile.descColor, blockColor: profile.blockColor }}
+                  background: '#fff',
+                }}
               />
-
-              {commonAudioElement}
-            </div>
-            <div className="text-center mt-4 pb-4">
-              <button
-                className="btn btn-link btn-sm text-muted"
-                style={{ textDecoration: 'none', fontSize: '0.8rem' }}
-                onClick={() => setShowReportModal(true)}
-              >
-                <i className="bi bi-flag me-1"></i> Report this profile
-              </button>
-            </div>
+            )}
+            <div className="username-glow" style={{
+              color: profile.titleColor || profile.nameColor || '#fff',
+              fontWeight: 700,
+              fontSize: 28,
+              marginBottom: 0,
+              textAlign: 'center',
+            }}>{profile.username}</div>
           </div>
         </>
-      )
+      );
     }
 
     // Linktree Style Layout - Centered minimal design

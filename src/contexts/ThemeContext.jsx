@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ThemeContext } from './ThemeContextUtils';
+import { ThemeContext, useTheme } from './ThemeContextUtils';
 
 const DEFAULT_THEME = 'vheart';
 
@@ -64,7 +64,7 @@ const applyThemeVariables = (themeKey) => {
   });
 };
 
-const ThemeProvider = ({ children }) => {
+export const ThemeProvider = ({ children }) => {
   const getInitialTheme = () => {
     if (typeof window === 'undefined') return DEFAULT_THEME;
     const savedTheme = window.localStorage.getItem('theme');
@@ -115,4 +115,4 @@ const ThemeProvider = ({ children }) => {
   );
 };
 
-export default ThemeProvider;
+export { useTheme };
